@@ -142,7 +142,7 @@
       "NoiseReductionMode": 2,
       "Sharpness": 4
     },
-    "enabled": true,
+    "enabled": false,
     "fps": 12,
     "height": 1440,
     "night": {
