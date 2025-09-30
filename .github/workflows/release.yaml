@@ -1,36 +1,26 @@
-# Nome del workflow che apparirà nella scheda "Actions" di GitHub
 name: Create Release
 
-# Specifica quando eseguire il workflow
 on:
   push:
-    # Esegui solo quando viene pushato un tag
     tags:
-      # Il pattern del tag deve essere tipo v1.0.0, v1.2.3, etc.
       - 'v*.*.*'
 
-# Definisce i job da eseguire
 jobs:
   build-release:
-    # Utilizza l'ultima versione di Ubuntu come sistema operativo
     runs-on: ubuntu-latest
 
-    # Definisce i passaggi del job
+    permissions:
+      contents: write
+
     steps:
-      # Passo 1: Clona il repository nel runner
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Passo 2: Crea l'archivio ZIP con il nome corretto
-      # github.ref_name contiene il nome del tag (es. v1.0.0)
       - name: Create ZIP archive
         run: zip -r zeroCam_${{ github.ref_name }}.zip ./*
 
-      # Passo 3: Crea la release su GitHub e carica lo ZIP come asset
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          # Il GITHUB_TOKEN è fornito automaticamente da GitHub
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Specifica i file da allegare alla release
           files: zeroCam_${{ github.ref_name }}.zip
