@@ -1,0 +1,54 @@
+<div v-if="!focusAidActive">
+  <div class="roi-editor-container roi-editor-component">
+    <div class="image-column">
+      <div class="image-container mb-3" ref="imageContainer">
+        <img :src="imageUrl" @error="onImageError" @load="onImageLoad" alt="Ultima immagine"
+          class="img-fluid rounded border" style="max-height: 720px;" />
+        <svg v-if="imageDimensions.width > 0" :width="imageDimensions.width" :height="imageDimensions.height"
+          @click="handleSvgClick" @dblclick="completeCurrentRoi" class="drawing-overlay">
+          <polygon v-for="roi in rois" :key="roi.id" :points="formatPoints(roi.points)" class="completed-roi" />
+          <text v-for="(roi, index) in rois" :key="'text-' + roi.id" :x="getPointInPixels(getRoiCenter(roi)).x"
+            :y="getPointInPixels(getRoiCenter(roi)).y" class="roi-number-text">
+            [[ index + 1 ]]
+          </text>
+          <polyline v-if="currentPoints.length > 0" :points="formatPoints(currentPoints)"
+            class="in-progress-roi-line" />
+          <circle v-for="(point, index) in currentPoints" :key="'point-' + index" :cx="getPointInPixels(point).x"
+            :cy="getPointInPixels(point).y" r="4" class="in-progress-roi-point" />
+        </svg>
+      </div>
+      <div class="mb-4">
+        <button class="btn btn-primary me-2" @click="$emit('take-photo')" :disabled="isCapturing">
+          <span v-if="isCapturing" class="spinner-border spinner-border-sm me-1" role="status"
+            aria-hidden="true"></span>
+          <i v-else class="bi bi-camera me-1"></i>
+          [[ isCapturing ? 'Scatto...' : 'Take Photo' ]]
+        </button>
+        <button class="btn btn-info me-2" @click="$emit('start-focus-aid')" :disabled="isCapturing">
+          <i class="bi bi-bullseye me-1"></i> Start Focus Aid
+        </button>
+        <button class="btn btn-danger" @click="$emit('restart-app')">
+          <i class="bi bi-arrow-clockwise me-1"></i> Riavvia
+        </button>
+      </div>
+    </div>
+    <div class="roi-list-column">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Privacy Masks</h5>
+        </div>
+        <div v-if="rois.length === 0" class="card-body text-muted">
+          No Privacy Mask defined. Click on the image to start drawing and double-click to complete.
+        </div>
+        <ul v-else class="list-group list-group-flush">
+          <li v-for="(roi, index) in rois" :key="roi.id"
+            class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Privacy Mask #[[ index + 1 ]]</span>
+            <button class="btn btn-outline-danger btn-sm" @click="deleteRoi(roi.id)"><i
+                class="bi bi-trash"></i></button>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,321 @@
+<div v-if="config">
+    <!-- Device Details -->
+    <div v-if="configPage === 'deviceDetails' && config.deviceDetails">
+        <h4>Device Details</h4>
+        <div class="card card-body">
+            <div class="row mb-3">
+                <div class="col-md-3"><label class="form-label">Name</label><field-renderer
+                        :model="config.deviceDetails" key-name="name" :schema="schema" /></div>
+                <div class="col-md-9"><label class="form-label">Remote URL</label><field-renderer
+                        :model="config.deviceDetails" key-name="remoteUrl" :schema="schema" /></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><label class="form-label">Latitude</label><field-renderer
+                        :model="config.deviceDetails" key-name="latitude" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Longitude</label><field-renderer
+                        :model="config.deviceDetails" key-name="longitude" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Elevation</label><field-renderer
+                        :model="config.deviceDetails" key-name="elevation" :schema="schema" /></div>
+            </div>
+            <div class="row">
+                <div class="col-md-3"><label class="form-label">Sunrise Offset</label><field-renderer
+                        :model="config.deviceDetails" key-name="sunRiseOffset" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Sunset Offset</label><field-renderer
+                        :model="config.deviceDetails" key-name="sunSetOffset" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Dawn Offset</label><field-renderer
+                        :model="config.deviceDetails" key-name="dawnOffset" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Dusk Offset</label><field-renderer
+                        :model="config.deviceDetails" key-name="duskOffset" :schema="schema" /></div>
+            </div>
+            <div class="row">
+                <div class="col-md-3"><label class="form-label">Image H-Flip</label><field-renderer
+                        :model="config.deviceDetails" key-name="hflip" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Image V-Flip</label><field-renderer
+                        :model="config.deviceDetails" key-name="vflip" :schema="schema" /></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ONVIF -->
+    <div v-if="configPage === 'onvif' && config.onvif">
+        <h4>ONVIF</h4>
+        <div class="card card-body">
+            <div class="row">
+                <div class="col-md-3 align-self-center">
+                    <field-renderer :model="config.onvif" key-name="enabled" :schema="schema" label="Enabled" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">ONVIF Snapshot Width (px)</label>
+                    <field-renderer :model="config.onvif" key-name="onvif_w" :schema="schema" />
+                    <div class="form-text">Height will be calculated automatically to maintain aspect ratio.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MQTT -->
+    <!-- <div v-if="configPage === 'mqtt' && config.mqtt">
+        <h4>MQTT</h4>
+        <div class="card card-body">
+            <div class="row mb-3 align-items-end">
+                <div class="col-md-2"><field-renderer :model="config.mqtt" key-name="enabled" :schema="schema" label="Connection"/></div>
+                <div class="col-md-5"><label class="form-label">Host</label><field-renderer :model="config.mqtt" key-name="host" :schema="schema" /></div>
+                <div class="col-md-5"><label class="form-label">Port</label><field-renderer :model="config.mqtt" key-name="port" :schema="schema" /></div>
+            </div>
+            <div class="row">
+                <div class="col-md-6"><label class="form-label">Username</label><field-renderer :model="config.mqtt" key-name="username" :schema="schema" /></div>
+                <div class="col-md-6"><label class="form-label">Password</label><field-renderer :model="config.mqtt" key-name="password" :schema="schema" /></div>
+            </div>
+        </div>
+    </div> -->
+
+    <!-- FTP Host -->
+    <div v-if="configPage === 'ftpHost' && config.FtpHost">
+        <h4>FTP Host</h4>
+        <div class="card card-body">
+            <div class="row mb-3">
+                <div class="col-md-4"><label class="form-label">Host</label><field-renderer :model="config.FtpHost"
+                        key-name="host" :schema="schema" /></div>
+                <div class="col-md-4"><label class="form-label">Port</label><field-renderer :model="config.FtpHost"
+                        key-name="port" :schema="schema" /></div>
+                <div class="col-md-4"><label class="form-label">Folder</label><field-renderer :model="config.FtpHost"
+                        key-name="folder" :schema="schema" /></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4"><label class="form-label">Username</label><field-renderer :model="config.FtpHost"
+                        key-name="username" :schema="schema" /></div>
+                <div class="col-md-4"><label class="form-label">Password</label><field-renderer :model="config.FtpHost"
+                        key-name="password" :schema="schema" /></div>
+                <div class="col-md-4"><label class="form-label">Timeout</label><field-renderer :model="config.FtpHost"
+                        key-name="timeout" :schema="schema" /></div>
+            </div>
+            <div class="row">
+                <div class="col-md-4"><label class="form-label">Filename</label><field-renderer :model="config.FtpHost"
+                        key-name="filename" :schema="schema" /></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Parameters -->
+    <div v-if="configPage === 'cameraParameters' && config.cameraParameters">
+        <h4>Camera Parameters</h4>
+        <div class="card card-body">
+            <div class="row mb-3 align-items-end">
+                <div class="col-md-3"><label class="form-label">Type</label><field-renderer
+                        :model="config.cameraParameters" key-name="type" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Shot Interval (s)</label><field-renderer
+                        :model="config.cameraParameters" key-name="shotInterval" :schema="schema" /></div>
+            </div>
+            <hr>
+            <div class="row mb-3 align-items-end">
+                <div class="col-md-3"><field-renderer :model="config.cameraParameters.crop" key-name="enabled"
+                        :schema="schema" label="Crop Enabled" /></div>
+                <div class="col-md-4">
+                    <label class="form-label">Crop Size</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" v-model.number="config.cameraParameters.crop.width">
+                        <span class="input-group-text">x</span>
+                        <input type="number" class="form-control" v-model.number="config.cameraParameters.crop.height">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Crop Offset</label>
+                    <div class="input-group">
+                        <span class="input-group-text">X</span>
+                        <input type="number" class="form-control"
+                            v-model.number="config.cameraParameters.crop.x_offset">
+                        <span class="input-group-text">Y</span>
+                        <input type="number" class="form-control"
+                            v-model.number="config.cameraParameters.crop.y_offset">
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <ul class="nav nav-tabs">
+                <li class="nav-item" v-for="phase in ['dawn', 'day', 'dusk', 'night']" :key="'cam-nav-' + phase">
+                    <button class="nav-link text-capitalize" :class="{ active: activeCameraTab === phase }"
+                        @click="$emit('update:activeCameraTab', phase)">[[ phase ]]</button>
+                </li>
+            </ul>
+            <div class="tab-content p-3 border border-top-0">
+                <div v-for="phase in ['dawn', 'day', 'dusk', 'night']" :key="'cam-pane-' + phase"
+                    v-show="activeCameraTab === phase">
+
+                    <div v-if="phase === 'day'">
+                        <p class="text-muted small">Impostazioni per l'esposizione automatica della fotocamera in
+                            condizioni diurne.</p>
+                        <div class="row align-items-end">
+                            <div class="col-md-3">
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="AeEnable"
+                                    :schema="schema" label="Auto Exposure" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Metering Mode</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="AeMeteringMode"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">HDR Mode</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="HdrMode"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sharpness</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="Sharpness"
+                                    :schema="schema" />
+                            </div>
+                        </div>
+                        <div class="row align-items-end mt-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Noise Reduction</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="NoiseReductionMode"
+                                    :schema="schema" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else>
+                        <p class="text-muted small">Impostazioni per l'algoritmo di bracketing manuale in condizioni di
+                            scarsa illuminazione.</p>
+                        <div class="row align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label">Min Target Brightness</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="MinTargetBrightness"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Max Target Brightness</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="MaxTargetBrightness"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sharpness</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="Sharpness"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Noise Reduction</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="NoiseReductionMode"
+                                    :schema="schema" />
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stream Parameters -->
+    <div v-if="configPage === 'streamParameters' && config.streamParameters">
+        <h4>Stream Parameters</h4>
+        <div class="card card-body">
+            <div class="row mb-3 align-items-end">
+                <div class="col-md-3"><field-renderer :model="config.streamParameters" key-name="enabled"
+                        :schema="schema" label="Streaming Enabled" /></div>
+                <div class="col-md-9"><label class="form-label">YouTube API KEY</label><field-renderer
+                        :model="config.streamParameters" key-name="yt_api_key" :schema="schema" /></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><label class="form-label">FPS</label><field-renderer
+                        :model="config.streamParameters" key-name="fps" :schema="schema" /></div>
+                <div class="col-md-9"><label class="form-label">Resolution</label>
+                    <div class="input-group"><input type="number" class="form-control"
+                            v-model.number="config.streamParameters.width"><span class="input-group-text">x</span><input
+                            type="number" class="form-control" v-model.number="config.streamParameters.height"></div>
+                </div>
+            </div>
+            <hr>
+            <ul class="nav nav-tabs">
+                <li class="nav-item" v-for="phase in ['dawn', 'day', 'dusk', 'night']" :key="'stream-nav-' + phase">
+                    <button class="nav-link text-capitalize" :class="{ active: activeStreamTab === phase }"
+                        @click="$emit('update:activeStreamTab', phase)">[[ phase ]]</button>
+                </li>
+            </ul>
+            <div class="tab-content p-3 border border-top-0">
+                <div v-for="phase in ['dawn', 'day', 'dusk', 'night']" :key="'stream-pane-' + phase"
+                    v-show="activeStreamTab === phase">
+                    <div class="row align-items-end">
+                        <div class="col-md-3"><field-renderer :model="config.streamParameters[phase]"
+                                key-name="AeEnable" :schema="schema" label="Auto Exposure" /></div>
+                        <div class="col-md-3"><label class="form-label">Analogue Gain</label><field-renderer
+                                :model="config.streamParameters[phase]" key-name="AnalogueGain" :schema="schema" />
+                        </div>
+                        <div class="col-md-3"><label class="form-label">Sharpness</label><field-renderer
+                                :model="config.streamParameters[phase]" key-name="Sharpness" :schema="schema" /></div>
+                        <div class="col-md-3"><label class="form-label">AWB Mode</label><field-renderer
+                                :model="config.streamParameters[phase]" key-name="AwbMode" :schema="schema" /></div>
+                        <div class="col-md-3"><label class="form-label">Noise Reduction</label><field-renderer
+                                :model="config.streamParameters[phase]" key-name="NoiseReductionMode"
+                                :schema="schema" /></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay Images -->
+    <div v-if="configPage === 'overlayImages' && config.OverlayImages">
+        <h4>Overlay Images</h4>
+        <div class="card card-body">
+            <div v-for="(img, index) in config.OverlayImages" :key="index" class="border rounded p-3 mb-3">
+                <h5>Overlay #[[ index + 1 ]]</h5>
+                <div class="row mb-3 align-items-end">
+                    <div class="col-md-2"><field-renderer :model="img" key-name="enabled" :schema="schema"
+                            label="Enabled" /></div>
+                    <div class="col-md-4"><label class="form-label">Name</label><field-renderer :model="img"
+                            key-name="name" :schema="schema" /></div>
+                    <div class="col-md-6"><label class="form-label">URL</label><field-renderer :model="img"
+                            key-name="url" :schema="schema" /></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3"><label class="form-label">X</label><field-renderer :model="img" key-name="X"
+                            :schema="schema" /></div>
+                    <div class="col-md-3"><label class="form-label">Y</label><field-renderer :model="img" key-name="Y"
+                            :schema="schema" /></div>
+                    <div class="col-md-3"><label class="form-label">Scale</label><field-renderer :model="img"
+                            key-name="scale" :schema="schema" /></div>
+                    <div class="col-md-3"><label class="form-label">Opacity</label><field-renderer :model="img"
+                            key-name="opacity" :schema="schema" /></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Annotation -->
+    <div v-if="configPage === 'annotation' && config.Annotation">
+        <h4>Annotation</h4>
+        <div class="card card-body">
+            <h5>Container Background</h5>
+            <div class="row mb-3">
+                <div class="col-md-2" v-for="key in ['R', 'G', 'B', 'A']"><label class="form-label">[[ key
+                        ]]</label><field-renderer :model="config.Annotation.Container" :key-name="key"
+                        :schema="schema" /></div>
+                <div class="col-md-2"><label class="form-label">Offset</label><field-renderer
+                        :model="config.Annotation.Container" key-name="Offset" :schema="schema" /></div>
+            </div>
+            <h5 class="mt-4">Text</h5>
+            <div class="row mb-3">
+                <div class="col-md-2" v-for="key in ['R', 'G', 'B', 'A']"><label class="form-label">[[ key
+                        ]]</label><field-renderer :model="config.Annotation.Content.Color" :key-name="key"
+                        :schema="schema" /></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Text Content</label><field-renderer :model="config.Annotation.Content"
+                    key-name="Text" :schema="schema" />
+            </div>
+            <div class="row">
+                <div class="col-md-6"><label class="form-label">Font Size</label><field-renderer
+                        :model="config.Annotation.Content" key-name="FontSize" :schema="schema" /></div>
+                <div class="col-md-6"><label class="form-label">Date/Time Format</label><field-renderer
+                        :model="config.Annotation" key-name="DTFormat" :schema="schema" /></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 text-end">
+        <button class="btn btn-success me-2" @click="$emit('save-config')">
+            <i class="bi bi-save me-1"></i> Salva Configurazione
+        </button>
+    </div>
+</div>

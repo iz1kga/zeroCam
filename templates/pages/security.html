@@ -1,0 +1,25 @@
+<div>
+    <h4>Cambio Password</h4>
+    <div class="card">
+        <div class="card-body">
+            <div v-if="message" class="alert" :class="messageClass" role="alert">[[ message ]]</div>
+            
+            <div class="mb-3">
+                <label for="currentPassword" class="form-label">Password Attuale</label>
+                <input type="password" class="form-control" id="currentPassword" v-model="passwords.current">
+            </div>
+            <div class="mb-3">
+                <label for="newPassword" class="form-label">Nuova Password</label>
+                <input type="password" class="form-control" id="newPassword" v-model="passwords.new">
+            </div>
+            <div class="mb-3">
+                <label for="confirmPassword" class="form-label">Conferma Nuova Password</label>
+                <input type="password" class="form-control" id="confirmPassword" v-model="passwords.confirm">
+            </div>
+            <button class="btn btn-primary" @click="$emit('change-password', passwords)" :disabled="isLoading">
+                <span v-if="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                Cambia Password
+            </button>
+        </div>
+    </div>
+</div>

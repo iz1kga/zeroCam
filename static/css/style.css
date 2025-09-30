@@ -1,0 +1,155 @@
+/* === General Layout === */
+html, body {
+  height: 100vh; /* Use viewport height */
+  overflow: hidden; /* Prevent the main body from ever scrolling */
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* This is the middle row containing sidebar and main content */
+#app > .d-flex.flex-grow-1 {
+  overflow: hidden; /* Crucial: This prevents this row from growing and causing a body scrollbar */
+  flex: 1; /* Allow this container to fill available vertical space */
+}
+
+/* === Status === */
+.gauge-wrapper {
+  max-width: 200px;
+  margin: auto;
+}
+
+/* === Sidebar === */
+.sidebar {
+  width: 250px;
+  background-color: #f8f9fa;
+  border-right: 1px solid #dee2e6;
+  flex-shrink: 0;
+  overflow-y: auto; /* Allow sidebar to scroll if it has many items */
+}
+
+.sidebar .nav-link {
+  color: #333;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid transparent;
+}
+
+.sidebar .nav-link.active {
+  font-weight: 600;
+  color: #0d6efd;
+  background-color: #e9ecef;
+  border-left-color: #0d6efd;
+}
+
+.submenu {
+  border-left: 3px solid #dee2e6;
+  margin-left: 1rem;
+}
+
+.submenu .nav-link {
+  font-size: 0.9em;
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
+  border-left: none;
+}
+
+.submenu .nav-link.active {
+  font-weight: 600;
+  background-color: transparent; /* No background for active sub-items */
+}
+
+
+/* === Main Content Area === */
+.content-area {
+  padding: 1.5rem;
+  overflow-y: auto; /* This is the main scrollbar for all pages except the log page */
+  flex-grow: 1;
+}
+
+/* === Log Page Specific Fix === */
+
+/* When the log page is active, remove its padding and its own scrollbar */
+.content-area.is-log-page {
+  padding: 0;
+  overflow: hidden; /* Prevent this container from scrolling */
+  height: 100%;
+}
+
+/* The <pre> tag for the log view now handles scrolling */
+.content-area.is-log-page #logView {
+  height: 100%; /* Take full height of parent */
+  overflow-y: auto; /* Scroll inside the <pre> tag */
+  /* Add padding inside the scrollable area */
+  padding: 1.5rem;
+  box-sizing: border-box; /* IMPORTANT: include padding in the 100% height calculation */
+  /* Resetting properties */
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  /* Visuals */
+  font-family: monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap !important;
+  word-break: break-word;
+}
+
+/* === ROI Editor === */
+
+.roi-editor-container {
+  display: flex; 
+  flex-direction: row; 
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.image-column {
+  flex: 3;
+}
+
+.roi-list-column {
+  flex: 1;
+}
+
+.roi-editor-component .roi-editor-container {
+  display: flex;
+  gap: 1.5rem;
+}
+.roi-editor-component .image-column {
+  flex: 3;
+}
+.roi-editor-component .roi-list-column {
+  flex: 1;
+  min-width: 250px;
+}
+.roi-editor-component .image-container {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.roi-editor-component .drawing-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  cursor: crosshair;
+}
+.roi-editor-component .completed-roi {
+  fill: rgba(255, 165, 0, 0.4);
+  stroke: rgba(255, 140, 0, 1);
+  stroke-width: 2;
+}
+.roi-editor-component .in-progress-roi-line {
+  fill: none;
+  stroke: rgba(0, 123, 255, 0.9);
+  stroke-width: 2;
+  stroke-dasharray: 4;
+}
+.roi-editor-component .in-progress-roi-point {
+  fill: rgba(0, 123, 255, 1);
+  stroke: white;
+  stroke-width: 1;
+}
+.roi-editor-component .list-group-item {
+  font-size: 0.9rem;
+}

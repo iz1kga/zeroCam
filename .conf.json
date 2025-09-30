@@ -1,0 +1,158 @@
+{
+  "Annotation": {
+    "Container": {
+      "A": 150,
+      "B": 255,
+      "G": 0,
+      "Offset": 10,
+      "R": 0
+    },
+    "Content": {
+      "Color": {
+        "A": 255,
+        "B": 255,
+        "G": 255,
+        "R": 255
+      },
+      "FontSize": 50,
+      "Text": "Webcam Annotation Description"
+    },
+    "DTFormat": "%d-%m-%Y %H:%M"
+  },
+  "FtpHost": {
+    "filename": "webcam.jpg",
+    "folder": "/",
+    "host": "upload.your.ftp.com",
+    "password": "",
+    "port": 21,
+    "timeout": 181,
+    "username": "username"
+  },
+  "OverlayImages": [
+    {
+      "X": 3440,
+      "Y": 10,
+      "enabled": true,
+      "name": "My Fancy Logo",
+      "opacity": 80,
+      "scale": 180,
+      "url": "https://www.myimage.com/logo.png"
+    },
+    {
+      "X": 3800,
+      "Y": 10,
+      "enabled": false,
+      "name": "My other Logo",
+      "opacity": 80,
+      "scale": 180,
+      "url": "https://www.myimage.com/another_logo.png"
+    }
+  ],
+  "cameraParameters": {
+    "archiveImages": false,
+    "crop": {
+      "enabled": false,
+      "height": 2300,
+      "width": 3700,
+      "x_offset": 0,
+      "y_offset": 100
+    },
+    "dawn": {
+      "MaxTargetBrightness": 50,
+      "MinTargetBrightness": 40,
+      "NoiseReductionMode": 2,
+      "Sharpness": 4
+    },
+    "day": {
+      "AeEnable": true,
+      "AeMeteringMode": 0,
+      "AnalogueGain": 1,
+      "ExposureTime": 0,
+      "HdrMode": 2,
+      "NoiseReductionMode": 1,
+      "Sharpness": 4
+    },
+    "dusk": {
+      "MaxTargetBrightness": 50,
+      "MinTargetBrightness": 40,
+      "NoiseReductionMode": 2,
+      "Sharpness": 4
+    },
+    "hardResetInterval": 10,
+    "night": {
+      "MaxTargetBrightness": 50,
+      "MinTargetBrightness": 40,
+      "NoiseReductionMode": 2,
+      "Sharpness": 4
+    },
+    "shotInterval": 300,
+    "type": "piCamera",
+    "unsharpMask": false
+  },
+  "deviceDetails": {
+    "dawnOffset": -6,
+    "duskOffset": -6,
+    "elevation": 200,
+    "hflip": true,
+    "latitude": 45.071215, 
+    "longitude": 7.685083,
+    "name": "My Beautiful Webcam",
+    "remoteUrl": "https://www.mywebsite.com/webcam.jpg",
+    "sunRiseOffset": -2.5,
+    "sunSetOffset": -2.5,
+    "vflip": true
+  },
+  "mqtt": {
+    "enabled": false,
+    "host": "mqtt.mybroker.com",
+    "password": "",
+    "port": 1883,
+    "username": "mqtt_user"
+  },
+  "onvif": {
+    "enabled": false,
+    "onvif_w": 1920
+  },
+  "security": {
+    "flask_secret_key": "",
+    "password": "",
+    "username": "admin"
+  },
+  "streamParameters": {
+    "bitrate": "4000k",
+    "buffer": "8000k",
+    "dawn": {
+      "AeEnable": true,
+      "AnalogueGain": 31,
+      "AwbMode": 4,
+      "NoiseReductionMode": 2,
+      "Sharpness": 4
+    },
+    "day": {
+      "AeEnable": true,
+      "AnalogueGain": 1,
+      "AwbMode": 4,
+      "NoiseReductionMode": 2,
+      "Sharpness": 4
+    },
+    "dusk": {
+      "AeEnable": true,
+      "AnalogueGain": 32,
+      "AwbMode": 4,
+      "NoiseReductionMode": 2,
+      "Sharpness": 4
+    },
+    "enabled": true,
+    "fps": 12,
+    "height": 1440,
+    "night": {
+      "AeEnable": true,
+      "AnalogueGain": 64,
+      "AwbMode": 4,
+      "NoiseReductionMode": 2,
+      "Sharpness": 4
+    },
+    "width": 2560,
+    "yt_api_key": ""
+  }
+}

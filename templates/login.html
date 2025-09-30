@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>zeroCAM - Login</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        .login-form {
+            width: 100%;
+            max-width: 330px;
+            padding: 15px;
+            margin: auto;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <main class="login-form">
+        <form method="POST" action="{{ url_for('login') }}">
+            <h1 class="h3 mb-3 fw-normal">zeroCAM - Accesso</h1>
+
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <div class="alert alert-warning" role="alert">
+                  {{ messages[0] }}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
+                <label for="username">Username</label>
+            </div>
+            <div class="form-floating mb-3">
+                <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+                <label for="password">Password</label>
+            </div>
+
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Accedi</button>
+            <p class="mt-5 mb-3 text-muted">&copy; 2025 zeroCAM</p>
+        </form>
+    </main>
+</body>
+</html>

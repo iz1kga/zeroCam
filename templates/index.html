@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <title>zeroCAM - Console</title>
+  <!-- Librerie Esterne -->
+  <script src="{{ url_for('static', filename='js/gauge.js') }}"></script>
+  <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
+  <script src="{{ url_for('static', filename='js/vue.global.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/cdn.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+
+  
+  <!-- File CSS Locale -->
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+  <div id="app" class="d-flex flex-column h-100">
+    <header class="navbar navbar-light bg-light px-3 border-bottom">
+      <span class="navbar-brand mb-0 h1">zeroCAM - Console</span>
+    </header>
+    <div class="d-flex flex-grow-1">
+      <aside class="sidebar d-flex flex-column">
+        <nav class="nav flex-column">
+          <!-- Modificato: Menu Configuration con sottomenu -->
+          <a href="#" class="nav-link" :class="{ active: page === 'config' }" @click.prevent="page = 'config'">
+            <i class="bi bi-sliders me-2"></i>Configuration
+            <i class="bi float-end" :class="page === 'config' ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+          </a>
+          <div v-if="page === 'config'" class="submenu ps-4">
+            <a href="#" class="nav-link" :class="{ active: configPage === 'deviceDetails' }" @click.prevent="configPage = 'deviceDetails'">Device Details</a>
+            <a href="#" class="nav-link" :class="{ active: configPage === 'onvif' }" @click.prevent="configPage = 'onvif'">ONVIF</a>
+            <!-- <a href="#" class="nav-link" :class="{ active: configPage === 'mqtt' }" @click.prevent="configPage = 'mqtt'">MQTT</a> -->
+            <a href="#" class="nav-link" :class="{ active: configPage === 'ftpHost' }" @click.prevent="configPage = 'ftpHost'">FTP Host</a>
+            <a href="#" class="nav-link" :class="{ active: configPage === 'cameraParameters' }" @click.prevent="configPage = 'cameraParameters'">Camera</a>
+            <a href="#" class="nav-link" :class="{ active: configPage === 'streamParameters' }" @click.prevent="configPage = 'streamParameters'">Stream</a>
+            <a href="#" class="nav-link" :class="{ active: configPage === 'overlayImages' }" @click.prevent="configPage = 'overlayImages'">Overlays</a>
+            <a href="#" class="nav-link" :class="{ active: configPage === 'annotation' }" @click.prevent="configPage = 'annotation'">Annotation</a>
+          </div>
+
+          <a href="#" class="nav-link" :class="{ active: page === 'control' }" @click.prevent="page = 'control'">
+            <i class="bi bi-camera-video me-2"></i>Cam Control
+          </a>
+          <a href="#" class="nav-link" :class="{ active: page === 'status' }" @click.prevent="page = 'status'">
+            <i class="bi bi-speedometer2 me-2"></i>Status
+          </a>
+          <a href="#" class="nav-link" :class="{ active: page === 'log' }" @click.prevent="page = 'log'">
+            <i class="bi bi-terminal me-2"></i>Log
+          </a>
+          <a href="#" class="nav-link" :class="{ active: page === 'security' }" @click.prevent="page = 'security'">
+            <i class="bi bi-shield-lock me-2"></i>Security
+          </a>
+        </nav>
+        <div class="mt-auto p-3">
+            <button class="btn btn-outline-danger w-100" @click="logout">
+                <i class="bi bi-box-arrow-right me-2"></i>Logout
+            </button>
+        </div>
+      </aside>
+
+      <main class="flex-grow-1 content-area" :class="{ 'is-log-page': page === 'log' }">
+        <!-- Indicatore di caricamento -->
+        <div v-if="isLoading" class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        
+        <!-- Contenuto principale (mostrato dopo il caricamento) -->
+        <component  v-else
+                    :is="currentPageComponent" 
+                    :config="config" 
+                    :schema="schema"
+                    :stats="stats"
+                    :log-content="logContent"
+                    :image-url="imageUrl"
+                    :is-capturing="isCapturing"
+                    :focus-aid-active="focusAidActive"
+                    :config-page="configPage"
+                    :active-camera-tab="activeCameraTab"
+                    :active-stream-tab="activeStreamTab"
+                    @update:active-camera-tab="activeCameraTab = $event"
+                    @update:active-stream-tab="activeStreamTab = $event"
+                    @restart-app="restartApp"
+                    v-on:take-photo="takePhoto"
+                    v-on:start-focus-aid="startFocusAid"
+                    v-on:stop-focus-aid="stopFocusAid"
+                    v-on:save-config="saveConfig"
+                    :passwords="passwords"
+                    :is-loading="isChangingPassword"
+                    :message="changePasswordMessage"
+                    :message-class="changePasswordSuccess ? 'alert-success' : 'alert-danger'"
+                    @change-password="changePassword"
+        ></component>
+        </div>
+      </main>
+    </div>
+    <footer>
+      &copy; [[ new Date().getFullYear() ]] zeroCAM - Tutti i diritti riservati
+    </footer>
+  </div>
+
+  <!-- File JS Locali -->
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+</body>
+</html>
+

@@ -1,0 +1,46 @@
+<div class="row text-center">
+    <div class="col-md-6 mb-4">
+      <h6 class="text-muted">CPU Temperature</h6>
+      <div id="tempGauge" class="gauge-wrapper mx-auto"></div>
+    </div>
+    <div class="col-md-6 mb-4">
+      <h6 class="text-muted">CPU Usage</h6>
+      <div id="cpuGauge" class="gauge-wrapper mx-auto"></div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+      <h6 class="text-muted">Disk Usage</h6>
+      <div class="progress">
+        <div class="progress-bar bg-info" role="progressbar" :style="{ width: stats.latest.diskUsage + '%' }">
+          [[ stats.latest.diskUsage ]]%
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+      <h6 class="text-muted">Memory Usage</h6>
+      <div class="progress">
+        <div class="progress-bar bg-warning" role="progressbar" :style="{ width: stats.latest.memoryUsage + '%' }">
+          [[ stats.latest.memoryUsage ]]%
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mt-3" v-if="Array.isArray(stats.latest.loadAverage)">
+      <h6 class="text-muted">Load Average</h6>
+      <span class="badge bg-secondary me-2">1m: [[ stats.latest.loadAverage[0].toFixed(2) ]]</span>
+      <span class="badge bg-secondary me-2">5m: [[ stats.latest.loadAverage[1].toFixed(2) ]]</span>
+      <span class="badge bg-secondary">15m: [[ stats.latest.loadAverage[2].toFixed(2) ]]</span>
+    </div>
+
+    <!-- Grafici -->
+    <div class="col-md-6 mt-4">
+      <h6 class="text-muted">Temperature History (Last Hour)</h6>
+      <canvas id="tempChart"></canvas>
+    </div>
+    <div class="col-md-6 mt-4">
+      <h6 class="text-muted">CPU Usage History (Last Hour)</h6>
+      <canvas id="cpuChart"></canvas>
+    </div>
+</div>
+
