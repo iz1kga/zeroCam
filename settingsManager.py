@@ -38,15 +38,16 @@ class SettingsManager:
         self.focus_aid_running = False
         
         self.app = Flask(__name__, template_folder='templates', static_folder='static')
-        
+        self.logger.info("Initializing SettingsManager...")
         self._setup_secret_key()
+        self.logger.info("Flask secret key is set.")
         self._setup_login_manager()
         self._register_routes()
 
     def _setup_secret_key(self):
         """Ensures a persistent Flask secret key is present in the configuration."""
         security_config = self.zerocam.config_manager.get_raw('security', {})
-        if 'flask_secret_key' not in security_config:
+        if 'flask_secret_key' not in security_config or not security_config['flask_secret_key']:
             self.logger.warning("Flask secret key not found. Generating a new one.")
             secret_key = os.urandom(24).hex()
             
