@@ -5,22 +5,26 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
-  build-release:
+  build:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Create ZIP archive
-        run: zip -r zeroCam_${{ github.ref_name }}.zip ./*
+      - name: Archive release assets
+        id: archive
+        run: git archive -o zeroCam_${{ github.ref_name }}.zip HEAD
 
-      - name: Create GitHub Release
+      - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           files: zeroCam_${{ github.ref_name }}.zip
+          body: "Release ${{ github.ref_name }}"
+          draft: false
+          prerelease: false
+
