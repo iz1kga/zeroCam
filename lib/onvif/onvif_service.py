@@ -182,9 +182,7 @@ class ONVIFService:
 
             auth_status = verify_request(request.data, self.auth_user, self.auth_pass, self.logger)
 
-            ANONYMOUS_ACTIONS = []
-            is_anonymous_action = any(action in soap_action for action in ANONYMOUS_ACTIONS)
-            if not is_anonymous_action and auth_status == AuthResult.AUTH_NOT_REQUIRED:
+            if auth_status == AuthResult.NOT_AUTHENTICATED:
                 self.logger.warning(f"ONVIF: Action '{soap_action}' requires authentication, but none was provided.")
                 fault_body = onvif_responses.create_fault_response("Authentication Required")
                 return Response(self.generate_soap_response(fault_body), status=200, content_type="application/soap+xml")
