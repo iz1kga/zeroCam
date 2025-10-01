@@ -104,7 +104,7 @@ class SettingsManager:
         # ONVIF (if enabled)
         if self.zerocam.config_manager.get('onvif', {}).get('enabled', False):
             from lib.onvif.onvif_service import ONVIFService
-            onvif_service = ONVIFService(self.zerocam)
+            onvif_service = ONVIFService(self.zerocam, self.zerocam.config_manager.get('onvif', {}))
             onvif_service.register_routes(self.app)
 
     # --- Route Implementations ---

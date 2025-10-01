@@ -48,6 +48,8 @@
                     <label class="form-label">ONVIF Snapshot Width (px)</label>
                     <field-renderer :model="config.onvif" key-name="onvif_w" :schema="schema" />
                     <div class="form-text">Height will be calculated automatically to maintain aspect ratio.</div>
+                    <div class="col-md-4"><label class="form-label">Password</label><field-renderer :model="config.onvif"
+                        key-name="password" :schema="schema" /></div>
                 </div>
             </div>
         </div>

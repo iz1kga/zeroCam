@@ -95,7 +95,7 @@ class PiCameraDevice:
         self.camera = Picamera2()
         self.running = False
         # Define and create the shared memory directory for stream frames
-        self.shmem_path = '/home/zerocam/zerocam/shmem'
+        self.shmem_path = '/usr/local/zerocam/app/shmem'
         os.makedirs(self.shmem_path, exist_ok=True)
         self.logger.info(f"Shared memory path for stream frames set to: {self.shmem_path}")
 

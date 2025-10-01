@@ -34,6 +34,7 @@ class ConfigManager:
                 # Decrypt sensitive fields
                 self._decrypt_field(['mqtt', 'password'])
                 self._decrypt_field(['FtpHost', 'password'])
+                self._decrypt_field(['onvif', 'password'])
                 self._decrypt_field(['streamParameters', 'yt_api_key'])
 
         except (json.JSONDecodeError, IOError) as e:
@@ -65,6 +66,7 @@ class ConfigManager:
                 # Encrypt sensitive fields if they are not already encrypted
                 self._encrypt_field(config_to_save, ['FtpHost', 'password'])
                 self._encrypt_field(config_to_save, ['mqtt', 'password'])
+                self._encrypt_field(config_to_save, ['onvif', 'password'])
                 self._encrypt_field(config_to_save, ['streamParameters', 'yt_api_key'])
                 
                 with open(self.config_path, 'w') as f:

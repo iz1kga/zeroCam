@@ -2,6 +2,24 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone 
 
+def create_fault_response(fault_string):
+    """
+    Genera una risposta SOAP Fault standard.
+    """
+    return f"""
+    <soap:Fault>
+        <soap:Code>
+            <soap:Value>soap:Sender</soap:Value>
+            <soap:Subcode>
+                <soap:Value>wsse:FailedAuthentication</soap:Value>
+            </soap:Subcode>
+        </soap:Code>
+        <soap:Reason>
+            <soap:Text xml:lang="en">{fault_string}</soap:Text>
+        </soap:Reason>
+    </soap:Fault>
+    """
+
 def get_capabilities_response(announce_ip, server_port):
     return f"""
             <tds:GetCapabilitiesResponse xmlns:tds="http://www.onvif.org/ver10/device/wsdl">

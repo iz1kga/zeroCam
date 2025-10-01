@@ -94,7 +94,7 @@
     "duskOffset": -6,
     "elevation": 200,
     "hflip": true,
-    "latitude": 45.071215, 
+    "latitude": 45.071215,
     "longitude": 7.685083,
     "name": "My Beautiful Webcam",
     "remoteUrl": "https://www.mywebsite.com/webcam.jpg",
@@ -110,8 +110,11 @@
     "username": "mqtt_user"
   },
   "onvif": {
-    "enabled": false,
-    "onvif_w": 1920
+    "allow_unsecure": false,
+    "enabled": true,
+    "onvif_w": 1920,
+    "password": "",
+    "username": "onvif"
   },
   "security": {
     "flask_secret_key": "",
