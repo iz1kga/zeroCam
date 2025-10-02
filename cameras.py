@@ -136,8 +136,8 @@ class PiCameraDevice:
         self.logger.info(f"--- Inizio cattura per '{dayperiod}' ---")
         params = copy.deepcopy(self.params.get(dayperiod, {}))
         SHUTTER_SPEEDS_SECONDS = [1/8, 1/4, 1/2, 3/4, 1, 2, 4, 6, 8, 10, 12, 15, 20, 30, 45, 60]
-        BRIGHTNESS_TARGET_MIN = params.get("BrightnessTargetMin", 40)
-        BRIGHTNESS_TARGET_MAX = params.get("BrightnessTargetMax", 55)
+        BRIGHTNESS_TARGET_MIN = params.get("MinTargetBrightness", 40)
+        BRIGHTNESS_TARGET_MAX = params.get("MaxTargetBrightness", 55)
         try:
             # Configurazione comune a entrambi i metodi di scatto
             transform = Transform(hflip=self.deviceParams.get("hflip", False), vflip=self.deviceParams.get("vflip", False))
@@ -265,8 +265,10 @@ class PiCameraDevice:
             # Il blocco finally viene eseguito sempre, garantendo che la camera venga fermata
             if self.camera.started:
                 self.camera.stop()
+                time.sleep(2)
                 self.logger.info("--- Fine cattura, camera fermata. ---")
-                
+                time.sleep(2)
+
     def takePicture_old(self, dayperiod):
         """
         Cattura un'immagine, con l'opzione di lasciare la camera in esecuzione.
@@ -322,6 +324,7 @@ class PiCameraDevice:
         # --- 1. CONTROLLO ABILITAZIONE STREAM ---
         # Controlla se gli stream sono abilitati nella configurazione.
         # Il metodo .get() ritorna False se la chiave non è presente.
+        dayperiod_params = copy.deepcopy(self.streamParams.get(dayperiod, {}))
         yt_enabled = self.streamParams.get("enabled", False)
         onvif_enabled = self.onvifParams.get("enabled", False)
         
@@ -335,7 +338,7 @@ class PiCameraDevice:
 
         # --- 2. CONFIGURAZIONE CAMERA (COMUNE A ENTRAMBI) ---
         # Questa configurazione è necessaria se almeno uno stream è attivo.
-        fr = self.streamParams["fps"]
+        fr = dayperiod_params.pop("framerate", 10)
         w, h = self.streamParams["width"], self.streamParams["height"]
         onvif_w = self.onvifParams.get("onvif_w", 1920)
         onvif_h = int(onvif_w * (h / w))
@@ -351,8 +354,10 @@ class PiCameraDevice:
             transform=transform
         )
         self.camera.configure(video_config)
-        params = self.streamParams[dayperiod]
-        self.camera.set_controls(params)
+        dayperiod_params["AeEnable"] = True
+        dayperiod_params["AwbEnable"] = True
+        self.logger.info(f"dayperiod_params: {dayperiod_params}")
+        self.camera.set_controls(dayperiod_params)
         self.camera.start()
         time.sleep(2)
 

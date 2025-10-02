@@ -85,7 +85,7 @@
       "NoiseReductionMode": 2,
       "Sharpness": 4
     },
-    "shotInterval": 300,
+    "shotInterval": 600,
     "type": "piCamera",
     "unsharpMask": false
   },
@@ -125,35 +125,34 @@
     "bitrate": "4000k",
     "buffer": "8000k",
     "dawn": {
-      "AeEnable": true,
       "AnalogueGain": 31,
       "AwbMode": 4,
       "NoiseReductionMode": 2,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "framerate": 10
     },
     "day": {
-      "AeEnable": true,
       "AnalogueGain": 1,
       "AwbMode": 4,
       "NoiseReductionMode": 2,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "framerate": 15
     },
     "dusk": {
-      "AeEnable": true,
       "AnalogueGain": 32,
       "AwbMode": 4,
       "NoiseReductionMode": 2,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "framerate": 10
     },
     "enabled": false,
-    "fps": 12,
     "height": 1440,
     "night": {
-      "AeEnable": true,
-      "AnalogueGain": 64,
+      "AnalogueGain": 128,
       "AwbMode": 4,
       "NoiseReductionMode": 2,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "framerate": 5
     },
     "width": 2560,
     "yt_api_key": ""

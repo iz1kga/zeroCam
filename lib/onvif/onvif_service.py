@@ -5,6 +5,7 @@ import socket
 import time
 from datetime import datetime, timezone
 from functools import wraps
+import io
 
 import xml.etree.ElementTree as ET
 from flask import request, Response, send_file
@@ -61,7 +62,7 @@ class ONVIFService:
         max_retries = 4  # Prova un totale di 4 volte
         for attempt in range(max_retries):
             try:
-                with Image.open('./shmem/stream_latest.jpg') as img:
+                with Image.open('/usr/local/zerocam/app/shmem/stream_latest.jpg') as img:
                     self.image_width, self.image_height = img.size
                     self.logger.debug(f"ONVIF: Updated image resolution to {self.image_width}x{self.image_height}")
                     return  # Se ha successo, esce immediatamente dalla funzione
@@ -318,25 +319,36 @@ class ONVIFService:
             return Response(self.generate_soap_response("<soap:Fault>Internal Server Error</soap:Fault>"), status=500, content_type="application/soap+xml")
 
     def snapshot(self):
-        image_path = './shmem/stream_latest.jpg'
+        image_path = '/usr/local/zerocam/app/shmem/stream_latest.jpg'
         
+        send_counter = 0
         for _ in range(10):
+            send_counter += 1
             try:
+                # Esegui un pre-controllo rapido su esistenza e dimensione
                 if os.path.exists(image_path) and os.path.getsize(image_path) > 2:
+                    
+                    # 1. Leggi l'intero file in memoria in un solo colpo.
                     with open(image_path, 'rb') as f:
-                        f.seek(-2, os.SEEK_END)
-                        if f.read() == b'\xff\xd9':
-                            self.logger.info(f"ONVIF: Serving complete snapshot: {image_path}")
-                            return send_file(image_path, mimetype="image/jpeg")
-            except Exception:
+                        image_bytes = f.read()
+                    
+                    # 2. Esegui il controllo sui byte in memoria, non più sul file.
+                    #    Questo garantisce che ciò che controlli è ciò che invierai.
+                    if image_bytes.endswith(b'\xff\xd9'):
+                        
+                        # 3. Se il controllo passa, invia i byte che hai già in memoria.
+                        self.logger.debug(f"ONVIF: Serving complete snapshot from memory: {image_path}. send_counter={send_counter}")
+                        return send_file(
+                            io.BytesIO(image_bytes),
+                            mimetype='image/jpeg'
+                        )
+            except Exception as e:
+                # Logga l'eccezione per il debug, ma permetti al loop di continuare
+                self.logger.warning(f"ONVIF: Tentativo snapshot fallito, riprovo... Errore: {e}")
                 pass
             
+            # Se il file non era pronto o il controllo è fallito, attendi e riprova
             time.sleep(0.05)
             
-        self.logger.warning(f"ONVIF: Could not serve a complete snapshot from {image_path}. Serving fallback.")
-        fallback_path = './latest.jpg'
-        if os.path.exists(fallback_path):
-            return send_file(fallback_path, mimetype="image/jpeg")
-
         self.logger.error("ONVIF snapshot: No snapshot image is available.")
         return "Snapshot not available.", 404

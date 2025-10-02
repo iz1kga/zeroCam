@@ -1,3 +1,16 @@
+<!-- Sezione Focus Aid -->
+<div v-if="focusAidActive">
+  <h4>Focus Aid</h4>
+  <p class="text-muted">Regola la messa a fuoco. Il ciclo di cattura principale è in pausa.</p>
+  <div class="mb-3 border rounded text-center">
+    <img src="/focus-aid/stream" class="img-fluid" alt="Focus Aid Stream" 
+          style="max-width: 100%; max-height: calc(100vh - 250px); object-fit: contain;" />
+  </div>
+  <button class="btn btn-danger" @click="$emit('stop-focus-aid')">
+    <i class="bi bi-stop-circle me-1"></i> Stop Focus Aid
+  </button>
+</div>
+
 <div v-if="!focusAidActive">
   <div class="roi-editor-container roi-editor-component">
     <div class="image-column">

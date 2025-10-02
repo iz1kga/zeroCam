@@ -182,13 +182,13 @@
                         <div class="row align-items-end">
                             <div class="col-md-3">
                                 <label class="form-label">Min Target Brightness</label>
-                                <field-renderer :model="config.cameraParameters[phase]" key-name="MinTargetBrightness"
-                                    :schema="schema" />
+                                <input type="number" class="form-control"
+                                    v-model.number="config.cameraParameters[phase].MinTargetBrightness">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Max Target Brightness</label>
-                                <field-renderer :model="config.cameraParameters[phase]" key-name="MaxTargetBrightness"
-                                    :schema="schema" />
+                                <input type="number" class="form-control"
+                                    v-model.number="config.cameraParameters[phase].MaxTargetBrightness">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Sharpness</label>
@@ -219,8 +219,6 @@
                         :model="config.streamParameters" key-name="yt_api_key" :schema="schema" /></div>
             </div>
             <div class="row mb-3">
-                <div class="col-md-3"><label class="form-label">FPS</label><field-renderer
-                        :model="config.streamParameters" key-name="fps" :schema="schema" /></div>
                 <div class="col-md-9"><label class="form-label">Resolution</label>
                     <div class="input-group"><input type="number" class="form-control"
                             v-model.number="config.streamParameters.width"><span class="input-group-text">x</span><input
@@ -238,8 +236,6 @@
                 <div v-for="phase in ['dawn', 'day', 'dusk', 'night']" :key="'stream-pane-' + phase"
                     v-show="activeStreamTab === phase">
                     <div class="row align-items-end">
-                        <div class="col-md-3"><field-renderer :model="config.streamParameters[phase]"
-                                key-name="AeEnable" :schema="schema" label="Auto Exposure" /></div>
                         <div class="col-md-3"><label class="form-label">Analogue Gain</label><field-renderer
                                 :model="config.streamParameters[phase]" key-name="AnalogueGain" :schema="schema" />
                         </div>
@@ -250,6 +246,10 @@
                         <div class="col-md-3"><label class="form-label">Noise Reduction</label><field-renderer
                                 :model="config.streamParameters[phase]" key-name="NoiseReductionMode"
                                 :schema="schema" /></div>
+                    </div>
+                    <div class="row align-items-end">
+                        <div class="col-md-3"><label class="form-label">Framerate (FPS)</label><input type="number"
+                                class="form-control" v-model.number="config.streamParameters[phase].framerate" /></div>
                     </div>
                 </div>
             </div>
