@@ -38,7 +38,6 @@ class fakeCameraDevice:
         self.streamParams = streamParams
         self.onvifParams = onvifParams
         self.logger.info("Camera Object Created")
-        logRecursive(self.logger, self.params)
 
     def update_config(self, new_params, new_stream_params, new_device_params):
         self.logger.info("Updating camera configuration with new settings...")
@@ -85,7 +84,6 @@ class PiCameraDevice:
         self.capture_info = None
         self.logger.info("Camera Object Created")
         self._init_capture_index()
-        logRecursive(self.logger, self.params)
         from picamera2 import Picamera2
         try:
             version = importlib.metadata.version('picamera2')

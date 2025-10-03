@@ -344,11 +344,10 @@ def setup_logging(log_level_str):
     if not logger.handlers:
         # Console Handler
         console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
         logger.addHandler(console_handler)
 
         # Rotating File Handler
-        log_file_path = "./logs/zerocam.log"
+        log_file_path = "/usr/local/zerocam/app/logs/zerocam.log"
         os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
         file_handler = logging.handlers.TimedRotatingFileHandler(log_file_path, when="D", interval=1, backupCount=7)
         file_handler.setFormatter(formatter)

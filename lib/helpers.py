@@ -63,7 +63,6 @@ class FTPUploader:
         self.logger = logger
         self.ftp_host = ftp_host
         self.logger.info("FTPUploader object created")
-        logRecursive(self.logger, self.ftp_host)
 
     def upload(self, image, metadata):
         try:
@@ -84,7 +83,6 @@ class ImageOverlay:
         self.logger = logger
         self.OverlayImages = OverlayImages
         self.logger.info("ImageOverlay object created")
-        logRecursive(self.logger, self.OverlayImages)
         self.downloadImages()
 
     def downloadImages(self):
@@ -134,7 +132,6 @@ class ImageCropper:
         self.logger = logger
         self.crop_settings = crop_settings
         self.logger.info("ImageCropper object created")
-        logRecursive(self.logger, self.crop_settings)
 
     def update_config(self, crop_settings):
         self.crop_settings = crop_settings

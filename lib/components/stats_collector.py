@@ -10,8 +10,9 @@ from lib.helpers import get_raspberry_pi_stats
 class StatsCollector:
     """Collects, aggregates, and persists hardware statistics."""
 
-    def __init__(self, logger, history_file='./logs/stats.json', maxlen=288):
+    def __init__(self, logger, history_file='/usr/local/zerocam/app/logs/stats.json', maxlen=288):
         self.logger = logger
+        self.history_length = maxlen
         self.stats_history = deque(maxlen=maxlen)
         self.stats_buffer = []
         self.history_file = history_file
@@ -32,12 +33,26 @@ class StatsCollector:
             self.logger.error(f"Error reading stats history file: {e}")
 
     def _write_stats_to_disk(self, record):
-        """Appends a new aggregated stat record to the history file."""
-        try:
-            with open(self.history_file, 'a') as f:
-                f.write(json.dumps(record) + '\n')
-        except IOError as e:
-            self.logger.error(f"Error writing to stats history file: {e}")
+    """
+    Appends a new aggregated stat record to the history file.
+    Ensures the file does not exceed self.history_length lines by removing the oldest records.
+    """
+    try:
+        lines = []
+        if os.path.exists(self.history_file):
+            with open(self.history_file, 'r') as f:
+                lines = f.readlines()
+                
+        lines.append(json.dumps(record) + '\n')
+
+        if len(lines) > self.history_length:
+            lines = lines[-self.history_length:]
+
+        with open(self.history_file, 'w') as f:
+            f.writelines(lines)
+
+    except IOError as e:
+        self.logger.error(f"Error writing to stats history file: {e}")
 
     def collect_and_process(self):
         """Collects current stats and processes the buffer if it's large enough."""
