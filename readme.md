@@ -1,9 +1,19 @@
 # 📸 zeroCAM - By IZ1KGA
 
 ## Versione Italiana
+---
 
-Questa guida spiega come eseguire un'installazione pulita e automatizzata dell'applicazione zeroCAM su un sistema basato su Debian (come Raspberry Pi OS).
+ZeroCam è un progetto per costruire una webcam paesaggistica ad alte prestazioni utilizzando un Raspberry Pi (consigliato Pi 5) e una PiCamera HQ.
 
+Grazie al sensore della PiCamera HQ, il sistema cattura immagini e video di qualità eccezionale, superando le webcam tradizionali, con ottime performance anche in condizioni di scarsa illuminazione.
+
+Funzionalità principali:
+
+Immagini di Alta Qualità: Scatta foto nitide e dettagliate, anche di notte.
+
+Scatti Automatici e Upload FTP: Cattura immagini a intervalli regolari e le carica automaticamente su un server FTP.
+
+Streaming Live su YouTube: Trasmette un flusso video in diretta sul tuo canale YouTube.
 ---
 
 ## 🚀 Guida all'Installazione
@@ -52,6 +62,19 @@ IN NESSUN CASO GLI AUTORI O I TITOLARI DEL COPYRIGHT SARANNO RESPONSABILI PER AL
 ---
 ---
 ## English Version
+---
+ZeroCam is a project for building a high-performance landscape webcam using a Raspberry Pi (Pi 5 recommended) and a PiCamera HQ.
+
+Leveraging the large sensor of the PiCamera HQ, ZeroCam captures stunningly detailed images and video, far surpassing traditional webcams, with excellent performance even in low-light conditions.
+
+Key Features:
+
+High-Quality Imaging: Capture crisp, high-resolution photos, with excellent low-light and night performance.
+
+Automatic Snapshots & FTP Upload: Periodically take pictures and automatically upload them to an FTP server.
+
+YouTube Live Streaming: Broadcast a continuous live feed directly to your YouTube channel.
+---
 
 This guide explains how to perform a clean and automated installation of the zeroCAM application on a Debian-based system (like Raspberry Pi OS).
 
