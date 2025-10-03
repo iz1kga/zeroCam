@@ -33,26 +33,26 @@ class StatsCollector:
             self.logger.error(f"Error reading stats history file: {e}")
 
     def _write_stats_to_disk(self, record):
-    """
-    Appends a new aggregated stat record to the history file.
-    Ensures the file does not exceed self.history_length lines by removing the oldest records.
-    """
-    try:
-        lines = []
-        if os.path.exists(self.history_file):
-            with open(self.history_file, 'r') as f:
-                lines = f.readlines()
-                
-        lines.append(json.dumps(record) + '\n')
+        """
+        Appends a new aggregated stat record to the history file.
+        Ensures the file does not exceed self.history_length lines by removing the oldest records.
+        """
+        try:
+            lines = []
+            if os.path.exists(self.history_file):
+                with open(self.history_file, 'r') as f:
+                    lines = f.readlines()
+                    
+            lines.append(json.dumps(record) + '\n')
 
-        if len(lines) > self.history_length:
-            lines = lines[-self.history_length:]
+            if len(lines) > self.history_length:
+                lines = lines[-self.history_length:]
 
-        with open(self.history_file, 'w') as f:
-            f.writelines(lines)
+            with open(self.history_file, 'w') as f:
+                f.writelines(lines)
 
-    except IOError as e:
-        self.logger.error(f"Error writing to stats history file: {e}")
+        except IOError as e:
+            self.logger.error(f"Error writing to stats history file: {e}")
 
     def collect_and_process(self):
         """Collects current stats and processes the buffer if it's large enough."""
