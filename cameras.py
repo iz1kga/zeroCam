@@ -176,7 +176,6 @@ class PiCameraDevice:
 
             else:
                 # --- LOGICA PER SCATTI NOTTURNI/CREPUSCOLO (bracketing) ---
-                # Questa è la tua logica esistente, ora nel ramo 'else'.
                 self.logger.info("Modalità crepuscolo/notte: uso il bracketing manuale dell'esposizione.")
                 shutter_speeds_us = [int(s * 1_000_000) for s in SHUTTER_SPEEDS_SECONDS]
                 
