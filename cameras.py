@@ -14,6 +14,7 @@ from lib.helpers import logRecursive
 import random
 import threading
 import subprocess
+import threading
 import select
 import cv2
 import numpy as np
@@ -82,8 +83,9 @@ class PiCameraDevice:
         self.deviceParams = deviceParams
         self.last_known_exposure_index = None
         self.capture_info = None
+        self.camera_lock = threading.Lock()
         self.logger.info("Camera Object Created")
-        self._init_capture_index()
+        self._load_capture_indices()
         from picamera2 import Picamera2
         try:
             version = importlib.metadata.version('picamera2')
@@ -97,216 +99,264 @@ class PiCameraDevice:
         os.makedirs(self.shmem_path, exist_ok=True)
         self.logger.info(f"Shared memory path for stream frames set to: {self.shmem_path}")
 
-    def _init_capture_index(self):
-        with open('.capture_info', 'r') as f:
-            self.capture_info = json.load(f)
-            self.last_known_exposure_index = self.capture_info.get('capture_idx', 0)
+    def _load_capture_indices(self):
+        """
+        Carica gli ultimi indici noti per esposizione e gain dal file.
+        Gestisce l'assenza del file o un formato obsoleto.
+        """
+        try:
+            with open('.capture_info', 'r') as f:
+                data = json.load(f)
+                self.last_known_exposure_index = data.get('exposure_index', 8)
+                self.last_known_gain_index = data.get('gain_index', 0)
+                self.logger.info(
+                    f"Caricati indici: Esposizione={self.last_known_exposure_index}, "
+                    f"Gain={self.last_known_gain_index}"
+                )
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.logger.warning(
+                "File .capture_info non trovato o illeggibile. "
+                "Uso indici di default (Esposizione=8, Gain=0)."
+            )
+            self.last_known_exposure_index = 8
+            self.last_known_gain_index = 0
 
-    def _store_capture_index(self):
-        with open('.capture_info', 'w') as f:
-            self.capture_info['capture_idx'] = self.last_known_exposure_index
-            json.dump(self.capture_info, f)
-            self.logger.info(f"Stored capture index: {self.last_known_exposure_index}")
+    def _store_capture_indices(self):
+        """
+        Salva gli indici correnti di esposizione e gain su file.
+        """
+        data_to_store = {
+            'exposure_index': self.last_known_exposure_index,
+            'gain_index': self.last_known_gain_index
+        }
+        try:
+            with open('.capture_info', 'w') as f:
+                json.dump(data_to_store, f, indent=4)
+                self.logger.info(
+                    f"Salvati nuovi indici: Esposizione={data_to_store['exposure_index']}, "
+                    f"Gain={data_to_store['gain_index']}"
+                )
+        except Exception as e:
+            self.logger.error(f"Impossibile salvare il file .capture_info: {e}")
+
 
     def update_config(self, new_params, new_stream_params, new_device_params):
-        self.logger.info("Updating camera configuration with new settings...")
-        self.params = new_params
-        self.streamParams = new_stream_params
-        self.deviceParams = new_device_params
+        with self.camera_lock:
+            self.logger.info("Updating camera configuration with new settings...")
+            self.params = new_params
+            self.streamParams = new_stream_params
+            self.deviceParams = new_device_params
 
     def get_image(self ):
-        output_buffer = BytesIO()
-        self.logger.debug("Getting Image")
-        self.camera.capture_file(output_buffer, format="jpeg")
-        metadata = self.camera.capture_metadata()
-        self.logger.debug(metadata)
-        return output_buffer, metadata
-
-    
-    
+        with self.camera_lock:
+            output_buffer = BytesIO()
+            self.logger.debug("Getting Image")
+            self.camera.capture_file(output_buffer, format="jpeg")
+            metadata = self.camera.capture_metadata()
+            self.logger.debug(metadata)
+            return output_buffer, metadata
 
     def takePicture(self, dayperiod):
         """
-        Cattura un'immagine usando l'esposizione automatica per il giorno ('day')
-        o un bracketing manuale per le altre fasi (dawn, dusk, night).
+        Cattura un'immagine usando l'esposizione automatica per 'day'
+        o un bracketing manuale su esposizione E guadagno per le altre fasi.
         """
-        
-        self.logger.info(f"--- Inizio cattura per '{dayperiod}' ---")
-        params = copy.deepcopy(self.params.get(dayperiod, {}))
-        SHUTTER_SPEEDS_SECONDS = [1/8, 1/4, 1/2, 3/4, 1, 2, 4, 6, 8, 10, 12, 15, 20, 30, 45, 60]
-        BRIGHTNESS_TARGET_MIN = params.get("MinTargetBrightness", 40)
-        BRIGHTNESS_TARGET_MAX = params.get("MaxTargetBrightness", 55)
-        try:
-            # Configurazione comune a entrambi i metodi di scatto
-            transform = Transform(hflip=self.deviceParams.get("hflip", False), vflip=self.deviceParams.get("vflip", False))
-            config = self.camera.create_still_configuration(transform=transform, buffer_count=3, queue=False)
-            self.camera.configure(config)
+        with self.camera_lock:
+            self.logger.info(f"--- Inizio cattura per '{dayperiod}' ---")
+            params = copy.deepcopy(self.params.get(dayperiod, {}))
+            
+            # Costanti per il bracketing
+            SHUTTER_SPEEDS_SECONDS = [1/8, 1/4, 1/2, 3/4, 1, 2, 4, 6, 8, 10, 12, 15, 20, 30, 45]
+            ANALOG_GAINS = [1.0, 2.0, 4.0, 8.0]
+            
+            BRIGHTNESS_TARGET_MIN = params.get("MinTargetBrightness", 40)
+            BRIGHTNESS_TARGET_MAX = params.get("MaxTargetBrightness", 55)
 
-            # --- BIVIO LOGICO: Giorno vs. Altre Fasi ---
-            if dayperiod == "day":
-                # --- LOGICA PER LO SCATTO DIURNO (dayperiod == 'day') ---
-                self.logger.info("Modalità diurna: uso l'esposizione automatica della camera (AeEnable=True).")
+            try:
+                transform = Transform(hflip=self.deviceParams.get("hflip", False), vflip=self.deviceParams.get("vflip", False))
+                config = self.camera.create_still_configuration(transform=transform, buffer_count=3, queue=False)
+                self.camera.configure(config)
 
-                day_params = {
-                "AeEnable": True,
-                "AwbEnable": True,
-                "AwbMode": params.get("AwbMode", 0),
-                "AeMeteringMode": params.get("AeMeteringMode", 0), 
-                "AnalogueGain": 1.0,
-                "ExposureTime": 0,
-                "ExposureValue": 0,
-                "HdrMode": params.get("HdrMode", 2),
-                "NoiseReductionMode": params.get("NoiseReductionMode", 1),
-                "Sharpness": params.get("Sharpness", 4)
-                }
-                
-                self.camera.set_controls(day_params)
-                self.camera.start()
-                self.logger.info("In attesa della stabilizzazione dell'esposizione automatica (2 secondi)...")
-                time.sleep(2)
-
-                output_buffer = io.BytesIO()
-                self.camera.capture_file(output_buffer, format="jpeg")
-                metadata = self.camera.capture_metadata()
-                self.logger.info(
-                    f"Cattura diurna completata. Gain: {metadata.get('AnalogueGain'):.2f}, "
-                    f"Esposizione: {metadata.get('ExposureTime')/1000000:.4f}s"
-                )
-                return output_buffer, metadata
-
-            else:
-                # --- LOGICA PER SCATTI NOTTURNI/CREPUSCOLO (bracketing) ---
-                self.logger.info("Modalità crepuscolo/notte: uso il bracketing manuale dell'esposizione.")
-                shutter_speeds_us = [int(s * 1_000_000) for s in SHUTTER_SPEEDS_SECONDS]
-                
-                if hasattr(self, 'last_known_exposure_index') and self.last_known_exposure_index is not None:
-                    shutter_idx = self.last_known_exposure_index
-                else:
-                    shutter_idx = 8 
-                
-                manual_controls = {
-                    "AeEnable": False, 
-                    "AwbEnable": True, 
-                    "AnalogueGain": 1.0,
-                    "FrameDurationLimits": (100, 100_000_000),
-                }
-                self.camera.set_controls(manual_controls)
-                
-                exp_results = {}
-                max_attempts = 30
-                
-                for attempt in range(max_attempts):
-                    if not (0 <= shutter_idx < len(shutter_speeds_us)):
-                        self.logger.warning("Indice di scatto fuori dai limiti. Interrompo la ricerca.")
-                        break
-
-                    # --- ANTI-BOUNCING ---
-                    if shutter_idx in exp_results:
-                        self.logger.warning(f"Rilevata oscillazione! L'indice {shutter_idx} è già stato testato. Interrompo la ricerca per scegliere il migliore.")
-                        break
-
-                    exposure_us = shutter_speeds_us[shutter_idx]
-                    
-                    self.logger.info(f"Tentativo {attempt + 1}/{max_attempts}: Indice={shutter_idx}, Esposizione={exposure_us/1_000_000:.4f}s")
-                    self.camera.set_controls({"ExposureTime": exposure_us})
-                    
+                if dayperiod == "day":
+                    # --- LOGICA PER SCATTO DIURNO (INVARIATA) ---
+                    self.logger.info("Modalità diurna: uso l'esposizione automatica (AeEnable=True).")
+                    day_params = {
+                        "AeEnable": True, "AwbEnable": True,
+                        "AwbMode": params.get("AwbMode", 0), "AeMeteringMode": params.get("AeMeteringMode", 0), 
+                        "AnalogueGain": 1.0, "ExposureTime": 0, "ExposureValue": 0,
+                        "HdrMode": params.get("HdrMode", 2), "NoiseReductionMode": params.get("NoiseReductionMode", 1),
+                        "Sharpness": params.get("Sharpness", 4)
+                    }
+                    self.camera.set_controls(day_params)
                     self.camera.start()
-                    # sensor warmup time
+                    self.logger.info("Attesa stabilizzazione esposizione automatica (2 secondi)...")
                     time.sleep(2)
-                    
-                    current_buffer = io.BytesIO()
-                    self.camera.capture_file(current_buffer, format="jpeg")
+                    output_buffer = io.BytesIO()
+                    self.camera.capture_file(output_buffer, format="jpeg")
                     metadata = self.camera.capture_metadata()
+                    self.logger.info(
+                        f"Cattura diurna completata. Gain: {metadata.get('AnalogueGain'):.2f}, "
+                        f"Esposizione: {metadata.get('ExposureTime')/1000000:.4f}s"
+                    )
+                    return output_buffer, metadata
+
+                else:
+                    # --- LOGICA PER SCATTI NOTTURNI/CREPUSCOLO (CON AGGIUNTA DEL GAIN) ---
+                    self.logger.info("Modalità crepuscolo/notte: bracketing manuale su Esposizione e Gain.")
+                    shutter_speeds_us = [int(s * 1_000_000) for s in SHUTTER_SPEEDS_SECONDS]
+                    
+                    # Carica l'ultimo stato noto per esposizione E gain
+                    self._load_capture_indices()
+                    shutter_idx = getattr(self, 'last_known_exposure_index', 8)
+                    gain_idx = getattr(self, 'last_known_gain_index', 0)
+
+                    manual_controls = {
+                        "AeEnable": False, 
+                        "AwbEnable": True, 
+                        "AwbMode": params.get("AwbMode", 0),
+                        "FrameDurationLimits": (100, 100_000_000),
+                    }
+                    self.camera.set_controls(manual_controls)
+                    
+                    exp_results = {}
+                    max_attempts = 40 # Aumentato per coprire più combinazioni
+
+                    for attempt in range(max_attempts):
+                        # Validazione indici correnti
+                        shutter_idx = max(0, min(shutter_idx, len(shutter_speeds_us) - 1))
+                        gain_idx = max(0, min(gain_idx, len(ANALOG_GAINS) - 1))
+                        
+                        current_state = (shutter_idx, gain_idx)
+
+                        # --- ANTI-BOUNCING (ora basato su stato combinato) ---
+                        if current_state in exp_results:
+                            self.logger.warning(f"Rilevata oscillazione! Stato (shutter_idx={shutter_idx}, gain_idx={gain_idx}) già testato. Scelgo il migliore.")
+                            break
+
+                        exposure_us = shutter_speeds_us[shutter_idx]
+                        gain = ANALOG_GAINS[gain_idx]
+                        
+                        self.logger.info(
+                            f"Tentativo {attempt + 1}/{max_attempts}: "
+                            f"Idx Esp={shutter_idx}, Idx Gain={gain_idx} "
+                            f"({exposure_us/1_000_000:.3f}s, Gain={gain:.1f}x)"
+                        )
+                        self.camera.set_controls({"ExposureTime": exposure_us, "AnalogueGain": gain})
+                        
+                        self.camera.start()
+                        time.sleep(2) # Warmup sensore
+                        
+                        current_buffer = io.BytesIO()
+                        self.camera.capture_file(current_buffer, format="jpeg")
+                        metadata = self.camera.capture_metadata()
+                        self.camera.stop()
+
+                        if not current_buffer.getbuffer().nbytes:
+                            self.logger.error("Buffer immagine vuoto, salto.")
+                            continue
+
+                        current_buffer.seek(0)
+                        with Image.open(current_buffer) as img:
+                            brightness = ImageStat.Stat(img.convert('L')).mean[0]
+
+                        self.logger.info(f"Luminosità misurata: {brightness:.2f}")
+                        
+                        exp_results[current_state] = {"brightness": brightness, "metadata": metadata, "image": current_buffer}
+
+                        if BRIGHTNESS_TARGET_MIN <= brightness <= BRIGHTNESS_TARGET_MAX:
+                            self.logger.info(f"Esposizione ottimale trovata! Salvo lo stato (shutter_idx={shutter_idx}, gain_idx={gain_idx}).")
+                            self.last_known_exposure_index = shutter_idx
+                            self.last_known_gain_index = gain_idx
+                            self._store_capture_indices()
+                            return current_buffer, metadata
+                        
+                        # --- LOGICA DI AGGIORNAMENTO INDICI ---
+                        if brightness < BRIGHTNESS_TARGET_MIN:
+                            # Immagine troppo scura: aumenta l'esposizione
+                            if shutter_idx < len(shutter_speeds_us) - 1:
+                                shutter_idx += 1 # Priorità: aumentare il tempo di posa
+                            elif gain_idx < len(ANALOG_GAINS) - 1:
+                                gain_idx += 1 # Solo se il tempo è al massimo, aumenta il gain
+                            else:
+                                self.logger.warning("Raggiunto limite massimo di esposizione e gain. Interrompo ricerca.")
+                                break
+                        elif brightness > BRIGHTNESS_TARGET_MAX:
+                            # Immagine troppo chiara: diminuisci l'esposizione
+                            if gain_idx > 0:
+                                gain_idx -= 1 # Priorità: diminuire il gain
+                            elif shutter_idx > 0:
+                                shutter_idx -= 1 # Solo se il gain è al minimo, diminuisci il tempo
+                            else:
+                                self.logger.warning("Raggiunto limite minimo di esposizione e gain. Interrompo ricerca.")
+                                break
+
+                    # --- LOGICA DI FALLBACK (se non si trova l'esposizione perfetta) ---
+                    self.logger.warning("Nessuna esposizione perfetta trovata. Scelgo la più vicina.")
+                    if not exp_results: return None, {}
+                    target_br = (BRIGHTNESS_TARGET_MIN + BRIGHTNESS_TARGET_MAX) / 2
+                    
+                    # La chiave di ricerca ora è una tupla (shutter_idx, gain_idx)
+                    best_state = min(exp_results.keys(), key=lambda state: abs(exp_results[state]['brightness'] - target_br))
+                    best_result = exp_results[best_state]
+                    
+                    self.logger.info(f"Scatto migliore: Idx Esp={best_state[0]}, Idx Gain={best_state[1]}, Luminosità={best_result['brightness']:.2f}")
+                    self.last_known_exposure_index = best_state[0]
+                    self.last_known_gain_index = best_state[1]
+                    self._store_capture_indices() # Salva lo stato migliore trovato
+                    return best_result['image'], best_result['metadata']
+
+            except Exception as e:
+                self.logger.error(f"Errore durante takePicture: {e}", exc_info=True)
+                if self.camera.started: self.camera.stop()
+                return None, {}
+            finally:
+                if self.camera.started:
                     self.camera.stop()
-
-                    if not current_buffer.getbuffer().nbytes:
-                        self.logger.error("Buffer immagine vuoto, salto.")
-                        continue
-
-                    current_buffer.seek(0)
-                    with Image.open(current_buffer) as img:
-                        brightness = ImageStat.Stat(img.convert('L')).mean[0]
-
-                    self.logger.info(f"Esposizione={exposure_us/1_000_000:.4f}s, Luminosità={brightness:.2f}")
-                    
-                    exp_results[shutter_idx] = {"brightness": brightness, "metadata": metadata, "image": current_buffer}
-
-                    if BRIGHTNESS_TARGET_MIN <= brightness <= BRIGHTNESS_TARGET_MAX:
-                        self.logger.info(f"Esposizione ottimale trovata! Salvo l'indice {shutter_idx}.")
-                        self.last_known_exposure_index = shutter_idx
-                        self._store_capture_index()
-                        return current_buffer, metadata
-                    
-                    elif brightness < BRIGHTNESS_TARGET_MIN:
-                        shutter_idx += 1 
-                    elif brightness > BRIGHTNESS_TARGET_MAX:
-                        shutter_idx -= 1
-
-                # ... (logica di fallback per scegliere il migliore, invariata)
-                self.logger.warning("Nessuna esposizione perfetta trovata. Scelgo la più vicina.")
-                if not exp_results: return None, {}
-                target_br = (BRIGHTNESS_TARGET_MIN + BRIGHTNESS_TARGET_MAX) / 2
-                best_idx = min(exp_results.keys(), key=lambda idx: abs(exp_results[idx]['brightness'] - target_br))
-                best_result = exp_results[best_idx]
-                self.logger.info(f"Scatto migliore: Indice={best_idx}, Luminosità={best_result['brightness']:.2f}")
-                self.last_known_exposure_index = best_idx
-                self._store_capture_index()           
-                return best_result['image'], best_result['metadata']
-
-        except Exception as e:
-            self.logger.error(f"Errore durante takePicture: {e}", exc_info=True)
-            if self.camera.started:
-                self.camera.stop()
-            return None, {}
-        finally:
-            # Il blocco finally viene eseguito sempre, garantendo che la camera venga fermata
-            if self.camera.started:
-                self.camera.stop()
-                time.sleep(2)
-                self.logger.info("--- Fine cattura, camera fermata. ---")
-                time.sleep(2)
+                    self.logger.info("--- Fine cattura, camera fermata. ---")
+                    time.sleep(2)
 
     def takePicture_old(self, dayperiod):
         """
         Cattura un'immagine, con l'opzione di lasciare la camera in esecuzione.
         """
-        self.logger.info(f"--- Inizio cattura per '{dayperiod}' ---")
-        output_buffer = BytesIO()
-        
-        try:
-            # 1. Prepara i parametri e i controlli
-            params = copy.deepcopy(self.params.get(dayperiod, {}))
-            is_auto_mode = params.get("AeEnable", True)
+        with self.camera_lock:
+            self.logger.info(f"--- Inizio cattura per '{dayperiod}' ---")
+            output_buffer = BytesIO()
+            
+            try:
+                # 1. Prepara i parametri e i controlli
+                params = copy.deepcopy(self.params.get(dayperiod, {}))
+                is_auto_mode = params.get("AeEnable", True)
 
-            # Prepara la configurazione base della camera
-            transform = Transform(hflip=self.deviceParams.get("hflip", False), vflip=self.deviceParams.get("vflip", False))
-            config = self.camera.create_still_configuration(transform=transform)
-            self.camera.configure(config)
+                # Prepara la configurazione base della camera
+                transform = Transform(hflip=self.deviceParams.get("hflip", False), vflip=self.deviceParams.get("vflip", False))
+                config = self.camera.create_still_configuration(transform=transform)
+                self.camera.configure(config)
 
-            params['AwbEnable'] = True
-            params['AeExposureMode'] = 2 # prefer long exposure
-            self.camera.set_controls(params)
+                params['AwbEnable'] = True
+                params['AeExposureMode'] = 2 # prefer long exposure
+                self.camera.set_controls(params)
 
-            self.camera.start()
-            self.logger.info("In attesa della stabilizzazione del sensore (2 secondi)...")
-            time.sleep(2)
+                self.camera.start()
+                self.logger.info("In attesa della stabilizzazione del sensore (2 secondi)...")
+                time.sleep(2)
 
-            self.logger.info(f"Cattura dell'immagine {params['ExposureTime']/1000000:.2f}s a Gain {params.get('AnalogueGain')}")
-            self.camera.capture_file(output_buffer, format="jpeg")
-            metadata = self.camera.capture_metadata()
-            self.logger.info(f"Cattura completata. Gain: {metadata.get('AnalogueGain'):.2f}, Esposizione: {metadata.get('ExposureTime')/1000000:.2f}")
+                self.logger.info(f"Cattura dell'immagine {params['ExposureTime']/1000000:.2f}s a Gain {params.get('AnalogueGain')}")
+                self.camera.capture_file(output_buffer, format="jpeg")
+                metadata = self.camera.capture_metadata()
+                self.logger.info(f"Cattura completata. Gain: {metadata.get('AnalogueGain'):.2f}, Esposizione: {metadata.get('ExposureTime')/1000000:.2f}")
 
-            return output_buffer, metadata
+                return output_buffer, metadata
 
-        except Exception as e:
-            self.logger.error(f"Errore durante takePicture per '{dayperiod}': {e}", exc_info=True)
-            if self.camera.started:
+            except Exception as e:
+                self.logger.error(f"Errore durante takePicture per '{dayperiod}': {e}", exc_info=True)
+                if self.camera.started:
+                        self.camera.stop()
+                return None, {}
+            finally:
+                if self.camera.started:
                     self.camera.stop()
-            return None, {}
-        finally:
-            if self.camera.started:
-                self.camera.stop()
-                self.logger.info("--- Fine cattura, camera fermata. ---")
+                    self.logger.info("--- Fine cattura, camera fermata. ---")
 
 
     def streamStart(self, dayperiod):
@@ -318,45 +368,47 @@ class PiCameraDevice:
         self.streamThread.start()
 
     def streamNow(self, dayperiod):
-        # --- 1. CONTROLLO ABILITAZIONE STREAM ---
-        # Controlla se gli stream sono abilitati nella configurazione.
-        # Il metodo .get() ritorna False se la chiave non è presente.
-        dayperiod_params = copy.deepcopy(self.streamParams.get(dayperiod, {}))
-        yt_enabled = self.streamParams.get("enabled", False)
-        onvif_enabled = self.onvifParams.get("enabled", False)
-        
-        self.logger.info(f"Stream status: YouTube={'ENABLED' if yt_enabled else 'DISABLED'}, ONVIF={'ENABLED' if onvif_enabled else 'DISABLED'}")
+        with self.camera_lock:
+            # --- 1. CONTROLLO ABILITAZIONE STREAM ---
+            # Controlla se gli stream sono abilitati nella configurazione.
+            # Il metodo .get() ritorna False se la chiave non è presente.
+            dayperiod_params = copy.deepcopy(self.streamParams.get(dayperiod, {}))
+            yt_enabled = self.streamParams.get("enabled", False)
+            onvif_enabled = self.onvifParams.get("enabled", False)
+            
+            self.logger.info(f"Stream status: YouTube={'ENABLED' if yt_enabled else 'DISABLED'}, ONVIF={'ENABLED' if onvif_enabled else 'DISABLED'}")
 
-        # Se nessuno stream è abilitato, esci subito.
-        if not yt_enabled and not onvif_enabled:
-            self.logger.warning("Both YouTube and ONVIF streams are disabled. Exiting.")
-            self.running = False # Assicura che lo stato sia consistente
-            return
+            # Se nessuno stream è abilitato, esci subito.
+            if not yt_enabled and not onvif_enabled:
+                self.logger.warning("Both YouTube and ONVIF streams are disabled. Exiting.")
+                self.running = False # Assicura che lo stato sia consistente
+                return
 
-        # --- 2. CONFIGURAZIONE CAMERA (COMUNE A ENTRAMBI) ---
-        # Questa configurazione è necessaria se almeno uno stream è attivo.
-        fr = dayperiod_params.pop("framerate", 10)
-        w, h = self.streamParams["width"], self.streamParams["height"]
-        onvif_w = self.onvifParams.get("onvif_w", 1920)
-        onvif_h = int(onvif_w * (h / w))
-        
-        hflip = self.deviceParams.get("hflip", False)
-        vflip = self.deviceParams.get("vflip", False)
-        transform = Transform(hflip=hflip, vflip=vflip)
+            # --- 2. CONFIGURAZIONE CAMERA (COMUNE A ENTRAMBI) ---
+            # Questa configurazione è necessaria se almeno uno stream è attivo.
+            fr = dayperiod_params.pop("framerate", 10)
+            w, h = self.streamParams["width"], self.streamParams["height"]
+            onvif_w = self.onvifParams.get("onvif_w", 1920)
+            onvif_h = int(onvif_w * (h / w))
+            
+            hflip = self.deviceParams.get("hflip", False)
+            vflip = self.deviceParams.get("vflip", False)
+            transform = Transform(hflip=hflip, vflip=vflip)
 
-        video_config = self.camera.create_video_configuration(
-            main={"size": (w, h), "format": "YUV420"},
-            lores={"size": (onvif_w, onvif_h), "format": "RGB888"},
-            controls={"FrameRate": fr, "HdrMode": 0},
-            transform=transform
-        )
-        self.camera.configure(video_config)
-        dayperiod_params["AeEnable"] = True
-        dayperiod_params["AwbEnable"] = True
-        self.logger.info(f"dayperiod_params: {dayperiod_params}")
-        self.camera.set_controls(dayperiod_params)
-        self.camera.start()
-        time.sleep(2)
+            video_config = self.camera.create_video_configuration(
+                main={"size": (w, h), "format": "YUV420"},
+                lores={"size": (onvif_w, onvif_h), "format": "RGB888"},
+                controls={"FrameRate": fr, "HdrMode": 0},
+                transform=transform,
+                buffer_count=6
+            )
+            self.camera.configure(video_config)
+            dayperiod_params["AeEnable"] = True
+            dayperiod_params["AwbEnable"] = True
+            self.logger.info(f"dayperiod_params: {dayperiod_params}")
+            self.camera.set_controls(dayperiod_params)
+            self.camera.start()
+            time.sleep(2)
 
         # --- 3. INIZIALIZZAZIONE CONDIZIONALE ---
         self.ffmpeg_proc = None
