@@ -53,5 +53,4 @@ logs/
 images/
 
 *.jpg
-*.jpeg
-__pycache__/
+.env

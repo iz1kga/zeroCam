@@ -6,7 +6,8 @@ from lib.helpers import (
     ImageCropper,
     PrivacyMasker,
     ImageOverlay,
-    FTPUploader
+    FTPUploader,
+    HttpUploader
 )
 from cameras import cameraFactory
 
@@ -22,6 +23,7 @@ class ComponentManager:
         self.cropper = None
         self.overlay = None
         self.ftp_uploader = None
+        self.http_uploader = None
         self._initialize_all()
 
     def _initialize_all(self):
@@ -34,6 +36,7 @@ class ComponentManager:
         self._init_privacy_masker()
         self._init_overlay()
         self._init_ftp()
+        self._init_http_uploader()
         self.logger.info("All components initialized successfully.")
     
     def _init_with_feedback(self, component_name, init_func):
@@ -103,3 +106,8 @@ class ComponentManager:
         def _init():
             return FTPUploader(self.config("FtpHost"), self.logger)
         self.ftp_uploader = self._init_with_feedback("FTPUploader", _init)
+
+    def _init_http_uploader(self):
+        def _init():
+            return HttpUploader(self.config("HttpUploader", {}), self.logger)
+        self.http_uploader = self._init_with_feedback("HttpUploader", _init)

@@ -28,6 +28,13 @@
     "timeout": 181,
     "username": "username"
   },
+  "HttpUploader": {
+    "enabled": false,
+    "url": "https://meteoconnect.com/api/v1/webcams/ingest/",
+    "token": "",
+    "timeout": 30,
+    "send_timestamp": true
+  },
   "OverlayImages": [
     {
       "X": 3440,
