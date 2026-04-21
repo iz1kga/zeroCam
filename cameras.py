@@ -215,6 +215,7 @@ class PiCameraDevice:
                         "AwbEnable": True, 
                         "AwbMode": params.get("AwbMode", 0),
                         "FrameDurationLimits": (100, 100_000_000),
+                        "NoiseReductionMode": params.get("NoiseReductionMode", 1)
                     }
                     self.camera.set_controls(manual_controls)
                     
