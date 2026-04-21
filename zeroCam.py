@@ -169,6 +169,8 @@ class ZeroCamApp:
 
             self.publish_diagnostic("Uploading Image")
             self.components.ftp_uploader.upload(image_buffer, metadata)
+            image_buffer.seek(0)
+            self.components.http_uploader.upload(image_buffer, metadata)
 
             saveImage(self.logger, image_buffer) # Save latest image locally
             self._archive_image_if_enabled(image_buffer, metadata, day_period)

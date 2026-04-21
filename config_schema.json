@@ -64,5 +64,7 @@
   "url": { "type": "text" },
   "onvif_w": { "type": "number" },
   "MinTargetBrightness": { "type": "number" },
-  "MaxTargetBrightness": { "type": "number" }
+  "MaxTargetBrightness": { "type": "number" },
+  "token": { "type": "password" },
+  "send_timestamp": { "type": "boolean" }
 }

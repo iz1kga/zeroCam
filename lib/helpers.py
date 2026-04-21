@@ -12,6 +12,7 @@ import io
 import psutil
 import os
 import base64
+import requests
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -77,6 +78,66 @@ class FTPUploader:
             self.logger.info(f"Uploaded to {self.ftp_host['host']}")
         except Exception as e:
             self.logger.error(f"Failed to upload to {self.ftp_host['host']}: {e}")
+
+
+class HttpUploader:
+    def __init__(self, http_config, logger):
+        self.logger = logger
+        self.cfg = http_config or {}
+        self.logger.info("HttpUploader object created")
+
+    def upload(self, image, metadata):
+        if not self.cfg.get("enabled"):
+            return
+
+        url = self.cfg.get("url")
+        token = self.cfg.get("token")
+        if not url or not token:
+            self.logger.warning("HttpUploader enabled but url/token missing, skipping upload.")
+            return
+
+        try:
+            image.seek(0)
+            files = {"image": ("webcam.jpg", image, "image/jpeg")}
+            data = {}
+            if self.cfg.get("send_timestamp", True):
+                data["timestamp"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            self.logger.info(f"HTTP upload to {url}")
+            r = requests.post(
+                url,
+                headers={"Authorization": f"Bearer {token}"},
+                files=files,
+                data=data,
+                timeout=self.cfg.get("timeout", 30),
+            )
+
+            if r.status_code == 201:
+                self.logger.info(f"HTTP upload OK: {r.json()}")
+                return
+
+            # Error handling by documented codes
+            try:
+                payload = r.json()
+                code = payload.get("code", "")
+            except Exception:
+                payload = r.text
+                code = ""
+
+            if r.status_code == 409 or code == "DUPLICATE_DATA":
+                self.logger.warning(f"HTTP upload duplicate (409): {payload}")
+            elif r.status_code == 401:
+                self.logger.error(f"HTTP upload unauthorized (401): check token. {payload}")
+            elif r.status_code == 403:
+                self.logger.error(f"HTTP upload forbidden (403) — webcam disabled server-side. {payload}")
+            elif r.status_code == 400:
+                self.logger.error(f"HTTP upload bad request (400): {payload}")
+            else:
+                self.logger.error(f"HTTP upload failed status={r.status_code}: {payload}")
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"HTTP upload network error: {e}")
+        except Exception as e:
+            self.logger.error(f"HTTP upload unexpected error: {e}", exc_info=True)
 
 class ImageOverlay:
     def __init__(self, OverlayImages, logger):
