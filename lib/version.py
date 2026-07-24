@@ -33,8 +33,10 @@ def _read_version_file():
             value = f.read().strip()
     except OSError:
         return None
-    # Segnaposto non sostituito: siamo in un checkout, non in una release.
-    if not value or value.startswith('$Format'):
+    # Segnaposto non sostituito: siamo in un checkout, oppure la versione di
+    # git che ha creato l'archivio non conosce la direttiva. In entrambi i
+    # casi il contenuto non è una versione e va ignorato.
+    if not value or value.startswith('$Format') or value.startswith('%('):
         return None
     return value
 
