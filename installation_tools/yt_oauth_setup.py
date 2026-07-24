@@ -62,10 +62,21 @@ class CallbackHandler(http.server.BaseHTTPRequestHandler):
         query = urllib.parse.urlparse(self.path).query
         params = urllib.parse.parse_qs(query)
 
-        CallbackHandler.code = params.get("code", [None])[0]
-        CallbackHandler.error = params.get("error", [None])[0]
+        code = params.get("code", [None])[0]
+        error = params.get("error", [None])[0]
 
-        body = PAGE_OK if CallbackHandler.code else PAGE_KO
+        # Il browser chiede anche /favicon.ico subito dopo il redirect:
+        # va ignorata, altrimenti sovrascriverebbe il code appena ricevuto.
+        if not code and not error:
+            self.send_response(404)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+
+        CallbackHandler.code = code
+        CallbackHandler.error = error
+
+        body = PAGE_OK if code else PAGE_KO
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
