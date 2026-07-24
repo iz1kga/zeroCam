@@ -101,6 +101,8 @@ class SettingsManager:
         self.app.add_url_rule('/api/take_photo', 'take_photo', self.take_photo, methods=['POST'])
         self.app.add_url_rule('/api/timelapse', 'get_timelapse', self.get_timelapse, methods=['GET'])
         self.app.add_url_rule('/api/timelapse/run', 'run_timelapse', self.run_timelapse, methods=['POST'])
+        self.app.add_url_rule('/api/timelapse/frames', 'timelapse_frames', self.timelapse_frames, methods=['GET'])
+        self.app.add_url_rule('/timelapse/frame/<name>', 'timelapse_frame', self.timelapse_frame)
         self.app.add_url_rule('/api/privacy_mask', 'get_privacy_mask', self.get_privacy_mask, methods=['GET'])
         self.app.add_url_rule('/api/save_privacy_mask', 'save_privacy_mask', self.save_privacy_mask, methods=['POST'])
 
@@ -309,6 +311,25 @@ class SettingsManager:
             daemon=True,
         ).start()
         return jsonify(success=True, message="Timelapse build started.")
+
+    @login_required
+    def timelapse_frames(self):
+        """
+        Without 'day', the list of days holding frames; with it, that day's
+        frames. The gallery loads one image at a time, so only names travel.
+        """
+        timelapse = self.zerocam.components.timelapse
+        day = request.args.get('day')
+        if not day:
+            return jsonify(days=timelapse.days())
+        return jsonify(day=day, frames=timelapse.frames_for_day(day))
+
+    @login_required
+    def timelapse_frame(self, name):
+        path = self.zerocam.components.timelapse.frame_path(name)
+        if not path:
+            return "Frame not found", 404
+        return send_file(path, mimetype='image/jpeg')
 
     # --- Focus Aid ---
     

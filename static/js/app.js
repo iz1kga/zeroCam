@@ -667,7 +667,109 @@ const startApp = async () => {
   app.component('page-timelapse', {
     props: ['config', 'schema', 'timelapseStats', 'timelapseRunning'],
     emits: ['run-timelapse', 'refresh-timelapse'],
+    data() {
+      return {
+        galleryDays: [],
+        galleryDay: null,
+        galleryFrames: [],
+        galleryIndex: 0,
+        galleryPlaying: false,
+        gallerySpeed: 5
+      };
+    },
+    computed: {
+      galleryFrameUrl() {
+        const name = this.galleryFrames[this.galleryIndex];
+        return name ? `/timelapse/frame/${name}` : '';
+      },
+      galleryFrameLabel() {
+        const name = this.galleryFrames[this.galleryIndex];
+        if (!name) return '';
+        // Nome nel formato YYYYMMDD-HHMMSS.jpg
+        const t = name.slice(9, 15);
+        return `${t.slice(0, 2)}:${t.slice(2, 4)}:${t.slice(4, 6)}`;
+      }
+    },
+    created() {
+      // Timer non reattivo, come per i grafici
+      this.galleryTimer = null;
+    },
+    mounted() {
+      this.loadGalleryDays();
+    },
+    beforeUnmount() {
+      this.stopGalleryPlay();
+    },
+    watch: {
+      gallerySpeed() {
+        // Cambiare velocita' durante la riproduzione riavvia il timer
+        if (this.galleryPlaying) {
+          this.stopGalleryPlay();
+          this.startGalleryPlay();
+        }
+      }
+    },
     methods: {
+      async loadGalleryDays() {
+        try {
+          const res = await secureFetch('/api/timelapse/frames');
+          const data = await res.json();
+          this.galleryDays = data.days || [];
+          if (this.galleryDays.length > 0) {
+            const stillThere = this.galleryDays.some(d => d.day === this.galleryDay);
+            await this.selectGalleryDay(stillThere ? this.galleryDay : this.galleryDays[0].day);
+          } else {
+            this.galleryFrames = [];
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            console.error('Errore nel caricare i giorni della galleria:', error);
+          }
+        }
+      },
+      async selectGalleryDay(day) {
+        this.stopGalleryPlay();
+        try {
+          const res = await secureFetch('/api/timelapse/frames?day=' + encodeURIComponent(day));
+          const data = await res.json();
+          this.galleryDay = day;
+          this.galleryFrames = data.frames || [];
+          this.galleryIndex = 0;
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            console.error('Errore nel caricare i fotogrammi:', error);
+          }
+        }
+      },
+      stepGallery(delta) {
+        this.stopGalleryPlay();
+        const last = this.galleryFrames.length - 1;
+        this.galleryIndex = Math.min(last, Math.max(0, this.galleryIndex + delta));
+      },
+      toggleGalleryPlay() {
+        if (this.galleryPlaying) {
+          this.stopGalleryPlay();
+        } else {
+          this.startGalleryPlay();
+        }
+      },
+      startGalleryPlay() {
+        if (this.galleryFrames.length < 2) return;
+        // Riparte dall'inizio se siamo gia' in fondo
+        if (this.galleryIndex >= this.galleryFrames.length - 1) this.galleryIndex = 0;
+        this.galleryPlaying = true;
+        this.galleryTimer = setInterval(() => {
+          if (this.galleryIndex >= this.galleryFrames.length - 1) {
+            this.stopGalleryPlay();
+            return;
+          }
+          this.galleryIndex += 1;
+        }, 1000 / this.gallerySpeed);
+      },
+      stopGalleryPlay() {
+        clearInterval(this.galleryTimer);
+        this.galleryPlaying = false;
+      },
       formatBytes(bytes) {
         if (!bytes) return '0 B';
         const units = ['B', 'kB', 'MB', 'GB', 'TB'];

@@ -28,7 +28,9 @@ from PIL import Image
 from lib.youtube_auth import UPLOAD_BASE
 
 FRAME_PATTERN = "%Y%m%d-%H%M%S"
-FRAME_REGEX = re.compile(r"^\d{8}-\d{6}\.jpg$")
+# \Z e non $: quest'ultimo accetterebbe anche un a capo finale, e su Linux
+# un nome di file può contenerlo.
+FRAME_REGEX = re.compile(r"\A\d{8}-\d{6}\.jpg\Z")
 # Blocchi da 8 MiB: multiplo di 256 KiB come richiesto dall'upload resumable.
 CHUNK_SIZE = 8 * 1024 * 1024
 
@@ -103,6 +105,40 @@ class TimelapseManager:
             return []
         # Il nome è YYYYMMDD-HHMMSS: l'ordine alfabetico è quello cronologico.
         return [os.path.join(self.frames_dir, n) for n in sorted(names)]
+
+    def days(self):
+        """Giorni con fotogrammi disponibili, dal più recente, con il conteggio."""
+        counts = {}
+        for path in self.list_frames():
+            day = os.path.basename(path)[:8]
+            counts[day] = counts.get(day, 0) + 1
+        return [
+            {"day": f"{d[:4]}-{d[4:6]}-{d[6:8]}", "count": c}
+            for d, c in sorted(counts.items(), reverse=True)
+        ]
+
+    def frames_for_day(self, day):
+        """Nomi dei fotogrammi di un giorno (YYYY-MM-DD), in ordine cronologico."""
+        prefix = day.replace("-", "")
+        if not prefix.isdigit() or len(prefix) != 8:
+            return []
+        return [
+            os.path.basename(p) for p in self.list_frames()
+            if os.path.basename(p).startswith(prefix)
+        ]
+
+    def frame_path(self, name):
+        """
+        Percorso assoluto di un fotogramma, o None se il nome non è valido.
+
+        Il nome arriva da una richiesta HTTP: viene accettato solo se
+        corrisponde esattamente al formato dei fotogrammi, così non può
+        contenere separatori di percorso.
+        """
+        if not FRAME_REGEX.match(name or ""):
+            return None
+        path = os.path.join(os.path.abspath(self.frames_dir), name)
+        return path if os.path.exists(path) else None
 
     def stats(self):
         """Numero di fotogrammi e spazio occupato, per l'interfaccia web."""
