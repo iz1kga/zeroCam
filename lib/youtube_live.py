@@ -18,9 +18,7 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 
-TOKEN_URL = "https://oauth2.googleapis.com/token"
-API_BASE = "https://www.googleapis.com/youtube/v3"
-SCOPE = "https://www.googleapis.com/auth/youtube"
+from lib.youtube_auth import YouTubeAuth
 
 # Stati di un broadcast riutilizzabile: già in onda o pronto a partire.
 REUSABLE_STATES = ("active", "upcoming")
@@ -29,15 +27,13 @@ REUSABLE_STATES = ("active", "upcoming")
 class YouTubeLiveManager:
     """Crea, collega e riusa il liveBroadcast associato alla stream key."""
 
-    def __init__(self, yt_config, stream_key, logger):
+    def __init__(self, yt_config, stream_key, logger, auth=None):
         self.logger = logger
         self.cfg = yt_config or {}
         self.stream_key = stream_key or ""
-        self.timeout = self.cfg.get("timeout", 10)
+        self.auth = auth or YouTubeAuth(self.cfg, logger)
 
         self._lock = threading.Lock()
-        self._access_token = None
-        self._token_expiry = datetime.now(timezone.utc)
         self._stream_id = None
         self._broadcast_id = None
 
@@ -46,13 +42,10 @@ class YouTubeLiveManager:
     # --- Configurazione -------------------------------------------------
 
     def update_config(self, yt_config, stream_key):
-        """Applica una nuova configurazione invalidando token e cache."""
+        """Applica una nuova configurazione invalidando la cache."""
         with self._lock:
             self.cfg = yt_config or {}
             self.stream_key = stream_key or ""
-            self.timeout = self.cfg.get("timeout", 10)
-            self._access_token = None
-            self._token_expiry = datetime.now(timezone.utc)
             self._stream_id = None
             self._broadcast_id = None
 
@@ -61,7 +54,7 @@ class YouTubeLiveManager:
         return bool(self.cfg.get("enabled"))
 
     def _credentials_ok(self):
-        missing = [k for k in ("client_id", "client_secret", "refresh_token") if not self.cfg.get(k)]
+        missing = self.auth.missing_keys()
         if missing:
             self.logger.warning(f"YouTube Live enabled but missing config: {', '.join(missing)}")
             return False
@@ -70,49 +63,10 @@ class YouTubeLiveManager:
             return False
         return True
 
-    # --- OAuth ----------------------------------------------------------
-
-    def _token(self):
-        """Ritorna un access token valido, rinnovandolo se necessario."""
-        now = datetime.now(timezone.utc)
-        if self._access_token and now < self._token_expiry:
-            return self._access_token
-
-        self.logger.info("Refreshing YouTube OAuth access token...")
-        r = requests.post(
-            TOKEN_URL,
-            data={
-                "client_id": self.cfg["client_id"],
-                "client_secret": self.cfg["client_secret"],
-                "refresh_token": self.cfg["refresh_token"],
-                "grant_type": "refresh_token",
-            },
-            timeout=self.timeout,
-        )
-        if r.status_code != 200:
-            raise RuntimeError(f"OAuth refresh failed ({r.status_code}): {r.text}")
-
-        payload = r.json()
-        self._access_token = payload["access_token"]
-        # 60s di margine per non usare un token che scade durante la chiamata
-        self._token_expiry = now + timedelta(seconds=int(payload.get("expires_in", 3600)) - 60)
-        return self._access_token
-
     # --- API ------------------------------------------------------------
 
     def _api(self, method, path, params=None, body=None):
-        headers = {"Authorization": f"Bearer {self._token()}"}
-        r = requests.request(
-            method,
-            f"{API_BASE}/{path}",
-            headers=headers,
-            params=params,
-            json=body,
-            timeout=self.timeout,
-        )
-        if r.status_code >= 400:
-            raise RuntimeError(f"YouTube API {method} {path} failed ({r.status_code}): {r.text}")
-        return r.json() if r.content else {}
+        return self.auth.api(method, path, params=params, body=body)
 
     def _find_stream_id(self):
         """Trova l'id del liveStream corrispondente alla nostra stream key."""

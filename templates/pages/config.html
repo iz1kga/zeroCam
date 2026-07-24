@@ -253,6 +253,16 @@
                             type="number" class="form-control" v-model.number="config.streamParameters.height"></div>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-9"><label class="form-label">Destinazioni aggiuntive (una per riga)</label>
+                    <field-renderer :model="config.streamParameters" key-name="extra_destinations" :schema="schema" />
+                    <div class="form-text">
+                        URL RTMP completi verso cui ritrasmettere lo stesso flusso (Twitch, un server tuo, un'altra
+                        piattaforma). Il video viene codificato una sola volta e duplicato, quindi la CPU non cambia.
+                        Una destinazione irraggiungibile non ferma le altre.
+                    </div>
+                </div>
+            </div>
 
             <!-- Diretta automatica: gestione del broadcast via YouTube Data API -->
             <hr>

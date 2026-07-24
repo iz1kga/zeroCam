@@ -54,3 +54,5 @@ images/
 
 *.jpg
 .env
+timelapse_frames/
+timelapse/

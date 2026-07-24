@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 """
 Ottiene il refresh token OAuth necessario a zeroCam per gestire la
-diretta YouTube (creazione automatica del broadcast).
+diretta YouTube (creazione automatica del broadcast) e per pubblicare i
+timelapse settimanali.
 
 Va eseguito UNA VOLTA SOLA, su una macchina con un browser (anche il
 proprio PC: serve solo Python + requests, non la camera). Il refresh
@@ -34,7 +35,12 @@ except ImportError:
 
 AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
-SCOPE = "https://www.googleapis.com/auth/youtube"
+# youtube: gestione dei broadcast della diretta.
+# youtube.upload: caricamento dei timelapse settimanali.
+SCOPE = (
+    "https://www.googleapis.com/auth/youtube "
+    "https://www.googleapis.com/auth/youtube.upload"
+)
 PORT = 8765
 REDIRECT_URI = f"http://localhost:{PORT}/"
 

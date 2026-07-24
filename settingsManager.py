@@ -99,6 +99,8 @@ class SettingsManager:
         self.app.add_url_rule('/api/stats', 'get_stats', self.get_stats)
         self.app.add_url_rule('/api/status/capture', 'get_capture_status', self.get_capture_status)
         self.app.add_url_rule('/api/take_photo', 'take_photo', self.take_photo, methods=['POST'])
+        self.app.add_url_rule('/api/timelapse', 'get_timelapse', self.get_timelapse, methods=['GET'])
+        self.app.add_url_rule('/api/timelapse/run', 'run_timelapse', self.run_timelapse, methods=['POST'])
         self.app.add_url_rule('/api/privacy_mask', 'get_privacy_mask', self.get_privacy_mask, methods=['GET'])
         self.app.add_url_rule('/api/save_privacy_mask', 'save_privacy_mask', self.save_privacy_mask, methods=['POST'])
 
@@ -283,6 +285,31 @@ class SettingsManager:
         threading.Thread(target=self.zerocam.capture_job).start()
         return jsonify(success=True)
         
+    # --- Timelapse ---
+
+    @login_required
+    def get_timelapse(self):
+        """Frame count, disk usage and outcome of the last build."""
+        return jsonify(self.zerocam.components.timelapse.stats())
+
+    @login_required
+    def run_timelapse(self):
+        """
+        Triggers a build without waiting for the weekly schedule.
+
+        Encoding takes minutes, so it runs in the background: the outcome
+        is then readable from /api/timelapse.
+        """
+        upload = bool((request.json or {}).get('upload', True))
+        self.logger.info(f"Manual timelapse build requested (upload={upload}).")
+        threading.Thread(
+            target=self.zerocam.components.timelapse.run,
+            kwargs={'upload': upload},
+            name='ManualTimelapseThread',
+            daemon=True,
+        ).start()
+        return jsonify(success=True, message="Timelapse build started.")
+
     # --- Focus Aid ---
     
     @login_required

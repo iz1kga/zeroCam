@@ -8,6 +8,9 @@ from lib.helpers import CryptoHelper
 # configurazione vengono inserite con questi valori, così le installazioni
 # esistenti continuano a partire e mostrano la pagina nell'interfaccia web.
 DEFAULT_SECTIONS = {
+    "streamParameters": {
+        "extra_destinations": [],
+    },
     "youtubeLive": {
         "enabled": False,
         "client_id": "",
@@ -22,6 +25,27 @@ DEFAULT_SECTIONS = {
         "made_for_kids": False,
         "end_on_shutdown": False,
         "timeout": 10,
+    },
+    "timelapse": {
+        "enabled": False,
+        "day": "monday",
+        "time": "03:00",
+        "fps": 25,
+        "frame_width": 2560,
+        "frame_quality": 88,
+        "crf": 20,
+        "preset": "medium",
+        "threads": 2,
+        "nice": 19,
+        "min_frames": 30,
+        "retention_weeks": 4,
+        "keep_local": True,
+        "frames_dir": "./timelapse_frames",
+        "output_dir": "./timelapse",
+        "title": "Timelapse {from} - {to}",
+        "description": "",
+        "privacy": "public",
+        "made_for_kids": False,
     }
 }
 

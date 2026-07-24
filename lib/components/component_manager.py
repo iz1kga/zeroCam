@@ -9,7 +9,9 @@ from lib.helpers import (
     FTPUploader,
     HttpUploader
 )
+from lib.youtube_auth import YouTubeAuth
 from lib.youtube_live import YouTubeLiveManager
+from lib.timelapse import TimelapseManager
 from cameras import cameraFactory
 
 class ComponentManager:
@@ -25,7 +27,9 @@ class ComponentManager:
         self.overlay = None
         self.ftp_uploader = None
         self.http_uploader = None
+        self.youtube_auth = None
         self.youtube_live = None
+        self.timelapse = None
         self._initialize_all()
 
     def _initialize_all(self):
@@ -40,6 +44,7 @@ class ComponentManager:
         self._init_ftp()
         self._init_http_uploader()
         self._init_youtube_live()
+        self._init_timelapse()
         self.logger.info("All components initialized successfully.")
     
     def _init_with_feedback(self, component_name, init_func):
@@ -85,11 +90,17 @@ class ComponentManager:
             )
             self.cropper.update_config(new_config.get('cameraParameters', {}).get('crop', {}))
 
+        if self.youtube_auth:
+            self.youtube_auth.update_config(new_config.get('youtubeLive', {}))
+
         if self.youtube_live:
             self.youtube_live.update_config(
                 new_config.get('youtubeLive', {}),
                 new_config.get('streamParameters', {}).get('yt_api_key')
             )
+
+        if self.timelapse:
+            self.timelapse.update_config(new_config.get('timelapse', {}))
     
     def _init_annotator(self):
         def _init():
@@ -123,9 +134,17 @@ class ComponentManager:
 
     def _init_youtube_live(self):
         def _init():
+            # L'autenticazione è condivisa con l'upload dei timelapse
+            self.youtube_auth = YouTubeAuth(self.config("youtubeLive", {}), self.logger)
             return YouTubeLiveManager(
                 self.config("youtubeLive", {}),
                 self.config("streamParameters", {}).get("yt_api_key"),
                 self.logger,
+                auth=self.youtube_auth,
             )
         self.youtube_live = self._init_with_feedback("YouTubeLiveManager", _init)
+
+    def _init_timelapse(self):
+        def _init():
+            return TimelapseManager(self.config("timelapse", {}), self.youtube_auth, self.logger)
+        self.timelapse = self._init_with_feedback("TimelapseManager", _init)

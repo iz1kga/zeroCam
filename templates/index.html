@@ -49,6 +49,9 @@
           <a href="#" class="nav-link" :class="{ active: page === 'control' }" @click.prevent="page = 'control'">
             <i class="bi bi-camera-video me-2"></i>Cam Control
           </a>
+          <a href="#" class="nav-link" :class="{ active: page === 'timelapse' }" @click.prevent="page = 'timelapse'">
+            <i class="bi bi-film me-2"></i>Timelapse
+          </a>
           <a href="#" class="nav-link" :class="{ active: page === 'status' }" @click.prevent="page = 'status'">
             <i class="bi bi-speedometer2 me-2"></i>Status
           </a>
@@ -90,6 +93,10 @@
                     :config-page="configPage"
                     :active-camera-tab="activeCameraTab"
                     :active-stream-tab="activeStreamTab"
+                    :timelapse-stats="timelapseStats"
+                    :timelapse-running="timelapseRunning"
+                    @run-timelapse="runTimelapse"
+                    @refresh-timelapse="loadTimelapseStats"
                     @update:active-camera-tab="activeCameraTab = $event"
                     @update:active-stream-tab="activeStreamTab = $event"
                     @restart-app="restartApp"

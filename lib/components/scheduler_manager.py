@@ -29,6 +29,41 @@ class SchedulerManager:
         schedule.every(1).seconds.do(self.app.stats_collector.collect_and_process)
         self.logger.info("Stats collection job scheduled every 1 second.")
 
+        self._setup_timelapse_job()
+
+    def _setup_timelapse_job(self):
+        """Schedules the weekly timelapse build plus the daily frame cleanup."""
+        timelapse_config = self.app.config_manager.get("timelapse", {})
+        if not timelapse_config.get("enabled", False):
+            self.logger.info("Timelapse is disabled, no job scheduled.")
+            return
+
+        day = str(timelapse_config.get("day", "monday")).lower()
+        at_time = str(timelapse_config.get("time", "03:00"))
+
+        weekday = getattr(schedule.every(), day, None)
+        if weekday is None:
+            self.logger.error(f"Invalid timelapse day '{day}', falling back to monday.")
+            weekday = schedule.every().monday
+
+        weekday.at(at_time).do(self._safe_timelapse_job)
+        self.logger.info(f"Timelapse job scheduled every {day} at {at_time}.")
+
+        # La pulizia gira comunque ogni giorno: se il montaggio fallisce per
+        # settimane, i fotogrammi non devono accumularsi senza limite.
+        schedule.every().day.at("04:30").do(self.app.components.timelapse.cleanup_old_frames)
+        self.logger.info("Timelapse frame cleanup scheduled daily at 04:30.")
+
+    def _safe_timelapse_job(self):
+        """Runs the timelapse build without ever taking down the scheduler."""
+        try:
+            self.app.publish_diagnostic("Building timelapse")
+            self.app.components.timelapse.run()
+        except Exception:
+            self.logger.error("Timelapse job crashed.", exc_info=True)
+        finally:
+            self.app.publish_diagnostic("Idle")
+
     def _run_scheduler(self):
         """The main loop for the scheduler thread."""
         self.logger.info("Scheduler thread started.")
