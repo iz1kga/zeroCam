@@ -9,6 +9,7 @@ from lib.helpers import (
     FTPUploader,
     HttpUploader
 )
+from lib.youtube_live import YouTubeLiveManager
 from cameras import cameraFactory
 
 class ComponentManager:
@@ -24,6 +25,7 @@ class ComponentManager:
         self.overlay = None
         self.ftp_uploader = None
         self.http_uploader = None
+        self.youtube_live = None
         self._initialize_all()
 
     def _initialize_all(self):
@@ -37,6 +39,7 @@ class ComponentManager:
         self._init_overlay()
         self._init_ftp()
         self._init_http_uploader()
+        self._init_youtube_live()
         self.logger.info("All components initialized successfully.")
     
     def _init_with_feedback(self, component_name, init_func):
@@ -81,6 +84,12 @@ class ComponentManager:
                 new_config.get('deviceDetails')
             )
             self.cropper.update_config(new_config.get('cameraParameters', {}).get('crop', {}))
+
+        if self.youtube_live:
+            self.youtube_live.update_config(
+                new_config.get('youtubeLive', {}),
+                new_config.get('streamParameters', {}).get('yt_api_key')
+            )
     
     def _init_annotator(self):
         def _init():
@@ -111,3 +120,12 @@ class ComponentManager:
         def _init():
             return HttpUploader(self.config("HttpUploader", {}), self.logger)
         self.http_uploader = self._init_with_feedback("HttpUploader", _init)
+
+    def _init_youtube_live(self):
+        def _init():
+            return YouTubeLiveManager(
+                self.config("youtubeLive", {}),
+                self.config("streamParameters", {}).get("yt_api_key"),
+                self.logger,
+            )
+        self.youtube_live = self._init_with_feedback("YouTubeLiveManager", _init)

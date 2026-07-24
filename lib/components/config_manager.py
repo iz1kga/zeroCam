@@ -4,6 +4,27 @@ import threading
 
 from lib.helpers import CryptoHelper
 
+# Sezioni introdotte dopo il rilascio iniziale: se mancano dal file di
+# configurazione vengono inserite con questi valori, così le installazioni
+# esistenti continuano a partire e mostrano la pagina nell'interfaccia web.
+DEFAULT_SECTIONS = {
+    "youtubeLive": {
+        "enabled": False,
+        "client_id": "",
+        "client_secret": "",
+        "refresh_token": "",
+        "title": "Live {date}",
+        "description": "",
+        "privacy": "public",
+        "latency": "low",
+        "dvr": True,
+        "record": True,
+        "made_for_kids": False,
+        "end_on_shutdown": False,
+        "timeout": 10,
+    }
+}
+
 class ConfigManager:
     """Handles loading, saving, and decrypting application configuration."""
 
@@ -27,7 +48,9 @@ class ConfigManager:
             with self.config_lock:
                 with open(self.config_path, "r") as f:
                     self.config = json.load(f)
-                
+
+                self._apply_default_sections()
+
                 # Create a deep copy for decryption
                 self.decrypted_config = json.loads(json.dumps(self.config))
 
@@ -36,11 +59,22 @@ class ConfigManager:
                 self._decrypt_field(['FtpHost', 'password'])
                 self._decrypt_field(['onvif', 'password'])
                 self._decrypt_field(['streamParameters', 'yt_api_key'])
+                self._decrypt_field(['youtubeLive', 'client_secret'])
+                self._decrypt_field(['youtubeLive', 'refresh_token'])
                 self._decrypt_field(['HttpUploader', 'token'])
 
         except (json.JSONDecodeError, IOError) as e:
             self.logger.critical(f"Failed to load or parse configuration: {e}. Shutting down.", exc_info=True)
             os._exit(1)
+
+    def _apply_default_sections(self):
+        """Aggiunge le sezioni (e le chiavi) mancanti dopo un aggiornamento."""
+        for section, defaults in DEFAULT_SECTIONS.items():
+            current = self.config.setdefault(section, {})
+            if not isinstance(current, dict):
+                continue
+            for key, value in defaults.items():
+                current.setdefault(key, value)
 
     def _decrypt_field(self, path):
         """Helper to decrypt a nested configuration value."""
@@ -69,6 +103,8 @@ class ConfigManager:
                 self._encrypt_field(config_to_save, ['mqtt', 'password'])
                 self._encrypt_field(config_to_save, ['onvif', 'password'])
                 self._encrypt_field(config_to_save, ['streamParameters', 'yt_api_key'])
+                self._encrypt_field(config_to_save, ['youtubeLive', 'client_secret'])
+                self._encrypt_field(config_to_save, ['youtubeLive', 'refresh_token'])
                 self._encrypt_field(config_to_save, ['HttpUploader', 'token'])
                 
                 with open(self.config_path, 'w') as f:

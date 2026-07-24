@@ -126,6 +126,69 @@
         </div>
     </div>
 
+    <!-- YouTube Live -->
+    <div v-if="configPage === 'youtubeLive' && config.youtubeLive">
+        <h4>YouTube Live</h4>
+        <div class="card card-body">
+            <div class="row mb-3 align-items-end">
+                <div class="col-md-3">
+                    <field-renderer :model="config.youtubeLive" key-name="enabled" :schema="schema"
+                        label="Auto broadcast" />
+                </div>
+                <div class="col-md-9"><label class="form-label">Client ID</label><field-renderer
+                        :model="config.youtubeLive" key-name="client_id" :schema="schema" /></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6"><label class="form-label">Client Secret</label><field-renderer
+                        :model="config.youtubeLive" key-name="client_secret" :schema="schema" /></div>
+                <div class="col-md-6"><label class="form-label">Refresh Token</label><field-renderer
+                        :model="config.youtubeLive" key-name="refresh_token" :schema="schema" /></div>
+            </div>
+            <hr>
+            <div class="row mb-3">
+                <div class="col-md-6"><label class="form-label">Titolo diretta</label><field-renderer
+                        :model="config.youtubeLive" key-name="title" :schema="schema" /></div>
+                <div class="col-md-6"><label class="form-label">Descrizione</label><field-renderer
+                        :model="config.youtubeLive" key-name="description" :schema="schema" /></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><label class="form-label">Privacy</label>
+                    <select class="form-select" v-model="config.youtubeLive.privacy">
+                        <option value="public">Pubblico</option>
+                        <option value="unlisted">Non in elenco</option>
+                        <option value="private">Privato</option>
+                    </select>
+                </div>
+                <div class="col-md-3"><label class="form-label">Latenza</label>
+                    <select class="form-select" v-model="config.youtubeLive.latency">
+                        <option value="normal">Normale</option>
+                        <option value="low">Bassa</option>
+                        <option value="ultraLow">Molto bassa</option>
+                    </select>
+                </div>
+                <div class="col-md-3"><label class="form-label">Timeout API (s)</label><field-renderer
+                        :model="config.youtubeLive" key-name="timeout" :schema="schema" /></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="dvr" :schema="schema"
+                        label="DVR" /></div>
+                <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="record" :schema="schema"
+                        label="Registra dall'inizio" /></div>
+                <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="made_for_kids"
+                        :schema="schema" label="Contenuto per bambini" /></div>
+                <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="end_on_shutdown"
+                        :schema="schema" label="Chiudi diretta allo shutdown" /></div>
+            </div>
+            <div class="form-text">
+                Crea e collega automaticamente il broadcast alla stream key di
+                <strong>Stream Parameters</strong>, con avvio automatico e senza interruzione automatica: la
+                diretta parte da sola e sopravvive alle pause per la cattura della foto, senza aprire il browser.
+                Le credenziali si ottengono con <code>installation_tools/yt_oauth_setup.py</code>.
+                Nel titolo puoi usare i segnaposto <code>{date}</code> e <code>{time}</code>.
+            </div>
+        </div>
+    </div>
+
     <!-- Camera Parameters -->
     <div v-if="configPage === 'cameraParameters' && config.cameraParameters">
         <h4>Camera Parameters</h4>
