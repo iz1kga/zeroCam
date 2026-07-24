@@ -10,7 +10,13 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 import io
 from io import BytesIO
 from fractions import Fraction
-from lib.helpers import logRecursive
+from lib.helpers import (
+    logRecursive,
+    load_privacy_rois,
+    remap_rois_to_view,
+    centered_view,
+    FramePrivacyMasker,
+)
 import random
 import threading
 import subprocess
@@ -360,6 +366,61 @@ class PiCameraDevice:
                     self.logger.info("--- Fine cattura, camera fermata. ---")
 
 
+    def _still_sensor_view(self):
+        """
+        Porzione di sensore coperta dalla foto, in coordinate del sensore.
+
+        È la vista su cui l'utente disegna le privacy mask, quindi tiene
+        conto anche dell'eventuale ritaglio applicato da ImageCropper.
+        """
+        try:
+            pixel_w, pixel_h = self.camera.camera_properties["PixelArraySize"]
+            full_view = (0.0, 0.0, float(pixel_w), float(pixel_h))
+
+            crop = self.params.get("crop", {})
+            if not crop.get("enabled", False):
+                return full_view
+
+            still_w, still_h = self.camera.create_still_configuration()["main"]["size"]
+            # Stesso riquadro calcolato da ImageCropper.crop()
+            left = max(0, (still_w - crop["width"]) / 2 + crop["x_offset"])
+            top = max(0, (still_h - crop["height"]) / 2 + crop["y_offset"])
+            right = min(still_w, (still_w + crop["width"]) / 2 + crop["x_offset"])
+            bottom = min(still_h, (still_h + crop["height"]) / 2 + crop["y_offset"])
+
+            return (
+                left / still_w * pixel_w,
+                top / still_h * pixel_h,
+                (right - left) / still_w * pixel_w,
+                (bottom - top) / still_h * pixel_h,
+            )
+        except Exception as e:
+            self.logger.error(f"Could not determine the still sensor view: {e}")
+            return None
+
+    def _stream_sensor_view(self, fallback_view, aspect):
+        """
+        Porzione di sensore coperta dallo streaming, letta da ScalerCrop.
+
+        La camera va già avviata nella configurazione video. Se il dato non
+        è disponibile si ripiega sul ritaglio centrato del formato richiesto,
+        che è il comportamento predefinito di libcamera.
+        """
+        try:
+            crop = self.camera.capture_metadata().get("ScalerCrop")
+            if crop and len(crop) == 4 and crop[2] and crop[3]:
+                self.logger.info(f"Stream ScalerCrop reported by the camera: {tuple(crop)}")
+                return tuple(float(v) for v in crop)
+            self.logger.warning("ScalerCrop not reported by the camera.")
+        except Exception as e:
+            self.logger.error(f"Could not read ScalerCrop: {e}")
+
+        if not fallback_view:
+            return None
+        view = centered_view(fallback_view, aspect)
+        self.logger.warning(f"Falling back to a centred {aspect:.3f} crop for the stream view: {view}")
+        return view
+
     def streamStart(self, dayperiod):
         if self.running:
             self.logger.warning("Stream is already running. Please stop it first.")
@@ -415,6 +476,20 @@ class PiCameraDevice:
         self.ffmpeg_proc = None
         output_image_path = None
 
+        # Le privacy mask vengono rasterizzate qui, una volta per avvio dello
+        # streaming: le modifiche fatte dall'interfaccia web entrano in vigore
+        # al ciclo di cattura successivo, quando lo stream viene riavviato.
+        # Sono disegnate sulla foto, che ha un formato diverso dallo stream:
+        # vanno riportate sulla porzione di sensore che lo stream inquadra.
+        rois = load_privacy_rois(self.logger)
+        if rois:
+            still_view = self._still_sensor_view()
+            stream_view = self._stream_sensor_view(still_view, w / h)
+            self.logger.info(f"Sensor view - still: {still_view}, stream: {stream_view}")
+            rois = remap_rois_to_view(rois, still_view, stream_view, self.logger)
+        yt_masker = FramePrivacyMasker(rois, w, h, logger=self.logger) if yt_enabled else None
+        onvif_masker = FramePrivacyMasker(rois, onvif_w, onvif_h, logger=self.logger) if onvif_enabled else None
+
         if yt_enabled:
             api_key = self.streamParams["yt_api_key"]
             bitrate = self.streamParams.get("bitrate", "4500k")
@@ -450,6 +525,8 @@ class PiCameraDevice:
                 # --- Gestione Stream YouTube ---
                 if yt_enabled and self.ffmpeg_proc and self.ffmpeg_proc.stdin:
                     main_frame = request.make_array("main")
+                    if yt_masker.active:
+                        main_frame = yt_masker.apply_yuv420(main_frame)
                     if select.select([], [self.ffmpeg_proc.stdin], [], 0)[1]:
                         try:
                             self.ffmpeg_proc.stdin.write(main_frame.tobytes())
@@ -465,6 +542,8 @@ class PiCameraDevice:
                     current_time = time.time()
                     if current_time - last_frame_save_time >= 1.0: # Salva al massimo un frame al secondo
                         lores_frame = request.make_array("lores")
+                        if onvif_masker.active:
+                            lores_frame = onvif_masker.apply_rgb(lores_frame)
                         try:
                             rgb_frame = cv2.cvtColor(lores_frame, cv2.COLOR_BGR2RGB)
                             img = Image.fromarray(rgb_frame, 'RGB')
