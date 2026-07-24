@@ -43,6 +43,58 @@ def load_privacy_rois(logger=None):
         return []
 
 
+def centered_view(source_view, target_aspect):
+    """Ritaglio centrato, del formato richiesto, più ampio possibile dentro source_view."""
+    x, y, w, h = source_view
+    if not h or not target_aspect:
+        return source_view
+    if (w / h) > target_aspect:
+        new_w, new_h = h * target_aspect, h
+    else:
+        new_w, new_h = w, w / target_aspect
+    return (x + (w - new_w) / 2.0, y + (h - new_h) / 2.0, new_w, new_h)
+
+
+def remap_rois_to_view(rois, source_view, target_view, logger=None):
+    """
+    Riporta le ROI dalla vista su cui sono state disegnate a un'altra vista.
+
+    Le ROI sono in percentuale dell'immagine su cui l'utente le ha
+    tracciate (la foto, eventualmente ritagliata). La foto e lo streaming
+    hanno formati diversi e coprono porzioni diverse del sensore, quindi
+    le stesse percentuali indicano punti diversi della scena. Entrambe le
+    viste sono espresse in coordinate del sensore, l'unico riferimento
+    comune, e le ROI vengono convertite di conseguenza.
+
+    Le viste sono rettangoli (x, y, w, h) in coordinate del sensore.
+    """
+    logger = logger or logging.getLogger(__name__)
+    if not rois or not source_view or not target_view:
+        return rois
+
+    sx, sy, sw, sh = source_view
+    tx, ty, tw, th = target_view
+    if not sw or not sh or not tw or not th:
+        logger.warning("Invalid sensor views, privacy masks left unscaled.")
+        return rois
+    if (sx, sy, sw, sh) == (tx, ty, tw, th):
+        return rois
+
+    remapped = []
+    for roi in rois:
+        points = roi.get('points') or []
+        remapped.append({**roi, 'points': [
+            {
+                'x': ((sx + (p['x'] / 100.0) * sw) - tx) / tw * 100.0,
+                'y': ((sy + (p['y'] / 100.0) * sh) - ty) / th * 100.0,
+            }
+            for p in points
+        ]})
+
+    logger.info(f"Privacy masks remapped from sensor view {source_view} to {target_view}.")
+    return remapped
+
+
 def split_rois_by_mode(rois):
     """Separa le ROI fra quelle da sfocare e quelle da coprire completamente."""
     blur, filled = [], []
