@@ -24,6 +24,7 @@
   <div id="app" class="d-flex flex-column h-100">
     <header class="navbar navbar-light bg-light px-3 border-bottom">
       <span class="navbar-brand mb-0 h1">zeroCAM - Console</span>
+      <span class="text-muted small">{{ version }}</span>
     </header>
     <div class="d-flex flex-grow-1">
       <aside class="sidebar d-flex flex-column">
@@ -56,6 +57,9 @@
           </a>
           <a href="#" class="nav-link" :class="{ active: page === 'security' }" @click.prevent="page = 'security'">
             <i class="bi bi-shield-lock me-2"></i>Security
+          </a>
+          <a href="#" class="nav-link" :class="{ active: page === 'license' }" @click.prevent="page = 'license'">
+            <i class="bi bi-file-earmark-text me-2"></i>License
           </a>
         </nav>
         <div class="mt-auto p-3">

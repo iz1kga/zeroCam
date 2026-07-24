@@ -27,6 +27,7 @@ from lib.helpers import (
     get_raspberry_pi_stats,
     saveImage
 )
+from lib.version import get_version
 from settingsManager import run_settings_manager
 
 # --- Global Exception Handler ---
@@ -377,6 +378,7 @@ def print_banner(logger):
                                                   www.iz1kga.it - IZ1KGA
 """
     logger.info(zerocam_banner)
+    logger.info(f"Version: {get_version()}")
     logger.info("This software is provided under a dual-license model:")
     logger.info("- Free for non-commercial use under the CC BY-NC-SA 4.0 license.")
     logger.info("- Commercial use requires a separate license. Please contact the author.")

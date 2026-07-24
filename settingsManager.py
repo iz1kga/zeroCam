@@ -11,6 +11,8 @@ from PIL import Image, ImageDraw
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
+from lib.version import get_version
+
 # La classe User ora è disaccoppiata dall'oggetto zerocam globale.
 class User(UserMixin):
     """Represents a user for the login system."""
@@ -43,6 +45,11 @@ class SettingsManager:
         self.logger.info("Flask secret key is set.")
         self._setup_login_manager()
         self._register_routes()
+
+        # Resa disponibile a tutti i template, header e pagina licenza inclusi
+        version = get_version()
+        self.app.context_processor(lambda: {'version': version})
+        self.logger.info(f"Web interface serving zeroCAM version {version}")
 
     def _setup_secret_key(self):
         """Ensures a persistent Flask secret key is present in the configuration."""
