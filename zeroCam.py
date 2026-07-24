@@ -175,6 +175,9 @@ class ZeroCamApp:
 
             saveImage(self.logger, image_buffer) # Save latest image locally
             self._archive_image_if_enabled(image_buffer, metadata, day_period)
+            # Fotogramma per il timelapse settimanale: immagine finale, già
+            # ritagliata, mascherata e annotata come quella pubblicata.
+            self.components.timelapse.store_frame(image_buffer)
 
             self.publish_diagnostic("Capture Completed")
             self.logger.info("Capture job finished.")

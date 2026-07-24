@@ -97,15 +97,24 @@ class ONVIFService:
             auth = request.authorization
             
             if not auth:
-                self.logger.warning(f"SNAPSHOT: Richiesta a {request.path} senza header di autenticazione.")
+                # Prima metà del normale handshake Basic: il client chiede
+                # senza credenziali, riceve il 401 e ripete. Non è un problema,
+                # quindi non merita un WARNING a ogni snapshot.
+                self.logger.debug(
+                    f"SNAPSHOT: Richiesta a {request.path} senza header di autenticazione "
+                    f"da {request.remote_addr}, invio la richiesta di autenticazione."
+                )
                 return Response(
                     'Accesso negato: Autenticazione richiesta.', 401,
                     {'WWW-Authenticate': 'Basic realm="Snapshot Access"'})
-            
+
             if auth.username == self.auth_user and auth.password == self.auth_pass:
                 return f(*args, **kwargs)
 
-            self.logger.warning(f"SNAPSHOT: Tentativo di accesso fallito per l'utente '{auth.username}'.")
+            self.logger.warning(
+                f"SNAPSHOT: Tentativo di accesso fallito per l'utente '{auth.username}' "
+                f"da {request.remote_addr}."
+            )
             return Response(
                 'Accesso negato: Credenziali non valide.', 401,
                 {'WWW-Authenticate': 'Basic realm="Snapshot Access"'})

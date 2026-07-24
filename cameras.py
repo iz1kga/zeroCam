@@ -366,6 +366,32 @@ class PiCameraDevice:
                     self.logger.info("--- Fine cattura, camera fermata. ---")
 
 
+    def _stream_outputs(self, primary_url):
+        """
+        Argomenti di uscita per ffmpeg: una o più destinazioni RTMP.
+
+        Con più destinazioni si usa il muxer 'tee', che duplica il flusso già
+        codificato senza rifare l'encoding. 'onfail=ignore' fa sì che una
+        destinazione irraggiungibile non trascini giù le altre.
+        """
+        extra = [url.strip() for url in self.streamParams.get("extra_destinations", []) or [] if url.strip()]
+        if not extra:
+            return ["-f", "flv", primary_url]
+
+        destinations = "|".join(f"[f=flv:onfail=ignore]{url}" for url in [primary_url] + extra)
+        # Solo gli host: l'ultimo segmento dell'URL è la stream key e non
+        # deve finire nel log.
+        hosts = [url.split("/")[2] if "//" in url else "?" for url in [primary_url] + extra]
+        self.logger.info(f"Restreaming to {len(extra) + 1} destinations: {', '.join(hosts)}")
+        # global_header è raccomandato dalla documentazione di 'tee' quando i
+        # formati di uscita richiedono header globali, come flv con H.264/AAC:
+        # senza, le uscite oltre la prima possono risultare malformate.
+        return [
+            "-flags", "+global_header",
+            "-map", "0:v", "-map", "1:a",
+            "-f", "tee", destinations,
+        ]
+
     def _still_sensor_view(self):
         """
         Porzione di sensore coperta dalla foto, in coordinate del sensore.
@@ -501,9 +527,8 @@ class PiCameraDevice:
                 "-c:v", "libx264", "-preset", "veryfast", "-b:v", bitrate, "-maxrate", bitrate, "-bufsize", bufsize,
                 "-g", str(int(fr * 2)),
                 "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
-                "-f", "flv", f"rtmp://a.rtmp.youtube.com/live2/{api_key}"
-            ]
-            
+            ] + self._stream_outputs(f"rtmp://a.rtmp.youtube.com/live2/{api_key}")
+
             self.logger.info("Starting ffmpeg process for YouTube stream...")
             self.ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
 

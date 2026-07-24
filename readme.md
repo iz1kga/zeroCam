@@ -54,6 +54,25 @@ Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi
 
 Nel titolo della diretta puoi usare i segnaposto `{date}` e `{time}`. Il broadcast viene riusato finché resta valido e ricreato automaticamente quando YouTube lo chiude (limite di 12 ore).
 
+### Ritrasmissione su più destinazioni
+
+In **Config → Stream**, nel campo *Destinazioni aggiuntive*, puoi elencare altri URL RTMP (uno per riga) verso cui inviare lo stesso flusso: Twitch, un server tuo, un'altra piattaforma. Il video viene codificato una volta sola e semplicemente duplicato, quindi il carico sulla CPU non cambia. Una destinazione irraggiungibile non interrompe le altre.
+
+### Timelapse settimanale
+
+Ogni scatto lascia una copia ridimensionata in una cartella dedicata (`timelapse_frames/`); una volta a settimana i fotogrammi vengono montati con ffmpeg e il video caricato sul canale YouTube. L'archivio di debug (*Camera → Archive Images*) è un'altra cosa e non serve a questo.
+
+Si configura in **Config → Timelapse**: giorno e ora del montaggio, fps, risoluzione dei fotogrammi, qualità di codifica, titolo e privacy del video. Nel titolo e nella descrizione sono disponibili i segnaposto `{from}`, `{to}`, `{date}` e `{frames}`.
+
+Due note pratiche:
+
+* Le credenziali sono le stesse della diretta, ma serve anche lo scope `youtube.upload`. Se il refresh token è stato generato prima di questa funzione, va rigenerato con `yt_oauth_setup.py`.
+* I fotogrammi occupano spazio: con uno scatto ogni 10 minuti a 2560px si va sull'ordine del gigabyte al mese. Il parametro *Conserva i frame* cancella automaticamente quelli più vecchi, e la pagina Timelapse mostra sempre quanti sono e quanto occupano.
+
+Il pulsante *Genera e pubblica ora* monta subito il timelapse senza aspettare la scadenza settimanale, utile per provare la configurazione.
+
+Nella stessa pagina c'è una galleria per scorrere i fotogrammi raccolti: si sceglie il giorno, si scorre con il cursore o con le frecce, e il pulsante *Riproduci* fa un'anteprima animata a 2, 5 o 10 fotogrammi al secondo. È il modo più rapido per controllare cosa finirà nel video prima di montarlo.
+
 ---
 
 ## 📜 Licenza
@@ -131,6 +150,25 @@ The RTMP push alone is no longer enough: YouTube retired "Stream now", so the st
 3.  In the web interface, page **Config → YouTube Live**: enable *Auto broadcast* and paste Client ID, Client Secret and Refresh Token. The stream key stays the one in **Stream Parameters**.
 
 The broadcast title supports the `{date}` and `{time}` placeholders. An existing broadcast is reused while valid and recreated automatically once YouTube closes it (12 hour limit).
+
+### Restreaming to several destinations
+
+Under **Config → Stream**, the *Destinazioni aggiuntive* field takes extra RTMP URLs (one per line) to push the same feed to: Twitch, your own server, another platform. The video is encoded once and simply duplicated, so CPU usage does not change. An unreachable destination does not bring the others down.
+
+### Weekly timelapse
+
+Every capture leaves a downscaled copy in a dedicated folder (`timelapse_frames/`); once a week the frames are assembled with ffmpeg and the video is uploaded to the YouTube channel. The debug archive (*Camera → Archive Images*) is a different thing and is not involved.
+
+Configure it under **Config → Timelapse**: build day and time, fps, frame resolution, encoding quality, video title and privacy. Title and description accept the `{from}`, `{to}`, `{date}` and `{frames}` placeholders.
+
+Two practical notes:
+
+* Credentials are the same as the live broadcast, but the `youtube.upload` scope is also required. A refresh token generated before this feature must be regenerated with `yt_oauth_setup.py`.
+* Frames take space: one capture every 10 minutes at 2560px lands in the order of a gigabyte per month. The *retention* setting removes the oldest ones automatically, and the Timelapse page always shows how many frames there are and how much they take.
+
+The *Genera e pubblica ora* button builds the timelapse immediately instead of waiting for the weekly schedule, which is handy to check the configuration.
+
+The same page holds a gallery to browse the collected frames: pick a day, scrub with the slider or the arrows, and the *Riproduci* button plays an animated preview at 2, 5 or 10 frames per second. It is the quickest way to check what will end up in the video before building it.
 
 ---
 

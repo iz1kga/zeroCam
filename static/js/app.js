@@ -36,7 +36,12 @@ const FieldRenderer = defineComponent({
       set(v) { if (this.model) this.model[this.keyName] = v; }
     },
     fieldType() { return this.schema?.[this.keyName]?.type || 'text'; },
-    options() { return this.schema?.[this.keyName]?.options || []; }
+    options() { return this.schema?.[this.keyName]?.options || []; },
+    // Liste di stringhe (es. destinazioni RTMP): una per riga nel textarea
+    listText: {
+      get() { return Array.isArray(this.value) ? this.value.join('\n') : (this.value || ''); },
+      set(v) { this.value = v.split('\n').map(s => s.trim()).filter(s => s.length > 0); }
+    }
   },
   // 2. Applica la prop agli elementi del template
   template: `
@@ -44,6 +49,7 @@ const FieldRenderer = defineComponent({
       <select v-if="fieldType === 'select'" v-model="value" class="form-select" :disabled="disabled">
         <option v-for="(opt, index) in options" :value="index">[[ opt ]]</option>
       </select>
+      <textarea v-else-if="fieldType === 'textlist'" class="form-control" rows="3" v-model="listText" :disabled="disabled"></textarea>
       <input v-else-if="fieldType === 'number'" type="number" class="form-control" v-model.number="value" :disabled="disabled">
       <div v-else-if="fieldType === 'password'" class="input-group">
         <input :type="showPassword ? 'text' : 'password'" class="form-control" v-model="value" :disabled="disabled">
@@ -68,14 +74,16 @@ const startApp = async () => {
     statusTemplate,
     logTemplate,
     securityTemplate,
-    licenseTemplate
+    licenseTemplate,
+    timelapseTemplate
   ] = await Promise.all([
     loadTemplate('config'),
     loadTemplate('control'),
     loadTemplate('status'),
     loadTemplate('log'),
     loadTemplate('security'),
-    loadTemplate('license')
+    loadTemplate('license'),
+    loadTemplate('timelapse')
   ]);
 
   const app = createApp({
@@ -103,7 +111,9 @@ const startApp = async () => {
         },
         changePasswordMessage: '',
         changePasswordSuccess: false,
-        isChangingPassword: false
+        isChangingPassword: false,
+        timelapseStats: null,
+        timelapseRunning: false
         // Rimuoviamo i grafici da qui per renderli non reattivi
       };
     },
@@ -116,6 +126,9 @@ const startApp = async () => {
       // Inizializziamo i grafici come proprietà non reattive dell'istanza
       this.tempChart = null;
       this.cpuChart = null;
+      // Esito noto prima di avviare un montaggio: serve solo a capire quando
+      // ne compare uno nuovo, non deve essere reattivo.
+      this.timelapseStartedAt = null;
     },
     mounted() {
       Promise.all([
@@ -141,6 +154,7 @@ const startApp = async () => {
       clearInterval(this.imageInterval);
       clearInterval(this.captureStatusTimer);
       clearInterval(this.statsTimer);
+      clearInterval(this.timelapseTimer);
     },
     methods: {
       async saveConfig() {
@@ -157,6 +171,47 @@ const startApp = async () => {
           if (error.message !== 'Session expired') {
             console.error('Errore durante lo scatto:', error);
             alert('Errore durante lo scatto. Controlla i log.');
+          }
+        }
+      },
+      async loadTimelapseStats() {
+        try {
+          const res = await secureFetch('/api/timelapse');
+          this.timelapseStats = await res.json();
+          // Il montaggio prosegue in background: finche' non compare un esito
+          // piu' recente si continua a mostrare lo stato "in corso".
+          if (this.timelapseRunning && this.timelapseStats.last_result) {
+            if (this.timelapseStats.last_result.at !== this.timelapseStartedAt) {
+              this.timelapseRunning = false;
+            }
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            console.error('Errore nel leggere lo stato del timelapse:', error);
+          }
+        }
+      },
+      async runTimelapse(upload) {
+        const question = upload
+          ? 'Montare e pubblicare subito il timelapse su YouTube?'
+          : 'Montare subito il timelapse senza pubblicarlo?';
+        if (!confirm(question)) return;
+        try {
+          this.timelapseStartedAt = this.timelapseStats?.last_result?.at || null;
+          const res = await secureFetch('/api/timelapse/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ upload: upload })
+          });
+          if (res.ok) {
+            this.timelapseRunning = true;
+          } else {
+            alert('Impossibile avviare il montaggio.');
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            console.error('Errore avviando il timelapse:', error);
+            alert('Errore avviando il timelapse. Controlla i log.');
           }
         }
       },
@@ -332,6 +387,13 @@ const startApp = async () => {
           this.startLogPolling();
         } else if (oldVal === 'log') {
           this.stopLogPolling();
+        }
+
+        if (newVal === 'timelapse') {
+          this.loadTimelapseStats();
+          this.timelapseTimer = setInterval(this.loadTimelapseStats, 5000);
+        } else if (oldVal === 'timelapse') {
+          clearInterval(this.timelapseTimer);
         }
 
         if (newVal === 'status') {
@@ -601,6 +663,122 @@ const startApp = async () => {
   });
   app.component('page-license', {
     template: licenseTemplate
+  });
+  app.component('page-timelapse', {
+    props: ['config', 'schema', 'timelapseStats', 'timelapseRunning'],
+    emits: ['run-timelapse', 'refresh-timelapse'],
+    data() {
+      return {
+        galleryDays: [],
+        galleryDay: null,
+        galleryFrames: [],
+        galleryIndex: 0,
+        galleryPlaying: false,
+        gallerySpeed: 5
+      };
+    },
+    computed: {
+      galleryFrameUrl() {
+        const name = this.galleryFrames[this.galleryIndex];
+        return name ? `/timelapse/frame/${name}` : '';
+      },
+      galleryFrameLabel() {
+        const name = this.galleryFrames[this.galleryIndex];
+        if (!name) return '';
+        // Nome nel formato YYYYMMDD-HHMMSS.jpg
+        const t = name.slice(9, 15);
+        return `${t.slice(0, 2)}:${t.slice(2, 4)}:${t.slice(4, 6)}`;
+      }
+    },
+    created() {
+      // Timer non reattivo, come per i grafici
+      this.galleryTimer = null;
+    },
+    mounted() {
+      this.loadGalleryDays();
+    },
+    beforeUnmount() {
+      this.stopGalleryPlay();
+    },
+    watch: {
+      gallerySpeed() {
+        // Cambiare velocita' durante la riproduzione riavvia il timer
+        if (this.galleryPlaying) {
+          this.stopGalleryPlay();
+          this.startGalleryPlay();
+        }
+      }
+    },
+    methods: {
+      async loadGalleryDays() {
+        try {
+          const res = await secureFetch('/api/timelapse/frames');
+          const data = await res.json();
+          this.galleryDays = data.days || [];
+          if (this.galleryDays.length > 0) {
+            const stillThere = this.galleryDays.some(d => d.day === this.galleryDay);
+            await this.selectGalleryDay(stillThere ? this.galleryDay : this.galleryDays[0].day);
+          } else {
+            this.galleryFrames = [];
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            console.error('Errore nel caricare i giorni della galleria:', error);
+          }
+        }
+      },
+      async selectGalleryDay(day) {
+        this.stopGalleryPlay();
+        try {
+          const res = await secureFetch('/api/timelapse/frames?day=' + encodeURIComponent(day));
+          const data = await res.json();
+          this.galleryDay = day;
+          this.galleryFrames = data.frames || [];
+          this.galleryIndex = 0;
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            console.error('Errore nel caricare i fotogrammi:', error);
+          }
+        }
+      },
+      stepGallery(delta) {
+        this.stopGalleryPlay();
+        const last = this.galleryFrames.length - 1;
+        this.galleryIndex = Math.min(last, Math.max(0, this.galleryIndex + delta));
+      },
+      toggleGalleryPlay() {
+        if (this.galleryPlaying) {
+          this.stopGalleryPlay();
+        } else {
+          this.startGalleryPlay();
+        }
+      },
+      startGalleryPlay() {
+        if (this.galleryFrames.length < 2) return;
+        // Riparte dall'inizio se siamo gia' in fondo
+        if (this.galleryIndex >= this.galleryFrames.length - 1) this.galleryIndex = 0;
+        this.galleryPlaying = true;
+        this.galleryTimer = setInterval(() => {
+          if (this.galleryIndex >= this.galleryFrames.length - 1) {
+            this.stopGalleryPlay();
+            return;
+          }
+          this.galleryIndex += 1;
+        }, 1000 / this.gallerySpeed);
+      },
+      stopGalleryPlay() {
+        clearInterval(this.galleryTimer);
+        this.galleryPlaying = false;
+      },
+      formatBytes(bytes) {
+        if (!bytes) return '0 B';
+        const units = ['B', 'kB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return (bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+      }
+    },
+    components: { FieldRenderer },
+    template: timelapseTemplate
   });
 
   app.config.compilerOptions.delimiters = ['[[', ']]'];

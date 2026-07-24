@@ -75,5 +75,14 @@
   "dvr": { "type": "boolean" },
   "record": { "type": "boolean" },
   "made_for_kids": { "type": "boolean" },
-  "end_on_shutdown": { "type": "boolean" }
+  "end_on_shutdown": { "type": "boolean" },
+  "extra_destinations": { "type": "textlist" },
+  "time": { "type": "text" },
+  "frame_width": { "type": "number" },
+  "frame_quality": { "type": "number" },
+  "crf": { "type": "number" },
+  "threads": { "type": "number" },
+  "min_frames": { "type": "number" },
+  "retention_weeks": { "type": "number" },
+  "keep_local": { "type": "boolean" }
 }
