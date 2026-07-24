@@ -379,8 +379,18 @@ class PiCameraDevice:
             return ["-f", "flv", primary_url]
 
         destinations = "|".join(f"[f=flv:onfail=ignore]{url}" for url in [primary_url] + extra)
-        self.logger.info(f"Restreaming to {len(extra) + 1} destinations.")
-        return ["-map", "0:v", "-map", "1:a", "-f", "tee", destinations]
+        # Solo gli host: l'ultimo segmento dell'URL è la stream key e non
+        # deve finire nel log.
+        hosts = [url.split("/")[2] if "//" in url else "?" for url in [primary_url] + extra]
+        self.logger.info(f"Restreaming to {len(extra) + 1} destinations: {', '.join(hosts)}")
+        # global_header è raccomandato dalla documentazione di 'tee' quando i
+        # formati di uscita richiedono header globali, come flv con H.264/AAC:
+        # senza, le uscite oltre la prima possono risultare malformate.
+        return [
+            "-flags", "+global_header",
+            "-map", "0:v", "-map", "1:a",
+            "-f", "tee", destinations,
+        ]
 
     def _still_sensor_view(self):
         """
