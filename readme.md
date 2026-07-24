@@ -40,6 +40,20 @@ Una volta completata l'installazione, puoi accedere all'interfaccia web del disp
 
 Ora puoi configurare la tua telecamera e iniziare a usarla!
 
+### Diretta YouTube automatica
+
+Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi la sola chiave di streaming non fa andare in onda nulla finché non si apre la Live Control Room. zeroCAM può creare e collegare il broadcast da solo, con avvio automatico e senza interruzione automatica, così la diretta parte da sé e sopravvive alle pause di pochi secondi durante la cattura della foto.
+
+1.  Sulla [Google Cloud Console](https://console.cloud.google.com/): crea un progetto, abilita **YouTube Data API v3**, configura la schermata di consenso OAuth e crea credenziali OAuth di tipo **Applicazione desktop**.
+2.  Su un PC con browser esegui lo script di setup (serve solo Python e `requests`):
+    ```bash
+    python3 installation_tools/yt_oauth_setup.py
+    ```
+    Inserisci Client ID e Client Secret, autorizza l'accesso e annota il **refresh token** stampato.
+3.  Nell'interfaccia web, pagina **Config → YouTube Live**: attiva *Auto broadcast* e incolla Client ID, Client Secret e Refresh Token. La stream key resta quella di **Stream Parameters**.
+
+Nel titolo della diretta puoi usare i segnaposto `{date}` e `{time}`. Il broadcast viene riusato finché resta valido e ricreato automaticamente quando YouTube lo chiude (limite di 12 ore).
+
 ---
 
 ## 📜 Licenza
@@ -103,6 +117,20 @@ Once the installation is complete, you can access the device's web interface:
 * **Password:** The one you provided during installation.
 
 Now you can configure your camera and start using it!
+
+### Automatic YouTube broadcast
+
+The RTMP push alone is no longer enough: YouTube retired "Stream now", so the stream key by itself never goes on air until someone opens the Live Control Room. zeroCAM can create and bind the broadcast on its own, with auto-start enabled and auto-stop disabled, so the stream goes live by itself and survives the few-second pauses taken to capture the still image.
+
+1.  On the [Google Cloud Console](https://console.cloud.google.com/): create a project, enable **YouTube Data API v3**, configure the OAuth consent screen and create **Desktop app** OAuth credentials.
+2.  On a machine with a browser, run the setup script (only Python and `requests` are needed):
+    ```bash
+    python3 installation_tools/yt_oauth_setup.py
+    ```
+    Enter Client ID and Client Secret, authorize access and note the printed **refresh token**.
+3.  In the web interface, page **Config → YouTube Live**: enable *Auto broadcast* and paste Client ID, Client Secret and Refresh Token. The stream key stays the one in **Stream Parameters**.
+
+The broadcast title supports the `{date}` and `{time}` placeholders. An existing broadcast is reused while valid and recreated automatically once YouTube closes it (12 hour limit).
 
 ---
 

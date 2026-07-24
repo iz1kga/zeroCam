@@ -66,5 +66,14 @@
   "MinTargetBrightness": { "type": "number" },
   "MaxTargetBrightness": { "type": "number" },
   "token": { "type": "password" },
-  "send_timestamp": { "type": "boolean" }
+  "send_timestamp": { "type": "boolean" },
+  "client_id": { "type": "text" },
+  "client_secret": { "type": "password" },
+  "refresh_token": { "type": "password" },
+  "title": { "type": "text" },
+  "description": { "type": "text" },
+  "dvr": { "type": "boolean" },
+  "record": { "type": "boolean" },
+  "made_for_kids": { "type": "boolean" },
+  "end_on_shutdown": { "type": "boolean" }
 }

@@ -224,6 +224,10 @@ class ZeroCamApp:
 
     def _restart_stream_if_enabled(self, day_period):
         """Restarts the YouTube stream if it's enabled in the config."""
+        # Il broadcast va predisposto PRIMA che ffmpeg riprenda a pubblicare:
+        # con enableAutoStart va in onda appena rileva l'ingest RTMP.
+        if self.config_manager.get("streamParameters", {}).get("enabled", False):
+            self.components.youtube_live.ensure_broadcast()
         self.components.camera.streamStart(day_period)
 
     def hard_reset_camera(self):
@@ -281,7 +285,10 @@ class ZeroCamApp:
         if hasattr(self.components.camera, 'running') and self.components.camera.running:
             self.logger.info("Stopping active stream before shutdown...")
             self.components.camera.streamStop()
-        
+
+        if self.config_manager.get("youtubeLive", {}).get("end_on_shutdown", False):
+            self.components.youtube_live.end_broadcast()
+
         self.mqtt_manager.disconnect()
         
         self.logger.warning("Graceful shutdown complete. Exiting to trigger service restart.")
