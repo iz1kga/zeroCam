@@ -67,13 +67,15 @@ const startApp = async () => {
     controlTemplate,
     statusTemplate,
     logTemplate,
-    securityTemplate
+    securityTemplate,
+    licenseTemplate
   ] = await Promise.all([
     loadTemplate('config'),
     loadTemplate('control'),
     loadTemplate('status'),
     loadTemplate('log'),
-    loadTemplate('security')
+    loadTemplate('security'),
+    loadTemplate('license')
   ]);
 
   const app = createApp({
@@ -596,6 +598,9 @@ const startApp = async () => {
     template: securityTemplate,
     props: ['passwords', 'isLoading', 'message', 'messageClass'],
     emits: ['change-password']
+  });
+  app.component('page-license', {
+    template: licenseTemplate
   });
 
   app.config.compilerOptions.delimiters = ['[[', ']]'];

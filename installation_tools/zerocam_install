@@ -138,7 +138,10 @@ TEMP_ZIP=$(mktemp)
 wget -O "$TEMP_ZIP" "$RELEASE_URL"
 unzip "$TEMP_ZIP" -d "$APP_DIR"
 rm "$TEMP_ZIP"
-echo_success "Applicazione estratta in $APP_DIR."
+# Il tag installato e' l'unica fonte attendibile della versione: l'archivio
+# potrebbe non avere il segnaposto sostituito.
+echo "$RELEASE_TAG" > "$APP_DIR/VERSION"
+echo_success "Applicazione $RELEASE_TAG estratta in $APP_DIR."
 
 # Passo 7: Ripristino della configurazione dal backup
 # ==============================================================================
