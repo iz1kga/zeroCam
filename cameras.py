@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageStat
 import io
 from io import BytesIO
 from fractions import Fraction
-from lib.helpers import logRecursive
+from lib.helpers import logRecursive, load_privacy_rois, FramePrivacyMasker
 import random
 import threading
 import subprocess
@@ -415,6 +415,13 @@ class PiCameraDevice:
         self.ffmpeg_proc = None
         output_image_path = None
 
+        # Le privacy mask vengono rasterizzate qui, una volta per avvio dello
+        # streaming: le modifiche fatte dall'interfaccia web entrano in vigore
+        # al ciclo di cattura successivo, quando lo stream viene riavviato.
+        rois = load_privacy_rois(self.logger)
+        yt_masker = FramePrivacyMasker(rois, w, h, logger=self.logger) if yt_enabled else None
+        onvif_masker = FramePrivacyMasker(rois, onvif_w, onvif_h, logger=self.logger) if onvif_enabled else None
+
         if yt_enabled:
             api_key = self.streamParams["yt_api_key"]
             bitrate = self.streamParams.get("bitrate", "4500k")
@@ -450,6 +457,8 @@ class PiCameraDevice:
                 # --- Gestione Stream YouTube ---
                 if yt_enabled and self.ffmpeg_proc and self.ffmpeg_proc.stdin:
                     main_frame = request.make_array("main")
+                    if yt_masker.active:
+                        main_frame = yt_masker.apply_yuv420(main_frame)
                     if select.select([], [self.ffmpeg_proc.stdin], [], 0)[1]:
                         try:
                             self.ffmpeg_proc.stdin.write(main_frame.tobytes())
@@ -465,6 +474,8 @@ class PiCameraDevice:
                     current_time = time.time()
                     if current_time - last_frame_save_time >= 1.0: # Salva al massimo un frame al secondo
                         lores_frame = request.make_array("lores")
+                        if onvif_masker.active:
+                            lores_frame = onvif_masker.apply_rgb(lores_frame)
                         try:
                             rgb_frame = cv2.cvtColor(lores_frame, cv2.COLOR_BGR2RGB)
                             img = Image.fromarray(rgb_frame, 'RGB')

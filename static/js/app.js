@@ -478,7 +478,7 @@ const startApp = async () => {
           console.warn("Disegno ROI annullato: servono almeno 3 punti.");
           return;
         }
-        const newRoi = { id: Date.now(), points: this.currentPoints };
+        const newRoi = { id: Date.now(), points: this.currentPoints, mode: 'blur' };
         this.rois.push(newRoi);
         this.currentPoints = [];
         this.savePrivacyMask();
@@ -505,6 +505,12 @@ const startApp = async () => {
 
       deleteRoi(roiId) {
         this.rois = this.rois.filter(roi => roi.id !== roiId);
+        this.savePrivacyMask();
+      },
+
+      // Sfocatura o copertura completa dell'area
+      setRoiMode(roi, mode) {
+        roi.mode = mode;
         this.savePrivacyMask();
       },
 

@@ -17,6 +17,41 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import json
+import logging
+import cv2
+import numpy as np
+
+PRIVACY_MASK_PATH = '.privacy_mask.json'
+
+
+def load_privacy_rois(logger=None):
+    """Carica le ROI delle privacy mask, ritornando una lista vuota se assenti."""
+    logger = logger or logging.getLogger(__name__)
+    try:
+        with open(PRIVACY_MASK_PATH, 'r') as f:
+            rois = json.load(f)
+            logger.info(f"Loaded {len(rois)} privacy mask(s) from {PRIVACY_MASK_PATH}.")
+            return rois
+    except FileNotFoundError:
+        logger.info(f"{PRIVACY_MASK_PATH} not found. No privacy masks will be applied.")
+        return []
+    except json.JSONDecodeError:
+        logger.error(f"{PRIVACY_MASK_PATH} is corrupted. Could not load privacy masks.")
+        return []
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while loading ROIs: {e}")
+        return []
+
+
+def split_rois_by_mode(rois):
+    """Separa le ROI fra quelle da sfocare e quelle da coprire completamente."""
+    blur, filled = [], []
+    for roi in rois or []:
+        points = roi.get('points')
+        if not points or len(points) < 3:
+            continue
+        (filled if roi.get('mode') == 'filled' else blur).append(points)
+    return blur, filled
 
 class CryptoHelper:
     def __init__(self, secret_key, logger):
@@ -437,10 +472,23 @@ def get_raspberry_pi_stats():
     return stats
 
 
+def _polygon_mask(size, polygons):
+    """Rasterizza dei poligoni (punti in percentuale) su una maschera 'L'."""
+    width, height = size
+    mask = Image.new('L', size, 0)
+    draw = ImageDraw.Draw(mask)
+    for points in polygons:
+        draw.polygon(
+            [((p['x'] / 100.0) * width, (p['y'] / 100.0) * height) for p in points],
+            fill=255
+        )
+    return mask
+
+
 class PrivacyMasker:
     """
-    Applies privacy masks to an image by blurring polygonal regions
-    defined in a JSON file.
+    Applies privacy masks to an image, either blurring or completely
+    covering the polygonal regions defined in a JSON file.
     """
     def __init__(self, blur_radius=10, logger=None):
         """
@@ -455,67 +503,150 @@ class PrivacyMasker:
         self.rois = self._load_rois()
 
     def _load_rois(self):
-        """
-        Loads the ROI polygons from the .privacy_mask.json file.
-        Returns an empty list if the file is not found or is invalid.
-        """
-        try:
-            with open('.privacy_mask.json', 'r') as f:
-                rois = json.load(f)
-                self.logger.info(f"Loaded {len(rois)} privacy mask(s) from .privacy_mask.json.")
-                return rois
-        except FileNotFoundError:
-            self.logger.info(".privacy_mask.json not found. No privacy masks will be applied.")
-            return []
-        except json.JSONDecodeError:
-            self.logger.error(".privacy_mask.json is corrupted. Could not load privacy masks.")
-            return []
-        except Exception as e:
-            self.logger.error(f"An unexpected error occurred while loading ROIs: {e}")
-            return []
+        return load_privacy_rois(self.logger)
 
     def apply_masks(self, image_buffer):
         self.rois = self._load_rois()  # Reload ROIs in case the file has changed
-        if not self.rois:
+        blur_polygons, filled_polygons = split_rois_by_mode(self.rois)
+        if not blur_polygons and not filled_polygons:
             return image_buffer
 
         try:
             self.logger.info("Applying privacy masks to image...")
             original_image = Image.open(image_buffer)
-            
-            # Ottieni le dimensioni dell'immagine che stai processando
-            img_width, img_height = original_image.size
+            size = original_image.size
 
-            blurred_image = original_image.filter(ImageFilter.GaussianBlur(radius=self.blur_radius))
-            mask = Image.new('L', original_image.size, 0)
-            mask_draw = ImageDraw.Draw(mask)
+            if blur_polygons:
+                blurred_image = original_image.filter(ImageFilter.GaussianBlur(radius=self.blur_radius))
+                original_image.paste(blurred_image, (0, 0), _polygon_mask(size, blur_polygons))
 
-            for roi in self.rois:
-                points = roi.get('points')
-                if not points or len(points) < 3:
-                    continue
-                
-                # --- MODIFICA CHIAVE: Converti i punti da % a pixel ---
-                point_tuples = [
-                    (
-                        (p['x'] / 100.0) * img_width, 
-                        (p['y'] / 100.0) * img_height
-                    ) 
-                    for p in points
-                ]
-                # --------------------------------------------------
-                
-                mask_draw.polygon(point_tuples, fill=255)
-
-            original_image.paste(blurred_image, (0, 0), mask)
+            if filled_polygons:
+                opaque = Image.new(original_image.mode, size, 0)
+                original_image.paste(opaque, (0, 0), _polygon_mask(size, filled_polygons))
 
             out_buffer = io.BytesIO()
             original_image.save(out_buffer, format='JPEG')
             out_buffer.seek(0)
-            
+
             self.logger.info("Privacy masks applied successfully.")
             return out_buffer
-            
+
         except Exception as e:
             self.logger.error(f"Failed to apply privacy masks: {e}", exc_info=True)
             return image_buffer
+
+
+class FramePrivacyMasker:
+    """
+    Applica le privacy mask ai frame video grezzi (array numpy) invece che
+    a un JPEG.
+
+    I poligoni vengono rasterizzati una sola volta alla risoluzione del
+    frame: per ogni fotogramma resta solo un'indicizzazione booleana, così
+    il costo regge il framerate dello streaming. La sfocatura è ottenuta
+    riducendo e reingrandendo la regione interessata, molto più economica
+    di una gaussiana a piena risoluzione e visivamente equivalente.
+    """
+
+    def __init__(self, rois, width, height, blur_radius=10, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
+        self.width = width
+        self.height = height
+        self.factor = max(2, int(blur_radius))
+
+        blur_polygons, filled_polygons = split_rois_by_mode(rois)
+        self.blur_mask = np.array(_polygon_mask((width, height), blur_polygons)) > 0
+        self.fill_mask = np.array(_polygon_mask((width, height), filled_polygons)) > 0
+        self.blur_box = self._bounding_box(self.blur_mask)
+        self.has_blur = self.blur_box is not None
+        self.has_fill = bool(self.fill_mask.any())
+        self.active = self.has_blur or self.has_fill
+
+        # Maschere per i piani cromatici, sottocampionati di un fattore 2 e
+        # impacchettati come in I420 (due righe di croma per riga di buffer).
+        self._blur_chroma = self._chroma_mask(self.blur_mask)
+        self._fill_chroma = self._chroma_mask(self.fill_mask)
+
+        if self.active:
+            self.logger.info(
+                f"Frame privacy masks ready for {width}x{height}: "
+                f"{len(blur_polygons)} blurred, {len(filled_polygons)} filled."
+            )
+
+    @staticmethod
+    def _bounding_box(mask):
+        """Riquadro che racchiude la maschera, o None se vuota."""
+        if not mask.any():
+            return None
+        rows = np.where(np.any(mask, axis=1))[0]
+        cols = np.where(np.any(mask, axis=0))[0]
+        return int(cols[0]), int(rows[0]), int(cols[-1]) + 1, int(rows[-1]) + 1
+
+    def _chroma_mask(self, mask):
+        """Sottocampiona la maschera per i piani U/V nel layout impacchettato."""
+        h, w = self.height, self.width
+        if h % 4 or w % 2 or not mask.any():
+            return None
+        # OR sui blocchi 2x2: un pixel cromatico è coperto se lo è almeno
+        # uno dei quattro pixel di luminanza corrispondenti.
+        small = (mask[0::2, 0::2] | mask[1::2, 0::2] |
+                 mask[0::2, 1::2] | mask[1::2, 1::2])
+        return np.ascontiguousarray(small).reshape(h // 4, w)
+
+    def _blur_region(self, region):
+        h, w = region.shape[:2]
+        small = cv2.resize(region, (max(1, w // self.factor), max(1, h // self.factor)),
+                           interpolation=cv2.INTER_AREA)
+        return cv2.resize(small, (w, h), interpolation=cv2.INTER_LINEAR)
+
+    @staticmethod
+    def _writable(frame):
+        return frame if frame.flags.writeable else frame.copy()
+
+    def apply_rgb(self, frame):
+        """Applica le maschere a un frame a 3 canali (RGB o BGR), in place."""
+        if not self.active:
+            return frame
+        try:
+            frame = self._writable(frame)
+            if self.has_blur:
+                x0, y0, x1, y1 = self.blur_box
+                region = frame[y0:y1, x0:x1]
+                selection = self.blur_mask[y0:y1, x0:x1]
+                region[selection] = self._blur_region(region)[selection]
+            if self.has_fill:
+                frame[self.fill_mask] = 0
+        except Exception as e:
+            self.logger.error(f"Failed to apply privacy masks to frame: {e}", exc_info=True)
+        return frame
+
+    def apply_yuv420(self, frame):
+        """Applica le maschere a un frame YUV420 planare (h*3/2, w), in place."""
+        if not self.active:
+            return frame
+        try:
+            frame = self._writable(frame)
+            h, w = self.height, self.width
+            luma = frame[:h]
+            chroma_planes = (frame[h:h + h // 4], frame[h + h // 4:h + h // 2])
+
+            if self.has_blur:
+                x0, y0, x1, y1 = self.blur_box
+                region = luma[y0:y1, x0:x1]
+                selection = self.blur_mask[y0:y1, x0:x1]
+                region[selection] = self._blur_region(region)[selection]
+                # Sui piani cromatici, a metà risoluzione, si appiattisce il
+                # colore sulla media della regione: sfocarli separatamente
+                # costerebbe di più senza aggiungere nulla di riconoscibile.
+                if self._blur_chroma is not None:
+                    for plane in chroma_planes:
+                        plane[self._blur_chroma] = int(plane[self._blur_chroma].mean())
+
+            if self.has_fill:
+                luma[self.fill_mask] = 0
+                if self._fill_chroma is not None:
+                    for plane in chroma_planes:
+                        plane[self._fill_chroma] = 128  # croma neutro: nero pieno
+        except Exception as e:
+            self.logger.error(f"Failed to apply privacy masks to frame: {e}", exc_info=True)
+        return frame
