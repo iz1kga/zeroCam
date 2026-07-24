@@ -26,7 +26,7 @@ Il metodo raccomandato per installare zeroCAM è utilizzare lo script di install
 
 1.  Scarica ed esegui lo script con un unico comando:
     ```bash
-    wget https://www.iz1kga.it/zeroCam/zeroCamInstall && sudo bash zeroCamInstall
+    wget -O zeroCamInstall https://www.iz1kga.it/zeroCam/zeroCamInstall && sudo bash zeroCamInstall
     ```
 2.  Segui le istruzioni a schermo. Ti verrà chiesto di inserire la versione di zeroCAM da installare e di impostare una password per l'amministratore.
 
@@ -104,7 +104,7 @@ The recommended way to install zeroCAM is by using the provided installation scr
 
 1.  Download and run the script with a single command:
     ```bash
-    wget https://www.iz1kga.it/zeroCam/zeroCamInstall && sudo bash zeroCamInstall
+    wget -O zeroCamInstall https://www.iz1kga.it/zeroCam/zeroCamInstall && sudo bash zeroCamInstall
     ```
 2.  Follow the on-screen instructions. You will be asked to enter the zeroCAM version to install and to set an administrator password.
 
