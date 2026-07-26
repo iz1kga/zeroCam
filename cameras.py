@@ -113,7 +113,7 @@ class PiCameraDevice:
         self.camera = Picamera2()
         self.running = False
         # Define and create the shared memory directory for stream frames
-        self.shmem_path = '/usr/local/zerocam/app/shmem'
+        self.shmem_path = paths.SHMEM_DIR
         os.makedirs(self.shmem_path, exist_ok=True)
         self.logger.info(f"Shared memory path for stream frames set to: {self.shmem_path}")
 
@@ -544,7 +544,9 @@ class PiCameraDevice:
             self.logger.info(f"Sensor view - still: {still_view}, stream: {stream_view}")
             rois = remap_rois_to_view(rois, still_view, stream_view, self.logger)
         yt_masker = FramePrivacyMasker(rois, w, h, logger=self.logger) if yt_enabled else None
-        onvif_masker = FramePrivacyMasker(rois, onvif_w, onvif_h, logger=self.logger) if onvif_enabled else None
+        # Il flusso lores serve a ONVIF e all'anteprima della pagina Cam
+        # Control, quindi viene mascherato ogni volta che si trasmette.
+        lores_masker = FramePrivacyMasker(rois, onvif_w, onvif_h, logger=self.logger)
 
         if yt_enabled:
             api_key = self.streamParams["yt_api_key"]
@@ -572,11 +574,11 @@ class PiCameraDevice:
             self.logger.info("Starting ffmpeg process for YouTube stream...")
             self.ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)
 
-        if onvif_enabled:
-            # Assicura che la directory esista
-            os.makedirs(self.shmem_path, exist_ok=True)
-            output_image_path = os.path.join(self.shmem_path, 'stream_latest.jpg')
-            self.logger.info(f"ONVIF frame saving enabled. Path: {output_image_path}")
+        # Un fotogramma al secondo su tmpfs: lo consuma ONVIF e lo mostra
+        # l'anteprima in diretta della pagina Cam Control.
+        os.makedirs(self.shmem_path, exist_ok=True)
+        output_image_path = paths.STREAM_PREVIEW
+        self.logger.info(f"Stream frame saving enabled. Path: {output_image_path}")
 
         # --- 4. LOOP PRINCIPALE DELLO STREAMING ---
         self.running = True
@@ -602,21 +604,20 @@ class PiCameraDevice:
                     else:
                         self.logger.warning("Frame skipped for YouTube (ffmpeg busy)")
                 
-                # --- Gestione Stream ONVIF (salvataggio frame) ---
-                if onvif_enabled:
-                    current_time = time.time()
-                    if current_time - last_frame_save_time >= 1.0: # Salva al massimo un frame al secondo
-                        lores_frame = request.make_array("lores")
-                        if onvif_masker.active:
-                            lores_frame = onvif_masker.apply_rgb(lores_frame)
-                        try:
-                            rgb_frame = cv2.cvtColor(lores_frame, cv2.COLOR_BGR2RGB)
-                            img = Image.fromarray(rgb_frame, 'RGB')
-                            img.save(output_image_path, 'JPEG', quality=85)
-                            last_frame_save_time = current_time
-                            self.logger.debug(f"Saved ONVIF frame to {output_image_path}")
-                        except Exception as e:
-                            self.logger.error(f"Failed to save ONVIF stream frame: {e}")
+                # --- Fotogramma condiviso (ONVIF e anteprima web) ---
+                current_time = time.time()
+                if current_time - last_frame_save_time >= 1.0: # Salva al massimo un frame al secondo
+                    lores_frame = request.make_array("lores")
+                    if lores_masker.active:
+                        lores_frame = lores_masker.apply_rgb(lores_frame)
+                    try:
+                        rgb_frame = cv2.cvtColor(lores_frame, cv2.COLOR_BGR2RGB)
+                        img = Image.fromarray(rgb_frame, 'RGB')
+                        img.save(output_image_path, 'JPEG', quality=85)
+                        last_frame_save_time = current_time
+                        self.logger.debug(f"Saved stream frame to {output_image_path}")
+                    except Exception as e:
+                        self.logger.error(f"Failed to save stream frame: {e}")
 
             except Exception as e:
                 self.logger.error(f"Streaming Error: {e}", exc_info=True)

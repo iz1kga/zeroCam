@@ -50,6 +50,11 @@ IMAGES_DIR = data_path("images")
 TIMELAPSE_FRAMES_DIR = data_path("timelapse_frames")
 TIMELAPSE_OUTPUT_DIR = data_path("timelapse")
 
+# La memoria condivisa resta dentro l'applicazione: è un tmpfs montato lì da
+# /etc/fstab e il suo contenuto è per definizione volatile.
+SHMEM_DIR = os.path.join(APP_DIR, "shmem")
+STREAM_PREVIEW = os.path.join(SHMEM_DIR, "stream_latest.jpg")
+
 # Quanto veniva tenuto nella cartella dell'applicazione fino alla versione
 # precedente e va spostato al primo avvio.
 LEGACY_ENTRIES = (

@@ -13,6 +13,7 @@ from lxml import etree
 from PIL import Image
 from werkzeug.security import check_password_hash
 
+from lib import paths
 from . import onvif_responses
 from . import onvif_data
 from .onvif_auth import verify_request, AuthResult
@@ -62,7 +63,7 @@ class ONVIFService:
         max_retries = 4  # Prova un totale di 4 volte
         for attempt in range(max_retries):
             try:
-                with Image.open('/usr/local/zerocam/app/shmem/stream_latest.jpg') as img:
+                with Image.open(paths.STREAM_PREVIEW) as img:
                     self.image_width, self.image_height = img.size
                     self.logger.debug(f"ONVIF: Updated image resolution to {self.image_width}x{self.image_height}")
                     return  # Se ha successo, esce immediatamente dalla funzione
@@ -328,7 +329,7 @@ class ONVIFService:
             return Response(self.generate_soap_response("<soap:Fault>Internal Server Error</soap:Fault>"), status=500, content_type="application/soap+xml")
 
     def snapshot(self):
-        image_path = '/usr/local/zerocam/app/shmem/stream_latest.jpg'
+        image_path = paths.STREAM_PREVIEW
         
         send_counter = 0
         for _ in range(10):

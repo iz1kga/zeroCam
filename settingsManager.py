@@ -104,6 +104,7 @@ class SettingsManager:
         self.app.add_url_rule('/api/log', 'get_log', self.get_log)
         self.app.add_url_rule('/api/stats', 'get_stats', self.get_stats)
         self.app.add_url_rule('/api/status/capture', 'get_capture_status', self.get_capture_status)
+        self.app.add_url_rule('/api/status/stream', 'get_stream_status', self.get_stream_status)
         self.app.add_url_rule('/api/take_photo', 'take_photo', self.take_photo, methods=['POST'])
         self.app.add_url_rule('/api/timelapse', 'get_timelapse', self.get_timelapse, methods=['GET'])
         self.app.add_url_rule('/api/timelapse/run', 'run_timelapse', self.run_timelapse, methods=['POST'])
@@ -166,7 +167,9 @@ class SettingsManager:
     @login_required
     def stream_latest_image(self):
         # Assicurati che il percorso sia corretto
-        return send_file('./shmem/stream_latest.jpg', mimetype='image/jpeg')
+        # L'anteprima cambia ogni secondo: nessuna cache, altrimenti il
+        # browser continuerebbe a mostrare il fotogramma già scaricato.
+        return send_file(paths.STREAM_PREVIEW, mimetype='image/jpeg', max_age=0, conditional=False)
 
     @login_required
     def serve_page_template(self, page_name):
@@ -358,6 +361,28 @@ class SettingsManager:
     @login_required
     def get_capture_status(self):
         return jsonify({"is_capturing": self.zerocam.capture_lock.locked()})
+
+    @login_required
+    def get_stream_status(self):
+        """
+        Tells whether a live preview is available right now.
+
+        'running' vale solo se il fotogramma condiviso è recente: lo stream
+        si ferma a ogni scatto e il file su tmpfs resta lì, quindi la sola
+        presenza non basta a dire che l'anteprima è viva.
+        """
+        camera = self.zerocam.components.camera
+        running = bool(getattr(camera, 'running', False))
+        fresh = False
+        if running:
+            try:
+                fresh = (time.time() - os.path.getmtime(paths.STREAM_PREVIEW)) < 10
+            except OSError:
+                fresh = False
+
+        enabled = (self.zerocam.config_manager.get('streamParameters', {}).get('enabled', False)
+                   or self.zerocam.config_manager.get('onvif', {}).get('enabled', False))
+        return jsonify(enabled=bool(enabled), running=running and fresh)
 
     @login_required
     def take_photo(self):

@@ -98,6 +98,12 @@ Il pulsante *Genera e pubblica ora* monta subito il timelapse senza aspettare la
 
 Nella stessa pagina c'è una galleria per scorrere i fotogrammi raccolti: si sceglie il giorno, si scorre con il cursore o con le frecce, e il pulsante *Riproduci* fa un'anteprima animata a 2, 5 o 10 fotogrammi al secondo. È il modo più rapido per controllare cosa finirà nel video prima di montarlo.
 
+### Anteprima della diretta in Cam Control
+
+Quando lo streaming è in corso, sopra l'immagine compare l'interruttore *Anteprima diretta*: mostra un fotogramma al secondo preso dal flusso video al posto dell'ultimo scatto. È lo stesso fotogramma che alimenta ONVIF, privacy mask già applicate, salvato su tmpfs per non consumare la SD.
+
+L'interruttore appare solo se il fotogramma è fresco: lo streaming si ferma a ogni scatto, e in quei secondi l'anteprima torna da sola all'ultima immagine. Sull'anteprima le privacy mask non sono modificabili, perché l'inquadratura dello streaming non coincide con quella della foto: per ridisegnarle si torna all'ultimo scatto.
+
 ### Backup e ripristino della configurazione
 
 Nella pagina **Sicurezza** si può scaricare l'intera configurazione (privacy mask compresa) in un unico file JSON e reimportarla in caso di SD morta o reinstallazione.
@@ -227,6 +233,12 @@ Two practical notes:
 The *Genera e pubblica ora* button builds the timelapse immediately instead of waiting for the weekly schedule, which is handy to check the configuration.
 
 The same page holds a gallery to browse the collected frames: pick a day, scrub with the slider or the arrows, and the *Riproduci* button plays an animated preview at 2, 5 or 10 frames per second. It is the quickest way to check what will end up in the video before building it.
+
+### Live preview in Cam Control
+
+While the stream is running, an *Anteprima diretta* switch appears above the image: it shows one frame per second taken from the video feed instead of the last capture. It is the very frame that feeds ONVIF, privacy masks already applied, written to tmpfs so the SD card is spared.
+
+The switch only shows up while the frame is fresh: the stream stops at every capture, and during those seconds the preview falls back to the last image on its own. Privacy masks cannot be edited on the preview, because the stream frames a different portion of the sensor than the photo: switch back to the capture to redraw them.
 
 ### Configuration backup and restore
 

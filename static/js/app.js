@@ -104,6 +104,10 @@ const startApp = async () => {
         focusAidActive: false,
         isCapturing: false,
         captureStatusTimer: null,
+        streamRunning: false,
+        livePreview: false,
+        previewUrl: '',
+        previewTimer: null,
         passwords: {
           current: '',
           new: '',
@@ -146,13 +150,14 @@ const startApp = async () => {
       });
 
       if (this.page === 'control') {
-        this.fetchCaptureStatus();
-        this.captureStatusTimer = setInterval(this.fetchCaptureStatus, 2000);
+        this.pollControlStatus();
+        this.captureStatusTimer = setInterval(this.pollControlStatus, 2000);
       }
     },
     beforeUnmount() {
       clearInterval(this.imageInterval);
       clearInterval(this.captureStatusTimer);
+      clearInterval(this.previewTimer);
       clearInterval(this.statsTimer);
       clearInterval(this.timelapseTimer);
     },
@@ -260,6 +265,38 @@ const startApp = async () => {
               this.isCapturing = false;
             }
           });
+      },
+      pollControlStatus() {
+        this.fetchCaptureStatus();
+        this.fetchStreamStatus();
+      },
+      fetchStreamStatus() {
+        secureFetch('/api/status/stream')
+          .then(res => res.json())
+          .then(data => {
+            this.streamRunning = !!data.running;
+            // Lo streaming si ferma a ogni scatto: senza fotogrammi freschi
+            // si torna all'ultima immagine invece di mostrarne uno vecchio.
+            if (!this.streamRunning && this.livePreview) this.setLivePreview(false);
+          })
+          .catch(err => {
+            if (err.message !== 'Session expired') {
+              console.error('Errore recupero stato streaming:', err);
+              this.streamRunning = false;
+            }
+          });
+      },
+      setLivePreview(active) {
+        this.livePreview = !!active;
+        clearInterval(this.previewTimer);
+        this.previewTimer = null;
+        if (this.livePreview) {
+          this.refreshPreview();
+          this.previewTimer = setInterval(this.refreshPreview, 1000);
+        }
+      },
+      refreshPreview() {
+        this.previewUrl = `/stream_latest.jpg?_=${Date.now()}`;
       },
       startLogPolling() {
         this.fetchLog();
@@ -444,11 +481,13 @@ const startApp = async () => {
         }
 
         if (newVal === 'control') {
-          this.fetchCaptureStatus();
-          this.captureStatusTimer = setInterval(this.fetchCaptureStatus, 2000);
+          this.pollControlStatus();
+          this.captureStatusTimer = setInterval(this.pollControlStatus, 2000);
         } else if (oldVal === 'control') {
           clearInterval(this.captureStatusTimer);
           this.captureStatusTimer = null;
+          // L'anteprima non serve fuori dalla pagina: si spegne il timer
+          this.setLivePreview(false);
         }
       },
       stats(newStats) {
@@ -495,10 +534,18 @@ const startApp = async () => {
   app.component('page-control', {
     props: {
       imageUrl: { type: String, required: true },
+      previewUrl: { type: String, default: '' },
+      streamRunning: { type: Boolean, default: false },
+      livePreview: { type: Boolean, default: false },
       isCapturing: { type: Boolean, default: false },
       focusAidActive: { type: Boolean, default: false }
     },
-    emits: ['take-photo', 'start-focus-aid', 'restart-app'],
+    emits: ['take-photo', 'start-focus-aid', 'restart-app', 'toggle-live-preview'],
+    computed: {
+      displayedImageUrl() {
+        return this.livePreview && this.previewUrl ? this.previewUrl : this.imageUrl;
+      }
+    },
     data() {
       return {
         rois: [],
@@ -522,6 +569,9 @@ const startApp = async () => {
           width: img.clientWidth,
           height: img.clientHeight,
         };
+        // Sull'anteprima in diretta le ROI non si disegnano: l'inquadratura
+        // dello streaming non coincide con quella dello scatto.
+        if (this.livePreview) return;
         // NUOVO: Ricarica/ridisegna le ROI con le dimensioni corrette
         this.loadPrivacyMask();
       },
