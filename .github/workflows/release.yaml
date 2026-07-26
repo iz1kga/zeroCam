@@ -15,6 +15,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Un tag che finisce con -rcN e' una candidata: si spedisce solo il
+      # pacchetto dell'applicazione, senza manuale ne' materiale meccanico, e la
+      # release resta marcata come prerelease.
+      - name: Identify release kind
+        id: kind
+        run: |
+          if [[ "${{ github.ref_name }}" =~ -rc[0-9]+$ ]]; then
+            echo "candidate=true" >> "$GITHUB_OUTPUT"
+            echo "Release candidate: allego solo l'archivio dell'applicazione."
+          else
+            echo "candidate=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Archive release assets
         id: archive
         run: git archive -o zeroCam_${{ github.ref_name }}.zip HEAD
@@ -22,6 +35,7 @@ jobs:
       # Il manuale viaggia come allegato della release, non dentro l'archivio
       # dell'applicazione: sul dispositivo non serve e peserebbe soltanto.
       - name: Install manual toolchain
+        if: steps.kind.outputs.candidate == 'false'
         run: |
           sudo apt-get update
           # lmodern va chiesto per nome: il template di pandoc lo carica sempre,
@@ -31,6 +45,7 @@ jobs:
             texlive-latex-extra texlive-fonts-recommended lmodern python3-pil
 
       - name: Build manual
+        if: steps.kind.outputs.candidate == 'false'
         env:
           MANUAL_VERSION: ${{ github.ref_name }}
         run: |
@@ -41,6 +56,7 @@ jobs:
       # c'e' davvero qualcosa da spedire, cosi' finche' il CAD non e' pronto la
       # release non porta un allegato vuoto.
       - name: Package hardware files
+        if: steps.kind.outputs.candidate == 'false'
         run: |
           if [ -n "$(find hardware/step hardware/print -type f ! -name '.gitkeep' 2>/dev/null)" ]; then
             zip -r zeroCam-hardware_${{ github.ref_name }}.zip \
@@ -61,5 +77,5 @@ jobs:
             zeroCam-hardware_${{ github.ref_name }}.zip
           body: "Release ${{ github.ref_name }}"
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.kind.outputs.candidate == 'true' }}
 
