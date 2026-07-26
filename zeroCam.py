@@ -270,7 +270,6 @@ class ZeroCamApp:
             "hardwareStatus": get_raspberry_pi_stats(),
             "dayPeriod": self.components.day_period_calc.get_day_period(),
             "nextCapture": schedule.next_run.strftime("%d-%m-%Y %H:%M:%S") if schedule.next_run else "N/A",
-            "remoteUrl": self.config_manager.get_raw("deviceDetails", {}).get("remoteUrl", "N/A")
         })
         if device_status:
             self.diagnostic_data["deviceStatus"] = device_status
