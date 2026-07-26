@@ -305,6 +305,8 @@
                     </div>
                     <div class="col-md-3"><label class="form-label">Timeout API (s)</label><field-renderer
                             :model="config.youtubeLive" key-name="timeout" :schema="schema" /></div>
+                    <div class="col-md-3"><label class="form-label">Nuova diretta alle (HH:MM)</label><field-renderer
+                            :model="config.youtubeLive" key-name="daily_reset_time" :schema="schema" /></div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="dvr" :schema="schema"
@@ -322,6 +324,9 @@
                     della foto, senza aprire il browser. Le credenziali si ottengono una volta sola con
                     <code>installation_tools/yt_oauth_setup.py</code>.
                     Nel titolo puoi usare i segnaposto <code>{date}</code> e <code>{time}</code>.
+                    Con &laquo;Nuova diretta alle&raquo; valorizzato (es. <code>00:00</code>) la diretta in corso
+                    viene chiusa e ricreata al primo scatto successivo a quell'ora; lasciandolo vuoto la stessa
+                    diretta resta attiva finch&eacute; YouTube la mantiene.
                 </div>
             </div>
 

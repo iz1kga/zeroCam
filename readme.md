@@ -54,6 +54,8 @@ Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi
 
 Nel titolo della diretta puoi usare i segnaposto `{date}` e `{time}`. Il broadcast viene riusato finché resta valido e ricreato automaticamente quando YouTube lo chiude (limite di 12 ore).
 
+Il campo **Nuova diretta alle (HH:MM)** forza il ricambio giornaliero: se valorizzato (es. `00:00`), al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con titolo aggiornato dai segnaposto. Lasciandolo vuoto il comportamento resta quello precedente (ricambio solo quando YouTube chiude la diretta).
+
 ### Ritrasmissione su più destinazioni
 
 In **Config → Stream**, nel campo *Destinazioni aggiuntive*, puoi elencare altri URL RTMP (uno per riga) verso cui inviare lo stesso flusso: Twitch, un server tuo, un'altra piattaforma. Il video viene codificato una volta sola e semplicemente duplicato, quindi il carico sulla CPU non cambia. Una destinazione irraggiungibile non interrompe le altre.
@@ -150,6 +152,8 @@ The RTMP push alone is no longer enough: YouTube retired "Stream now", so the st
 3.  In the web interface, page **Config → YouTube Live**: enable *Auto broadcast* and paste Client ID, Client Secret and Refresh Token. The stream key stays the one in **Stream Parameters**.
 
 The broadcast title supports the `{date}` and `{time}` placeholders. An existing broadcast is reused while valid and recreated automatically once YouTube closes it (12 hour limit).
+
+The **Nuova diretta alle (HH:MM)** field forces a daily rollover: when set (e.g. `00:00`), the first capture after that local time closes the running broadcast and starts a fresh one, with the title placeholders re-evaluated. Leave it empty to keep the previous behaviour (a new broadcast only when YouTube ends the current one).
 
 ### Restreaming to several destinations
 

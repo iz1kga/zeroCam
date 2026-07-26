@@ -24,6 +24,7 @@ DEFAULT_SECTIONS = {
         "record": True,
         "made_for_kids": False,
         "end_on_shutdown": False,
+        "daily_reset_time": "",
         "timeout": 10,
     },
     "timelapse": {
