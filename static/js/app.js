@@ -73,7 +73,7 @@ const startApp = async () => {
     controlTemplate,
     statusTemplate,
     logTemplate,
-    securityTemplate,
+    systemTemplate,
     licenseTemplate,
     timelapseTemplate
   ] = await Promise.all([
@@ -81,7 +81,7 @@ const startApp = async () => {
     loadTemplate('control'),
     loadTemplate('status'),
     loadTemplate('log'),
-    loadTemplate('security'),
+    loadTemplate('system'),
     loadTemplate('license'),
     loadTemplate('timelapse')
   ]);
@@ -656,8 +656,8 @@ const startApp = async () => {
     props: ['logContent'],
     template: logTemplate
   });
-  app.component('page-security', {
-    template: securityTemplate,
+  app.component('page-system', {
+    template: systemTemplate,
     props: ['passwords', 'isLoading', 'message', 'messageClass'],
     emits: ['change-password'],
     data() {
