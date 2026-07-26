@@ -14,6 +14,8 @@ Ogni `shotInterval` secondi lo scheduler avvia un ciclo che, nell'ordine:
 8. esegue l'eventuale reset hardware della camera;
 9. prepara il broadcast YouTube e fa ripartire lo streaming.
 
+![Il ciclo di scatto, dalla scadenza dell'intervallo alla ripartenza dello streaming.](img/ciclo-scatto.png){ width=52% }
+
 Durante il ciclo l'interfaccia mostra lo stato: `Capturing Image`, `Annotating and Overlaying`, `Uploading Image`, `Idle`.
 
 Uno scatto può essere avviato a mano da **Cam Control → Take Photo**: il ciclo è lo stesso.

@@ -53,6 +53,8 @@ L'applicazione è un unico processo Python (`zeroCam.py`) che avvia alcuni threa
 | `StatsCollector` | Legge temperatura, CPU, memoria e disco e ne conserva lo storico |
 | `cameras.py` | Cattura, streaming e gestione del sensore tramite `picamera2` |
 
+![Componenti dell'applicazione e loro rapporti.](img/architettura.png){ width=95% }
+
 Il ciclo di lavoro è sempre lo stesso: lo streaming, se attivo, viene interrotto per il tempo dello scatto, la foto viene elaborata e pubblicata, poi lo streaming riparte. È il motivo per cui alcune impostazioni della diretta hanno effetto solo dal ciclo successivo.
 
 ## Come leggere questo manuale

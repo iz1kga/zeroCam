@@ -27,6 +27,8 @@ zeroCAM non usa orari fissi: divide la giornata in quattro fasi in base all'alte
 | `dusk` | Da *Sunset Offset* fino a *Dusk Offset* |
 | `night` | Dopo *Dusk Offset* e fino a *Dawn Offset* |
 
+![Le soglie di elevazione solare che separano le quattro fasi. Alba e tramonto durano poco: fra $-6°$ e $-2,5°$ il Sole passa in fretta.](img/fasi-giorno.png){ width=100% }
+
 I quattro offset sono **angoli di elevazione del Sole rispetto all'orizzonte, in gradi**, non minuti di anticipo o ritardo. Con i valori predefiniti:
 
 * `sunRiseOffset` e `sunSetOffset` a `-2.5` — il "giorno" comincia quando il Sole è ancora 2,5° sotto l'orizzonte e finisce altrettanto dopo il tramonto geometrico, coprendo la luce ancora buona del primo mattino e della sera.

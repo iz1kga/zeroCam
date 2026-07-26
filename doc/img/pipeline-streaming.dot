@@ -1,0 +1,27 @@
+// Percorso dei fotogrammi durante lo streaming.
+// Rigenerare con doc/img/genera-diagrammi.sh
+digraph streaming {
+    rankdir=LR;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fillcolor="#f2f2f2", color="#555555",
+          fontname="Helvetica", fontsize=11, margin="0.18,0.10"];
+    edge [color="#555555", fontname="Helvetica", fontsize=9];
+
+    sensore [label="Sensore\nflusso principale +\nflusso ridotto", fillcolor="#dce6f2", penwidth=1.4];
+    maschere [label="Maschere privacy\nsui fotogrammi"];
+    ffmpeg [label="ffmpeg\nannotazione, loghi,\ncodifica H.264"];
+    tee [label="Duplicazione\n(muxer tee)", shape=diamond, style=filled, fillcolor="#eae4d9"];
+    youtube [label="YouTube", fillcolor="#e4efe4"];
+    altre [label="Altre destinazioni\nRTMP", fillcolor="#e4efe4"];
+
+    shmem [label="Fotogramma condiviso\nshmem/stream_latest.jpg\n1 al secondo", fillcolor="#eae4d9"];
+    onvif [label="ONVIF\n/snapshot.jpg"];
+    anteprima [label="Anteprima in\nCam Control"];
+
+    sensore -> maschere -> ffmpeg -> tee;
+    tee -> youtube;
+    tee -> altre;
+    maschere -> shmem [label="flusso ridotto"];
+    shmem -> onvif;
+    shmem -> anteprima;
+}

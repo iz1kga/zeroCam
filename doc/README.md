@@ -24,6 +24,10 @@ Il manuale è scritto in Markdown, un file per capitolo, e viene unito in un uni
 
 L'ordine dei capitoli nel PDF è quello alfabetico dei nomi dei file: per inserirne uno nuovo basta numerarlo di conseguenza.
 
+## Immagini
+
+Stanno in [img/](img/). I diagrammi si rigenerano da sorgente con `img/genera-diagrammi.sh` (serve `graphviz` e `matplotlib`) e vanno aggiornati quando cambia ciò che descrivono. Le schermate dell'interfaccia e le foto della webcam vanno acquisite dal dispositivo in funzione: l'elenco di quelle attese, con nomi e regole, è in [img/README.md](img/README.md).
+
 ## Costruire il PDF
 
 ```bash

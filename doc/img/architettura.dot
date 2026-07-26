@@ -1,0 +1,48 @@
+// Componenti dell'applicazione e loro rapporti.
+// Rigenerare con doc/img/genera-diagrammi.sh
+digraph architettura {
+    rankdir=TB;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fillcolor="#f2f2f2", color="#555555",
+          fontname="Helvetica", fontsize=11, margin="0.18,0.10"];
+    edge [color="#555555", fontname="Helvetica", fontsize=9];
+
+    zerocam [label="zeroCam.py\norchestratore", fillcolor="#dce6f2", penwidth=1.4];
+
+    subgraph cluster_thread {
+        label="Thread";
+        fontname="Helvetica"; fontsize=10; color="#aaaaaa"; style=dashed;
+        scheduler [label="SchedulerManager\nscatti, timelapse, statistiche"];
+        web       [label="SettingsManager\ninterfaccia web e API"];
+        stream    [label="Thread di streaming\nffmpeg"];
+    }
+
+    subgraph cluster_comp {
+        label="ComponentManager";
+        fontname="Helvetica"; fontsize=10; color="#aaaaaa"; style=dashed;
+        camera    [label="cameras.py\npicamera2"];
+        immagine  [label="Elaborazione\nritaglio, maschere,\nannotazione, loghi"];
+        upload    [label="Upload\nFTP e HTTP"];
+        timelapse [label="TimelapseManager"];
+        youtube   [label="YouTubeLiveManager"];
+    }
+
+    config [label="ConfigManager\ndata/.conf.json", fillcolor="#eae4d9"];
+    stats  [label="StatsCollector\ndata/logs/stats.json", fillcolor="#eae4d9"];
+
+    zerocam -> scheduler;
+    zerocam -> web;
+    zerocam -> config;
+    zerocam -> stats;
+
+    scheduler -> camera   [label="scatto"];
+    camera    -> immagine;
+    immagine  -> upload;
+    immagine  -> timelapse [label="fotogramma"];
+    scheduler -> timelapse [label="montaggio\nsettimanale"];
+    camera    -> stream    [label="fotogrammi\nvideo"];
+    youtube   -> stream    [label="broadcast\npronto"];
+    web       -> camera    [label="scatto manuale,\nfocus aid"];
+    config    -> immagine  [style=dotted];
+    config    -> camera    [style=dotted];
+}

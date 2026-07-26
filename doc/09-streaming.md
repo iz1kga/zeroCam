@@ -4,6 +4,8 @@
 
 Il Raspberry Pi produce fotogrammi grezzi che ffmpeg codifica in H.264 e spinge via RTMP verso YouTube — e, se richiesto, verso altre destinazioni. All'audio provvede una traccia silenziosa generata da ffmpeg, necessaria perché YouTube accetti il flusso.
 
+![Percorso dei fotogrammi durante lo streaming: il flusso principale va a ffmpeg, quello ridotto alimenta ONVIF e l'anteprima.](img/pipeline-streaming.png){ width=100% }
+
 Lo streaming si ferma a ogni scatto e riparte subito dopo: la camera non può servire contemporaneamente la cattura a piena risoluzione e il video. Sono pochi secondi, e la diretta è configurata per sopravvivere all'interruzione senza chiudersi.
 
 ## Parametri dello streaming
