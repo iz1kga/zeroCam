@@ -1,0 +1,12 @@
+# File temporanei e di backup di SOLIDWORKS
+~$*
+*.bak
+*.SLDPRT.bak
+*.SLDASM.bak
+*.SLDDRW.bak
+Backup/
+swxJRNL.*
+
+# Esportazioni di prova: nel repository entrano solo quelle definitive
+*_test.*
+*_prova.*

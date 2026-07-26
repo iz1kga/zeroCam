@@ -1,0 +1,35 @@
+// Il ciclo di scatto, dall'avvio dello scheduler alla ripartenza dello streaming.
+// Rigenerare con doc/img/genera-diagrammi.sh
+digraph ciclo {
+    rankdir=TB;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fillcolor="#f2f2f2", color="#555555",
+          fontname="Helvetica", fontsize=11, margin="0.20,0.10"];
+    edge [color="#555555", fontname="Helvetica", fontsize=9];
+
+    avvio  [label="Scadenza dell'intervallo\ndi scatto", fillcolor="#dce6f2", penwidth=1.4];
+    fase   [label="Calcolo della fase del giorno\n(alba, giorno, tramonto, notte)"];
+    stop   [label="Streaming fermato", fillcolor="#f4e6e6"];
+    scatto [label="Cattura\nautomatica di giorno,\nbracketing nelle altre fasi"];
+
+    unsharp [label="Maschera di contrasto\n(se attiva)"];
+    crop    [label="Ritaglio"];
+    privacy [label="Maschere privacy"];
+    annota  [label="Barra di annotazione"];
+    loghi   [label="Loghi"];
+
+    ftp   [label="Upload FTP"];
+    http  [label="Upload HTTP"];
+    disco [label="latest.jpg,\narchivio, fotogramma\ntimelapse"];
+
+    reset [label="Reset camera\n(ogni N scatti)"];
+    live  [label="Broadcast YouTube pronto\ne streaming riavviato", fillcolor="#e4efe4"];
+
+    avvio -> fase -> stop -> scatto -> unsharp -> crop -> privacy -> annota -> loghi;
+    loghi -> ftp;
+    loghi -> http;
+    loghi -> disco;
+    ftp   -> reset [style=invis];
+    disco -> reset;
+    reset -> live;
+}

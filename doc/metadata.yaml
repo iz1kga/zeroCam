@@ -1,0 +1,15 @@
+title: "zeroCAM"
+subtitle: "Manuale d'uso e di configurazione"
+author: "IZ1KGA — www.iz1kga.it"
+lang: it-IT
+toc-title: "Indice"
+documentclass: report
+papersize: a4
+geometry:
+  - margin=2.5cm
+fontsize: 11pt
+linestretch: 1.15
+colorlinks: true
+linkcolor: RoyalBlue
+urlcolor: RoyalBlue
+toccolor: black

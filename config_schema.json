@@ -40,7 +40,6 @@
   "password": { "type": "password" },
   "port": { "type": "number" },
   "username": { "type": "text" },
-  "remoteUrl": { "type": "text" },
   "AwbMode": {
     "type": "select",
     "options": ["Auto", "Tungsten", "Fluorescent", "Indoor", "Daylight", "Cloudy"]
