@@ -32,13 +32,7 @@ Uno scatto può essere avviato a mano da **Cam Control → Take Photo**: il cicl
 | Shot Interval | Secondi fra uno scatto e il successivo |
 | Crop Enabled, Crop Size, Crop Offset | Ritaglio dell'immagine (vedi più avanti) |
 
-Tre impostazioni esistono solo nel file di configurazione, senza campo nell'interfaccia:
-
-| Chiave in `.conf.json` | Significato |
-|---|---|
-| `cameraParameters.hardResetInterval` | Ogni quanti scatti reinizializzare completamente la camera (0 = mai) |
-| `cameraParameters.archiveImages` | Conserva ogni scatto in `data/images/` con i relativi metadati |
-| `cameraParameters.unsharpMask` | Applica una maschera di contrasto all'immagine |
+Il ciclo di scatto prevede anche il reset periodico della camera, l'archiviazione locale degli scatti e una maschera di contrasto: sono strumenti di diagnosi, senza campo nell'interfaccia e disattivati in esercizio. Le relative chiavi sono descritte nel capitolo *Riferimento della configurazione*.
 
 ### Giorno
 
@@ -63,14 +57,6 @@ Gli indici dell'ultima posa riuscita vengono salvati in `data/.capture_info`: il
 **Configuration → Camera → Crop** ritaglia un rettangolo dell'immagine: si indicano larghezza e altezza in pixel e, se serve, uno spostamento rispetto al centro. Il ritaglio è centrato sull'immagine e traslato dagli offset, e viene applicato prima di maschere e annotazioni: tutte le coordinate successive (privacy mask, loghi) si riferiscono all'immagine già ritagliata.
 
 Serve a togliere un bordo indesiderato — una grondaia, un palo — senza spostare la camera, e a portare l'immagine al formato voluto.
-
-## Reset della camera
-
-Se `hardResetInterval` è maggiore di zero, ogni N scatti la camera viene chiusa e reinizializzata da capo. È una difesa contro i blocchi del sensore che possono comparire dopo giorni di funzionamento continuo. Un valore di 10–50 scatti è ragionevole; se il reset fallisce, l'applicazione si arresta e systemd la fa ripartire.
-
-## Archivio degli scatti
-
-Con *Archive Images* attivo ogni scatto viene salvato in `data/images/` come `AAAAMMGG-HHMMSS.jpg` insieme a un `.json` con i metadati della cattura e gli orari di alba, tramonto e crepuscoli. È materiale di diagnosi, utile per capire perché una certa ora del giorno viene esposta male; non è la fonte del timelapse, che ha una propria cartella. Attenzione allo spazio: nessuna pulizia automatica lo tocca.
 
 ## Aiuto alla messa a fuoco
 

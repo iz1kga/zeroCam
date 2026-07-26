@@ -68,7 +68,7 @@ Dopo l'aggiornamento vale la pena controllare la pagina Log per i primi minuti e
 I consumatori di spazio, in ordine:
 
 1. `data/timelapse_frames/` — governato dalla finestra di conservazione;
-2. `data/images/` — l'archivio di debug, **senza pulizia automatica**: va svuotato a mano o tenuto disattivato;
+2. `data/images/` — l'archivio di diagnosi, di norma spento; se acceso cresce **senza pulizia automatica** e va svuotato a mano;
 3. `data/timelapse/` — i video montati, se si sceglie di conservarli;
 4. `data/logs/` — trascurabile, con rotazione a sette giorni.
 

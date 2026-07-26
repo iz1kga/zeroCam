@@ -27,13 +27,18 @@ Tutte le chiavi di `/usr/local/zerocam/data/.conf.json`. I campi marcati **cifra
 |---|---|---|
 | `type` | testo | `piCamera` oppure `fakeCamera` |
 | `shotInterval` | numero | Secondi fra gli scatti |
-| `hardResetInterval` | numero | Scatti fra un reset completo della camera e il successivo (0 = mai) |
-| `archiveImages` | sì/no | Conserva ogni scatto in `data/images/` |
-| `unsharpMask` | sì/no | Applica la maschera di contrasto |
 | `crop.enabled` | sì/no | Attiva il ritaglio |
 | `crop.width`, `crop.height` | numero | Dimensioni del ritaglio in pixel |
 | `crop.x_offset`, `crop.y_offset` | numero | Spostamento rispetto al centro |
 | `dawn`, `day`, `dusk`, `night` | oggetto | Parametri per fase (sotto) |
+
+Le tre chiavi seguenti servono a diagnosi e sviluppo, non hanno campo nell'interfaccia e in esercizio restano spente:
+
+| Chiave | Tipo | Significato |
+|---|---|---|
+| `hardResetInterval` | numero | Scatti fra un reset completo della camera e il successivo (0 = mai) |
+| `archiveImages` | sì/no | Conserva ogni scatto in `data/images/` con i metadati della cattura |
+| `unsharpMask` | sì/no | Applica una maschera di contrasto all'immagine |
 
 Parametri per fase, fase `day`:
 

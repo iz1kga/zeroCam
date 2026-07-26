@@ -2,7 +2,7 @@
 
 ## Il principio
 
-Ogni scatto lascia una copia ridimensionata in `data/timelapse_frames/`. Una volta a settimana i fotogrammi vengono montati con ffmpeg e il video caricato sul canale YouTube. L'archivio di debug (*Camera → Archive Images*) è un'altra cosa e non partecipa.
+Ogni scatto lascia una copia ridimensionata in `data/timelapse_frames/`. Una volta a settimana i fotogrammi vengono montati con ffmpeg e il video caricato sul canale YouTube. L'archivio di diagnosi degli scatti è un'altra cosa e non partecipa.
 
 I fotogrammi sono salvati già alla risoluzione finale del video: il montaggio è più rapido e lo spazio occupato è prevedibile. Il fotogramma è l'immagine definitiva — ritagliata, mascherata e annotata — quindi il video mostra esattamente ciò che è stato pubblicato.
 
