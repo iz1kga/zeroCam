@@ -17,6 +17,7 @@ from lib.helpers import (
     centered_view,
     FramePrivacyMasker,
 )
+from lib import stream_overlay
 import random
 import threading
 import subprocess
@@ -39,18 +40,24 @@ def cameraFactory(camera_type, *args, **kwargs):
         raise ValueError(f"Unknown camera type: {camera_type}")
 
 class fakeCameraDevice:
-    def __init__(self, params, streamParams, onvifParams, deviceParams, logger):
+    def __init__(self, params, streamParams, onvifParams, deviceParams, logger,
+                 annotation=None, overlayImages=None):
         self.logger = logger
         self.params = params
         self.streamParams = streamParams
         self.onvifParams = onvifParams
+        self.annotation = annotation or {}
+        self.overlayImages = overlayImages or []
         self.logger.info("Camera Object Created")
 
-    def update_config(self, new_params, new_stream_params, new_device_params):
+    def update_config(self, new_params, new_stream_params, new_device_params,
+                      new_annotation=None, new_overlay_images=None):
         self.logger.info("Updating camera configuration with new settings...")
         self.params = new_params
         self.streamParams = new_stream_params
         self.deviceParams = new_device_params
+        self.annotation = new_annotation or {}
+        self.overlayImages = new_overlay_images or []
 
     def fakeImage(self):
         width = 4000
@@ -81,12 +88,17 @@ class fakeCameraDevice:
         return self.takePicture('day')
 
 class PiCameraDevice:
-    def __init__(self, params, streamParams, onvifParams, deviceParams, logger):
+    def __init__(self, params, streamParams, onvifParams, deviceParams, logger,
+                 annotation=None, overlayImages=None):
         self.logger = logger
         self.params = params
         self.streamParams = streamParams
         self.onvifParams = onvifParams
         self.deviceParams = deviceParams
+        # Servono solo allo streaming: la foto viene annotata a valle, da
+        # ImageAnnotator e ImageOverlay.
+        self.annotation = annotation or {}
+        self.overlayImages = overlayImages or []
         self.last_known_exposure_index = None
         self.capture_info = None
         self.camera_lock = threading.Lock()
@@ -146,12 +158,15 @@ class PiCameraDevice:
             self.logger.error(f"Impossibile salvare il file .capture_info: {e}")
 
 
-    def update_config(self, new_params, new_stream_params, new_device_params):
+    def update_config(self, new_params, new_stream_params, new_device_params,
+                      new_annotation=None, new_overlay_images=None):
         with self.camera_lock:
             self.logger.info("Updating camera configuration with new settings...")
             self.params = new_params
             self.streamParams = new_stream_params
             self.deviceParams = new_device_params
+            self.annotation = new_annotation or {}
+            self.overlayImages = new_overlay_images or []
 
     def get_image(self ):
         with self.camera_lock:
@@ -366,17 +381,20 @@ class PiCameraDevice:
                     self.logger.info("--- Fine cattura, camera fermata. ---")
 
 
-    def _stream_outputs(self, primary_url):
+    def _stream_outputs(self, primary_url, video_label="0:v"):
         """
         Argomenti di uscita per ffmpeg: una o più destinazioni RTMP.
 
         Con più destinazioni si usa il muxer 'tee', che duplica il flusso già
         codificato senza rifare l'encoding. 'onfail=ignore' fa sì che una
         destinazione irraggiungibile non trascini giù le altre.
+
+        Il video da mappare è l'ingresso grezzo oppure l'uscita del
+        filtergraph che disegna annotazione e loghi.
         """
         extra = [url.strip() for url in self.streamParams.get("extra_destinations", []) or [] if url.strip()]
         if not extra:
-            return ["-f", "flv", primary_url]
+            return ["-map", video_label, "-map", "1:a", "-f", "flv", primary_url]
 
         destinations = "|".join(f"[f=flv:onfail=ignore]{url}" for url in [primary_url] + extra)
         # Solo gli host: l'ultimo segmento dell'URL è la stream key e non
@@ -388,9 +406,21 @@ class PiCameraDevice:
         # senza, le uscite oltre la prima possono risultare malformate.
         return [
             "-flags", "+global_header",
-            "-map", "0:v", "-map", "1:a",
+            "-map", video_label, "-map", "1:a",
             "-f", "tee", destinations,
         ]
+
+    def _still_width(self):
+        """
+        Larghezza in pixel della foto, ritaglio compreso.
+
+        È il riferimento delle coordinate di annotazione e loghi, che sullo
+        streaming vanno riscalate.
+        """
+        crop = self.params.get("crop", {})
+        if crop.get("enabled", False) and crop.get("width"):
+            return int(crop["width"])
+        return int(self.camera.create_still_configuration()["main"]["size"][0])
 
     def _still_sensor_view(self):
         """
@@ -520,14 +550,24 @@ class PiCameraDevice:
             api_key = self.streamParams["yt_api_key"]
             bitrate = self.streamParams.get("bitrate", "4500k")
             bufsize = self.streamParams.get("bufsize", "9000k")
-            
+
+            # Annotazione e loghi li disegna ffmpeg prima di codificare: sui
+            # frame YUV420 grezzi costerebbe molto di più.
+            overlay_inputs, overlay_filter, video_label = ([], None, "0:v")
+            if self.streamParams.get("overlay", False):
+                overlay_inputs, overlay_filter, video_label = stream_overlay.build(
+                    self.annotation, self.overlayImages, (w, h), self._still_width(),
+                    self.shmem_path, self.logger,
+                )
+
             ffmpeg_cmd = [
                 "ffmpeg", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", f"{w}x{h}", "-r", str(fr), "-i", "-",
                 "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+            ] + overlay_inputs + (["-filter_complex", overlay_filter] if overlay_filter else []) + [
                 "-c:v", "libx264", "-preset", "veryfast", "-b:v", bitrate, "-maxrate", bitrate, "-bufsize", bufsize,
                 "-g", str(int(fr * 2)),
                 "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
-            ] + self._stream_outputs(f"rtmp://a.rtmp.youtube.com/live2/{api_key}")
+            ] + self._stream_outputs(f"rtmp://a.rtmp.youtube.com/live2/{api_key}", video_label)
 
             self.logger.info("Starting ffmpeg process for YouTube stream...")
             self.ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)

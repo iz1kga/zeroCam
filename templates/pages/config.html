@@ -263,6 +263,18 @@
                     </div>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <field-renderer :model="config.streamParameters" key-name="overlay" :schema="schema"
+                        label="Annotazione e loghi nella diretta" />
+                    <div class="form-text">
+                        Disegna sul video in diretta la stessa barra con testo e data/ora della pagina
+                        <em>Annotation</em> e i loghi abilitati in <em>Overlay Images</em>, riscalati dal formato
+                        della foto a quello dello streaming. Il lavoro lo fa ffmpeg mentre codifica, quindi il
+                        costo in CPU &egrave; minimo. L'orologio &egrave; aggiornato in tempo reale.
+                    </div>
+                </div>
+            </div>
 
             <!-- Diretta automatica: gestione del broadcast via YouTube Data API -->
             <hr>

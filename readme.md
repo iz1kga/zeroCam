@@ -60,6 +60,14 @@ Il campo **Nuova diretta alle (HH:MM)** forza il ricambio giornaliero: se valori
 
 In **Config → Stream**, nel campo *Destinazioni aggiuntive*, puoi elencare altri URL RTMP (uno per riga) verso cui inviare lo stesso flusso: Twitch, un server tuo, un'altra piattaforma. Il video viene codificato una volta sola e semplicemente duplicato, quindi il carico sulla CPU non cambia. Una destinazione irraggiungibile non interrompe le altre.
 
+### Annotazione e loghi nella diretta
+
+La spunta *Annotazione e loghi nella diretta*, sempre in **Config → Stream**, riporta sul video in diretta la barra con testo e data/ora della pagina **Annotation** e i loghi abilitati in **Overlay Images**. Non c'è una seconda configurazione da compilare: font, coordinate e scala sono quelli della foto, riscalati per il rapporto fra la larghezza dello streaming e quella dello scatto.
+
+Il disegno lo fa ffmpeg con i suoi filtri mentre già ricodifica, quindi il costo in CPU è trascurabile e i frame non passano da Python. L'orologio è aggiornato fotogramma per fotogramma, non congelato all'avvio della diretta, e i loghi vengono scaricati una volta sola e tenuti in cache. Le privacy mask restano applicate prima, quindi testo e loghi non finiscono mai sotto la sfocatura.
+
+Se lo streaming inquadra una porzione di sensore diversa dalla foto, la posizione dei loghi può risultare spostata di qualche pixel rispetto allo scatto: le coordinate sono riscalate, non riproiettate.
+
 ### Timelapse settimanale
 
 Ogni scatto lascia una copia ridimensionata in una cartella dedicata (`timelapse_frames/`); una volta a settimana i fotogrammi vengono montati con ffmpeg e il video caricato sul canale YouTube. L'archivio di debug (*Camera → Archive Images*) è un'altra cosa e non serve a questo.
@@ -166,6 +174,14 @@ The **Nuova diretta alle (HH:MM)** field forces a daily rollover: when set (e.g.
 ### Restreaming to several destinations
 
 Under **Config → Stream**, the *Destinazioni aggiuntive* field takes extra RTMP URLs (one per line) to push the same feed to: Twitch, your own server, another platform. The video is encoded once and simply duplicated, so CPU usage does not change. An unreachable destination does not bring the others down.
+
+### Annotation and logos on the live stream
+
+The *Annotazione e loghi nella diretta* checkbox, again under **Config → Stream**, draws the bar with the text and the clock from the **Annotation** page and the logos enabled in **Overlay Images** onto the live video. There is no second configuration to fill in: font, coordinates and scale are the ones used for the still image, rescaled by the ratio between the stream width and the capture width.
+
+The drawing is done by ffmpeg filters while it is already re-encoding, so the CPU cost is negligible and frames never travel through Python for it. The clock updates frame by frame instead of freezing at stream start, and logos are downloaded once and cached. Privacy masks are still applied first, so text and logos never end up under the blur.
+
+If the stream frames a different portion of the sensor than the still image, logo positions can be off by a few pixels compared to the capture: the coordinates are rescaled, not reprojected.
 
 ### Weekly timelapse
 

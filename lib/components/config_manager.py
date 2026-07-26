@@ -10,6 +10,7 @@ from lib.helpers import CryptoHelper
 DEFAULT_SECTIONS = {
     "streamParameters": {
         "extra_destinations": [],
+        "overlay": False,
     },
     "youtubeLive": {
         "enabled": False,

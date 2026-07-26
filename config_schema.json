@@ -78,6 +78,7 @@
   "end_on_shutdown": { "type": "boolean" },
   "daily_reset_time": { "type": "text" },
   "extra_destinations": { "type": "textlist" },
+  "overlay": { "type": "boolean" },
   "time": { "type": "text" },
   "frame_width": { "type": "number" },
   "frame_quality": { "type": "number" },
