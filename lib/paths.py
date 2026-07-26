@@ -43,6 +43,9 @@ CAPTURE_INFO_FILE = data_path(".capture_info")
 LATEST_IMAGE = data_path("latest.jpg")
 LOG_DIR = data_path("logs")
 LOG_FILE = os.path.join(LOG_DIR, "zerocam.log")
+# Storico delle statistiche hardware: sta accanto ai log perché è lì che è
+# sempre stato, e la cartella intera viene migrata in un colpo solo.
+STATS_FILE = os.path.join(LOG_DIR, "stats.json")
 IMAGES_DIR = data_path("images")
 TIMELAPSE_FRAMES_DIR = data_path("timelapse_frames")
 TIMELAPSE_OUTPUT_DIR = data_path("timelapse")
