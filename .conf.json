@@ -68,7 +68,10 @@
       "MaxTargetBrightness": 50,
       "MinTargetBrightness": 40,
       "NoiseReductionMode": 2,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "AwbMode": 0,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "day": {
       "AeEnable": true,
@@ -77,20 +80,29 @@
       "ExposureTime": 0,
       "HdrMode": 2,
       "NoiseReductionMode": 1,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "AwbMode": 0,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "dusk": {
       "MaxTargetBrightness": 50,
       "MinTargetBrightness": 40,
       "NoiseReductionMode": 2,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "AwbMode": 0,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "hardResetInterval": 10,
     "night": {
       "MaxTargetBrightness": 50,
       "MinTargetBrightness": 40,
       "NoiseReductionMode": 2,
-      "Sharpness": 4
+      "Sharpness": 4,
+      "AwbMode": 0,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "shotInterval": 600,
     "type": "piCamera",

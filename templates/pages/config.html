@@ -199,6 +199,30 @@
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="NoiseReductionMode"
                                     :schema="schema" />
                             </div>
+                            <div class="col-md-3">
+                                <label class="form-label">AWB Mode</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="AwbMode"
+                                    :schema="schema" />
+                            </div>
+                        </div>
+                        <div class="row align-items-end mt-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Guadagno rosso</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainRed"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Guadagno blu</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainBlue"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-text">
+                                    Con entrambi i guadagni a zero vale la modalit&agrave; AWB qui sopra. Valorizzandoli
+                                    l'automatismo viene spento e il bilanciamento resta fisso: &egrave; il rimedio alle
+                                    luci al sodio, che l'AWB insegue virando tutta l'immagine.
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -226,6 +250,29 @@
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="NoiseReductionMode"
                                     :schema="schema" />
                             </div>
+                        </div>
+                        <div class="row align-items-end mt-3">
+                            <div class="col-md-3">
+                                <label class="form-label">AWB Mode</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="AwbMode"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Guadagno rosso</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainRed"
+                                    :schema="schema" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Guadagno blu</label>
+                                <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainBlue"
+                                    :schema="schema" />
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            Di notte l'AWB automatico non ha un bianco su cui agganciarsi e le luci al sodio lo portano
+                            fuori strada: valorizzando i due guadagni (0 = automatico) il bilanciamento resta fisso.
+                            I valori di partenza si leggono nei metadati di uno scatto venuto bene, campo
+                            <code>ColourGains</code>.
                         </div>
                     </div>
 

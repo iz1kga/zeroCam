@@ -177,6 +177,32 @@ class PiCameraDevice:
             self.logger.debug(metadata)
             return output_buffer, metadata
 
+    def _apply_white_balance(self, controls, params):
+        """
+        Bilanciamento del bianco per lo scatto: automatico o a guadagni fissi.
+
+        Sotto le luci al sodio l'automatismo insegue una dominante che non
+        sparisce mai e vira l'intera immagine: con i guadagni impostati a mano
+        l'AWB viene spento e il colore resta quello scelto. Guadagni a zero
+        significano automatico, con la modalità AwbMode configurata.
+        """
+        try:
+            red = float(params.get("ColourGainRed", 0) or 0)
+            blue = float(params.get("ColourGainBlue", 0) or 0)
+        except (TypeError, ValueError):
+            red = blue = 0.0
+
+        if red > 0 and blue > 0:
+            controls["AwbEnable"] = False
+            controls["ColourGains"] = (red, blue)
+            controls.pop("AwbMode", None)
+            self.logger.info(f"Bilanciamento del bianco manuale: guadagni R={red:.2f}, B={blue:.2f}")
+        else:
+            controls["AwbEnable"] = True
+            controls["AwbMode"] = int(params.get("AwbMode", 0))
+            self.logger.info(f"Bilanciamento del bianco automatico, modalità {controls['AwbMode']}")
+        return controls
+
     def takePicture(self, dayperiod):
         """
         Cattura un'immagine usando l'esposizione automatica per 'day'
@@ -205,12 +231,13 @@ class PiCameraDevice:
                     # --- LOGICA PER SCATTO DIURNO (INVARIATA) ---
                     self.logger.info("Modalità diurna: uso l'esposizione automatica (AeEnable=True).")
                     day_params = {
-                        "AeEnable": True, "AwbEnable": True,
-                        "AwbMode": params.get("AwbMode", 0), "AeMeteringMode": params.get("AeMeteringMode", 0), 
+                        "AeEnable": True,
+                        "AeMeteringMode": params.get("AeMeteringMode", 0),
                         "AnalogueGain": 1.0, "ExposureTime": 0, "ExposureValue": 0,
                         "HdrMode": params.get("HdrMode", 2), "NoiseReductionMode": params.get("NoiseReductionMode", 1),
                         "Sharpness": params.get("Sharpness", 4)
                     }
+                    self._apply_white_balance(day_params, params)
                     self.camera.set_controls(day_params)
                     self.camera.start()
                     self.logger.info("Attesa stabilizzazione esposizione automatica (2 secondi)...")
@@ -240,12 +267,11 @@ class PiCameraDevice:
                     gain_idx = getattr(self, 'last_known_gain_index', 0)
 
                     manual_controls = {
-                        "AeEnable": False, 
-                        "AwbEnable": True, 
-                        "AwbMode": params.get("AwbMode", 0),
+                        "AeEnable": False,
                         "FrameDurationLimits": (100, 100_000_000),
                         "NoiseReductionMode": params.get("NoiseReductionMode", 1)
                     }
+                    self._apply_white_balance(manual_controls, params)
                     self.camera.set_controls(manual_controls)
                     
                     exp_results = {}
