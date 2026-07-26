@@ -1,1 +1,5 @@
 VERSION export-subst
+
+# Fuori dall'archivio installato sul dispositivo: servono al progetto, non all'app.
+doc/ export-ignore
+.github/ export-ignore

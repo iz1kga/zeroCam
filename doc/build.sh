@@ -17,16 +17,20 @@ if ! command -v pandoc >/dev/null; then
     exit 1
 fi
 
-# La versione finisce in copertina: il file VERSION contiene il tag installato,
-# ma nel repository e' ancora il segnaposto di git-archive.
-VERSION="$(cat ../VERSION 2>/dev/null || true)"
-case "$VERSION" in
-    *Format*|'') VERSION="$(git -C .. describe --tags --always 2>/dev/null || echo 'versione di sviluppo')" ;;
-esac
-# git describe da' 'v1.1.2-6-gabc1234': in copertina si legge meglio come
-# tag piu' il numero di commit che lo seguono.
-if [[ "$VERSION" =~ ^(.+)-([0-9]+)-g[0-9a-f]+$ ]]; then
-    VERSION="${BASH_REMATCH[1]} (+${BASH_REMATCH[2]} commit)"
+# La versione finisce in copertina. In una build di release la impone il
+# workflow con MANUAL_VERSION; altrimenti si guarda il file VERSION, che nel
+# repository contiene ancora il segnaposto di git-archive, e infine git.
+VERSION="${MANUAL_VERSION:-}"
+if [ -z "$VERSION" ]; then
+    VERSION="$(cat ../VERSION 2>/dev/null || true)"
+    case "$VERSION" in
+        *Format*|'') VERSION="$(git -C .. describe --tags --always 2>/dev/null || echo 'versione di sviluppo')" ;;
+    esac
+    # git describe da' 'v1.1.2-6-gabc1234': in copertina si legge meglio come
+    # tag piu' il numero di commit che lo seguono.
+    if [[ "$VERSION" =~ ^(.+)-([0-9]+)-g[0-9a-f]+$ ]]; then
+        VERSION="${BASH_REMATCH[1]} (+${BASH_REMATCH[2]} commit)"
+    fi
 fi
 
 OGGI="$(date '+%d/%m/%Y')"

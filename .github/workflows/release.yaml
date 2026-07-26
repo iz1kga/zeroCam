@@ -19,11 +19,29 @@ jobs:
         id: archive
         run: git archive -o zeroCam_${{ github.ref_name }}.zip HEAD
 
+      # Il manuale viaggia come allegato della release, non dentro l'archivio
+      # dell'applicazione: sul dispositivo non serve e peserebbe soltanto.
+      - name: Install manual toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc texlive-xetex texlive-latex-base texlive-latex-recommended \
+            texlive-latex-extra texlive-fonts-recommended python3-pil
+
+      - name: Build manual
+        env:
+          MANUAL_VERSION: ${{ github.ref_name }}
+        run: |
+          ./doc/build.sh
+          mv doc/zeroCAM-manuale.pdf zeroCAM-manuale_${{ github.ref_name }}.pdf
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          files: zeroCam_${{ github.ref_name }}.zip
+          files: |
+            zeroCam_${{ github.ref_name }}.zip
+            zeroCAM-manuale_${{ github.ref_name }}.pdf
           body: "Release ${{ github.ref_name }}"
           draft: false
           prerelease: false
