@@ -23,10 +23,17 @@ VERSION="$(cat ../VERSION 2>/dev/null || true)"
 case "$VERSION" in
     *Format*|'') VERSION="$(git -C .. describe --tags --always 2>/dev/null || echo 'versione di sviluppo')" ;;
 esac
+# git describe da' 'v1.1.2-6-gabc1234': in copertina si legge meglio come
+# tag piu' il numero di commit che lo seguono.
+if [[ "$VERSION" =~ ^(.+)-([0-9]+)-g[0-9a-f]+$ ]]; then
+    VERSION="${BASH_REMATCH[1]} (+${BASH_REMATCH[2]} commit)"
+fi
+
+OGGI="$(date '+%d/%m/%Y')"
 
 COMMON=(
     --metadata-file=metadata.yaml
-    --metadata "date=$(date '+%d/%m/%Y')"
+    --metadata "date=$OGGI"
     --metadata "subtitle=Manuale d'uso e di configurazione — $VERSION"
     --toc --toc-depth=2
     --number-sections
@@ -45,7 +52,11 @@ case "$FORMAT" in
             echo "In alternativa:  ./build.sh html" >&2
             exit 1
         fi
-        pandoc "${COMMON[@]}" --pdf-engine="$ENGINE" "${CHAPTERS[@]}" -o "$OUT"
+        # La copertina porta versione e data, quindi si rifa a ogni build
+        python3 img/genera-copertina.py --versione "$VERSION" --data "$OGGI" >/dev/null
+        pandoc "${COMMON[@]}" --pdf-engine="$ENGINE" \
+               --include-in-header=copertina.tex \
+               "${CHAPTERS[@]}" -o "$OUT"
         ;;
     html)
         pandoc "${COMMON[@]}" --standalone --embed-resources "${CHAPTERS[@]}" -o "$OUT"

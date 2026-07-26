@@ -35,7 +35,15 @@ sudo apt install pandoc texlive-xetex texlive-fonts-recommended
 ./build.sh
 ```
 
-Produce `zeroCAM-manuale.pdf` con copertina, indice e capitoli numerati. La versione in copertina è presa dal file `VERSION` del progetto, o dal tag git se si lavora sul repository.
+Produce `zeroCAM-manuale.pdf` con copertina, indice e capitoli numerati.
+
+La copertina è composta da `img/genera-copertina.py` (fascia con il titolo, una foto della webcam, piede con autore, versione e data) e viene rifatta a ogni compilazione, perché versione e data cambiano; `copertina.tex` la sostituisce al frontespizio di pandoc. Per cambiare la fotografia basta `--foto`:
+
+```bash
+python3 img/genera-copertina.py --foto img/foto-privacy.png --versione v1.2.0 --data 01/09/2026
+```
+
+La versione è presa dal file `VERSION` del progetto, o dal tag git se si lavora sul repository.
 
 Senza LaTeX si può ottenere una pagina HTML autonoma, con tutto incorporato:
 

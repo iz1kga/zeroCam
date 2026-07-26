@@ -1,0 +1,13 @@
+% Sostituisce il frontespizio di pandoc con la copertina composta da
+% img/genera-copertina.py, stampata a pagina piena e senza margini.
+\usepackage{graphicx}
+
+\renewcommand{\maketitle}{%
+  \begingroup
+  \newgeometry{margin=0pt}
+  \thispagestyle{empty}
+  \noindent\includegraphics[width=\paperwidth,height=\paperheight]{img/copertina.png}%
+  \clearpage
+  \restoregeometry
+  \endgroup
+}
