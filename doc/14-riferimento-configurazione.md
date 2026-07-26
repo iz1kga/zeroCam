@@ -47,7 +47,7 @@ Parametri per fase, fase `day`:
 | `AeEnable` | Esposizione automatica |
 | `AeMeteringMode` | Misurazione: centrata, spot, matrix |
 | `AwbMode` | Modalità di bilanciamento del bianco (vedi sotto) |
-| `ColourGainRed`, `ColourGainBlue` | Guadagni fissi di rosso e blu; con entrambi > 0 l'AWB viene spento |
+| `ColourGainRed`, `ColourGainBlue` | Guadagni fissi di rosso e blu, usati solo con `AwbMode` a 7 |
 | `HdrMode` | HDR: off, singola esposizione, multipla |
 | `AnalogueGain`, `ExposureTime`, `ExposureValue` | Valori di partenza |
 | `NoiseReductionMode`, `Sharpness` | Riduzione rumore e nitidezza |
@@ -71,6 +71,7 @@ I valori di `AwbMode` sono quelli di libcamera:
 | 4 | Indoor |
 | 5 | Daylight |
 | 6 | Cloudy |
+| 7 | Manuale: AWB spento, valgono `ColourGainRed` e `ColourGainBlue` |
 
 ## streamParameters
 
@@ -82,7 +83,7 @@ I valori di `AwbMode` sono quelli di libcamera:
 | `bitrate`, `buffer` | testo | Per esempio `4000k` e `8000k` |
 | `extra_destinations` | elenco | Altri URL RTMP |
 | `overlay` | sì/no | Annotazione e loghi sul video |
-| `dawn`, `day`, `dusk`, `night` | oggetto | `framerate`, `AnalogueGain`, `AwbMode`, `NoiseReductionMode`, `Sharpness` |
+| `dawn`, `day`, `dusk`, `night` | oggetto | `framerate`, `AnalogueGain`, `AwbMode`, `ColourGainRed`, `ColourGainBlue`, `NoiseReductionMode`, `Sharpness` |
 
 ## youtubeLive
 

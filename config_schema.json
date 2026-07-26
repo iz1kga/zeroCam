@@ -42,7 +42,7 @@
   "username": { "type": "text" },
   "AwbMode": {
     "type": "select",
-    "options": ["Auto", "Incandescent", "Tungsten", "Fluorescent", "Indoor", "Daylight", "Cloudy"]
+    "options": ["Auto", "Incandescent", "Tungsten", "Fluorescent", "Indoor", "Daylight", "Cloudy", "Manuale (guadagni R/B)"]
   },
   "ColourGainRed": { "type": "number" },
   "ColourGainBlue": { "type": "number" },

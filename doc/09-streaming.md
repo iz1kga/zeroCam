@@ -24,6 +24,8 @@ Lo streaming si ferma a ogni scatto e riparte subito dopo: la camera non può se
 
 Nelle schede per fase del giorno si impostano frequenza dei fotogrammi (`framerate`), guadagno, bilanciamento del bianco, riduzione del rumore e nitidezza: di notte conviene un framerate basso (4–5) e un guadagno alto, di giorno il contrario.
 
+Il bilanciamento del bianco funziona come per lo scatto, modalità *Manuale* compresa: sotto le luci al sodio è il modo per evitare che la diretta viri all'arancione. Vedi il capitolo *La cattura delle immagini*.
+
 Bitrate e buffer (`bitrate`, `buffer`) governano la qualità: 4000–4500 kbit/s per il 1440p sono un punto di partenza sensato. La codifica usa il preset `veryfast` e un gruppo di immagini pari a due secondi, come richiesto dalle piattaforme di live.
 
 ## Ritrasmissione su più destinazioni

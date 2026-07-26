@@ -31,6 +31,11 @@ import copy
 import json
 
 
+# Voce "Manuale" del menu AWB: non e' una modalita' di libcamera, e' il modo
+# di dire "spegni l'automatismo e usa i guadagni indicati".
+AWB_MANUAL = 7
+
+
 def cameraFactory(camera_type, *args, **kwargs):
     if camera_type == 'fakeCamera':
         return fakeCameraDevice(*args, **kwargs)
@@ -181,26 +186,41 @@ class PiCameraDevice:
         """
         Bilanciamento del bianco per lo scatto: automatico o a guadagni fissi.
 
-        Sotto le luci al sodio l'automatismo insegue una dominante che non
-        sparisce mai e vira l'intera immagine: con i guadagni impostati a mano
-        l'AWB viene spento e il colore resta quello scelto. Guadagni a zero
-        significano automatico, con la modalità AwbMode configurata.
+        Con la modalità "Manuale" l'automatismo viene spento e restano i
+        guadagni di rosso e blu indicati: è il rimedio alle luci al sodio, che
+        l'AWB insegue virando l'intera immagine. Con qualunque altra modalità
+        i guadagni sono ignorati.
         """
         try:
-            red = float(params.get("ColourGainRed", 0) or 0)
-            blue = float(params.get("ColourGainBlue", 0) or 0)
+            mode = int(params.get("AwbMode", 0))
         except (TypeError, ValueError):
-            red = blue = 0.0
+            mode = 0
 
-        if red > 0 and blue > 0:
-            controls["AwbEnable"] = False
-            controls["ColourGains"] = (red, blue)
-            controls.pop("AwbMode", None)
-            self.logger.info(f"Bilanciamento del bianco manuale: guadagni R={red:.2f}, B={blue:.2f}")
-        else:
-            controls["AwbEnable"] = True
-            controls["AwbMode"] = int(params.get("AwbMode", 0))
-            self.logger.info(f"Bilanciamento del bianco automatico, modalità {controls['AwbMode']}")
+        if mode == AWB_MANUAL:
+            try:
+                red = float(params.get("ColourGainRed", 0) or 0)
+                blue = float(params.get("ColourGainBlue", 0) or 0)
+            except (TypeError, ValueError):
+                red = blue = 0.0
+
+            if red > 0 and blue > 0:
+                controls["AwbEnable"] = False
+                controls["ColourGains"] = (red, blue)
+                controls.pop("AwbMode", None)
+                self.logger.info(f"Bilanciamento del bianco manuale: guadagni R={red:.2f}, B={blue:.2f}")
+                return controls
+
+            # Manuale senza guadagni validi non e' una richiesta eseguibile:
+            # meglio l'automatico che una foto con i colori a caso.
+            self.logger.warning(
+                "Bilanciamento manuale richiesto ma i guadagni non sono validi: torno all'automatico."
+            )
+            mode = 0
+
+        controls["AwbEnable"] = True
+        controls["AwbMode"] = mode
+        controls.pop("ColourGains", None)
+        self.logger.info(f"Bilanciamento del bianco automatico, modalità {mode}")
         return controls
 
     def takePicture(self, dayperiod):
@@ -568,8 +588,15 @@ class PiCameraDevice:
                 buffer_count=6
             )
             self.camera.configure(video_config)
+            # AwbMode e guadagni non vanno passati grezzi: la voce "Manuale"
+            # non esiste per libcamera e i guadagni sono chiavi nostre.
+            awb_params = {
+                key: dayperiod_params.pop(key)
+                for key in ("AwbMode", "ColourGainRed", "ColourGainBlue")
+                if key in dayperiod_params
+            }
             dayperiod_params["AeEnable"] = True
-            dayperiod_params["AwbEnable"] = True
+            self._apply_white_balance(dayperiod_params, awb_params)
             self.logger.info(f"dayperiod_params: {dayperiod_params}")
             self.camera.set_controls(dayperiod_params)
             self.camera.start()
