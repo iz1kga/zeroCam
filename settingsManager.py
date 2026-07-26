@@ -407,7 +407,9 @@ class SettingsManager:
         path = self.zerocam.components.timelapse.frame_path(name)
         if not path:
             return "Frame not found", 404
-        return send_file(path, mimetype='image/jpeg')
+        # I fotogrammi non cambiano mai: lasciarli in cache al browser evita
+        # di riscaricarli a ogni passaggio della galleria.
+        return send_file(path, mimetype='image/jpeg', max_age=86400, conditional=True)
 
     # --- Focus Aid ---
     

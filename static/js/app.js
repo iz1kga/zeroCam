@@ -785,8 +785,9 @@ const startApp = async () => {
       }
     },
     created() {
-      // Timer non reattivo, come per i grafici
+      // Timer e cache dei fotogrammi: non reattivi, come per i grafici
       this.galleryTimer = null;
+      this.galleryPreload = new Map();
     },
     mounted() {
       this.loadGalleryDays();
@@ -829,6 +830,8 @@ const startApp = async () => {
           this.galleryDay = day;
           this.galleryFrames = data.frames || [];
           this.galleryIndex = 0;
+          // Cambiando giorno le promesse del giorno precedente non servono piu'
+          this.galleryPreload.clear();
         } catch (error) {
           if (error.message !== 'Session expired') {
             console.error('Errore nel caricare i fotogrammi:', error);
@@ -852,16 +855,47 @@ const startApp = async () => {
         // Riparte dall'inizio se siamo gia' in fondo
         if (this.galleryIndex >= this.galleryFrames.length - 1) this.galleryIndex = 0;
         this.galleryPlaying = true;
-        this.galleryTimer = setInterval(() => {
-          if (this.galleryIndex >= this.galleryFrames.length - 1) {
-            this.stopGalleryPlay();
-            return;
-          }
-          this.galleryIndex += 1;
-        }, 1000 / this.gallerySpeed);
+        this.playGalleryFrame();
+      },
+      playGalleryFrame() {
+        // L'indice avanza solo quando il fotogramma successivo e' gia' in
+        // cache: con un intervallo fisso le richieste si accodavano piu' in
+        // fretta di quanto il dispositivo le servisse e l'immagine restava
+        // ferma sull'ultima scaricata, mentre cursore ed etichetta correvano.
+        const next = this.galleryIndex + 1;
+        if (next > this.galleryFrames.length - 1) {
+          this.stopGalleryPlay();
+          return;
+        }
+
+        const startedAt = Date.now();
+        this.preloadGalleryFrame(next).then(() => {
+          if (!this.galleryPlaying) return;
+          this.galleryIndex = next;
+          // Tiene un fotogramma di vantaggio, cosi' il prossimo scatto e' pronto
+          this.preloadGalleryFrame(next + 1);
+          const wait = Math.max(0, (1000 / this.gallerySpeed) - (Date.now() - startedAt));
+          this.galleryTimer = setTimeout(this.playGalleryFrame, wait);
+        });
+      },
+      preloadGalleryFrame(index) {
+        const name = this.galleryFrames[index];
+        if (!name) return Promise.resolve();
+        // Il fotogramma gia' richiesto non viene riscaricato: la stessa
+        // promessa serve sia al prefetch sia all'attesa prima di mostrarlo.
+        if (this.galleryPreload.has(name)) return this.galleryPreload.get(name);
+
+        const pending = new Promise(resolve => {
+          const img = new Image();
+          // Anche un fotogramma illeggibile deve lasciar proseguire la riproduzione
+          img.onload = img.onerror = resolve;
+          img.src = `/timelapse/frame/${name}`;
+        });
+        this.galleryPreload.set(name, pending);
+        return pending;
       },
       stopGalleryPlay() {
-        clearInterval(this.galleryTimer);
+        clearTimeout(this.galleryTimer);
         this.galleryPlaying = false;
       },
       formatBytes(bytes) {
