@@ -150,15 +150,6 @@ Elenco di oggetti:
 | `username`, `password` | testo | Credenziali (password **cifrata**) |
 | `allow_unsecure` | sì/no | Consente `/snapshot.jpg` senza autenticazione |
 
-## mqtt
-
-| Chiave | Tipo | Significato |
-|---|---|---|
-| `enabled` | sì/no | Attiva la connessione |
-| `host`, `port` | testo, numero | Broker |
-| `username` | testo | Utente |
-| `password` | testo **cifrato** | Password |
-
 ## settingsManager
 
 | Chiave | Tipo | Significato |

@@ -14,9 +14,9 @@ Ogni `shotInterval` secondi lo scheduler avvia un ciclo che, nell'ordine:
 8. esegue l'eventuale reset hardware della camera;
 9. prepara il broadcast YouTube e fa ripartire lo streaming.
 
-Durante il ciclo l'interfaccia mostra lo stato (`Capturing Image`, `Annotating and Overlaying`, `Uploading Image`, `Idle`), che viene pubblicato anche via MQTT.
+Durante il ciclo l'interfaccia mostra lo stato: `Capturing Image`, `Annotating and Overlaying`, `Uploading Image`, `Idle`.
 
-Uno scatto può essere avviato a mano da **Cam Control → Take Photo** o via comando MQTT: il ciclo è lo stesso.
+Uno scatto può essere avviato a mano da **Cam Control → Take Photo**: il ciclo è lo stesso.
 
 ## Parametri della camera
 

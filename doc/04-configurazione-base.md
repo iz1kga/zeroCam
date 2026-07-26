@@ -34,7 +34,7 @@ I quattro offset sono **angoli di elevazione del Sole rispetto all'orizzonte, in
 
 Per anticipare il passaggio a una fase si usa un valore più negativo (il Sole è più basso, quindi accade prima al tramonto e più tardi all'alba); per posticiparlo, un valore più vicino a zero o positivo. Su una webcam affacciata su un versante in ombra conviene abbassare le soglie del giorno, per esempio a `-1`, così l'esposizione automatica non viene usata quando la valle è già in ombra.
 
-La fase corrente si vede nella diagnostica MQTT e nel log a ogni scatto.
+La fase corrente viene scritta nel log a ogni scatto.
 
 ## Sicurezza e accesso
 
@@ -51,6 +51,6 @@ sudo systemctl restart zerocam.service
 
 ## Il file di configurazione
 
-Tutto ciò che si imposta dall'interfaccia finisce in `/usr/local/zerocam/data/.conf.json`. I campi sensibili — password MQTT, FTP e ONVIF, chiave di streaming, credenziali YouTube, token HTTP — sono cifrati e appaiono con il prefisso `enc:`. La cifratura deriva da `ZEROCAM_SECRET_KEY`, quindi il file da solo, copiato su un'altra macchina, non è leggibile: per spostare una configurazione si usa il backup della pagina System.
+Tutto ciò che si imposta dall'interfaccia finisce in `/usr/local/zerocam/data/.conf.json`. I campi sensibili — password FTP e ONVIF, chiave di streaming, credenziali YouTube, token HTTP — sono cifrati e appaiono con il prefisso `enc:`. La cifratura deriva da `ZEROCAM_SECRET_KEY`, quindi il file da solo, copiato su un'altra macchina, non è leggibile: per spostare una configurazione si usa il backup della pagina System.
 
 Il file si può modificare a mano a servizio fermo, ma non è la via consigliata: l'interfaccia conosce i tipi dei campi e riscrive i valori cifrati correttamente. Le chiavi introdotte da una nuova versione vengono aggiunte automaticamente con i loro valori di default, sia dall'installer sia al primo avvio.

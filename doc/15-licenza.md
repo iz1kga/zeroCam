@@ -20,4 +20,4 @@ IN NESSUN CASO GLI AUTORI O I TITOLARI DEL COPYRIGHT SARANNO RESPONSABILI PER AL
 
 ## Componenti di terze parti
 
-zeroCAM si appoggia a software rilasciato con licenze proprie, fra cui `picamera2` e `libcamera`, ffmpeg, Flask, waitress, Pillow, OpenCV, `ephem`, `paho-mqtt` e Bootstrap. Ciascuno resta soggetto alla propria licenza.
+zeroCAM si appoggia a software rilasciato con licenze proprie, fra cui `picamera2` e `libcamera`, ffmpeg, Flask, waitress, Pillow, OpenCV, `ephem` e Bootstrap. Ciascuno resta soggetto alla propria licenza.

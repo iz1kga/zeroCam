@@ -16,7 +16,7 @@ Il manuale è scritto in Markdown, un file per capitolo, e viene unito in un uni
 | [08-pubblicazione-immagini.md](08-pubblicazione-immagini.md) | Upload FTP e HTTP |
 | [09-streaming.md](09-streaming.md) | Diretta YouTube, ritrasmissione, anteprima |
 | [10-timelapse.md](10-timelapse.md) | Raccolta, montaggio, pubblicazione, galleria |
-| [11-integrazioni.md](11-integrazioni.md) | ONVIF e MQTT |
+| [11-onvif.md](11-onvif.md) | Integrazione ONVIF |
 | [12-manutenzione.md](12-manutenzione.md) | Backup, log, statistiche, spazio su disco |
 | [13-risoluzione-problemi.md](13-risoluzione-problemi.md) | Sintomi, cause, rimedi |
 | [14-riferimento-configurazione.md](14-riferimento-configurazione.md) | Tutte le chiavi di `.conf.json` |

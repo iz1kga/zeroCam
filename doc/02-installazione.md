@@ -56,7 +56,7 @@ Sono lette dal servizio tramite `EnvironmentFile=/usr/local/zerocam/data/.env`.
 | Variabile | Obbligatoria | Significato |
 |---|---|---|
 | `ZEROCAM_SECRET_KEY` | sì | Chiave da cui deriva la cifratura dei segreti nella configurazione |
-| `DEVICE_ID` | sì | Identificativo del dispositivo, usato nei topic MQTT |
+| `DEVICE_ID` | sì | Identificativo univoco del dispositivo |
 | `ZEROCAM_DATA_DIR` | no | Sposta altrove l'intera cartella dei dati |
 | `LOG_LEVEL` | no | `DEBUG`, `INFO` (default), `WARNING`, `ERROR` |
 

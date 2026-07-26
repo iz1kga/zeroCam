@@ -16,7 +16,7 @@ Tutto si governa da un'interfaccia web sul dispositivo, senza toccare file di co
 * **Pubblicazione**: upload FTP, upload HTTP verso un endpoint con token, ultima immagine sempre disponibile via web.
 * **Diretta YouTube**: push RTMP con creazione e collegamento automatico del broadcast via API, ritrasmissione simultanea verso altre destinazioni RTMP, annotazione e loghi anche sul video.
 * **Timelapse settimanale**: raccolta dei fotogrammi, montaggio con ffmpeg e caricamento su YouTube, con galleria di anteprima nell'interfaccia.
-* **Integrazioni**: servizio ONVIF (snapshot e profilo media) e comandi/diagnostica via MQTT.
+* **Integrazione ONVIF**: istantanea e profilo media per NVR e software di videosorveglianza.
 * **Gestione**: log a schermo, statistiche hardware storiche, backup e ripristino cifrato della configurazione, riavvio da interfaccia, aiuto alla messa a fuoco.
 
 ## Requisiti
@@ -50,7 +50,6 @@ L'applicazione è un unico processo Python (`zeroCam.py`) che avvia alcuni threa
 | `SchedulerManager` | Pianifica scatti, diagnostica, raccolta statistiche, timelapse e pulizia |
 | `ComponentManager` | Costruisce e tiene insieme camera, uploader, annotatore, maschere, timelapse, YouTube |
 | `SettingsManager` | Interfaccia web e API REST (Flask servito da waitress) |
-| `MQTTManager` | Connessione al broker, comandi in ingresso e diagnostica in uscita |
 | `StatsCollector` | Legge temperatura, CPU, memoria e disco e ne conserva lo storico |
 | `cameras.py` | Cattura, streaming e gestione del sensore tramite `picamera2` |
 
@@ -58,7 +57,7 @@ Il ciclo di lavoro è sempre lo stesso: lo streaming, se attivo, viene interrott
 
 ## Come leggere questo manuale
 
-I capitoli seguono l'ordine naturale di lavoro: installazione, primo accesso, configurazione, poi una parte per ciascuna funzione (scatto, privacy, annotazione, pubblicazione, diretta, timelapse) e infine integrazioni, manutenzione e risoluzione dei problemi.
+I capitoli seguono l'ordine naturale di lavoro: installazione, primo accesso, configurazione, poi una parte per ciascuna funzione (scatto, privacy, annotazione, pubblicazione, diretta, timelapse) e infine l'integrazione ONVIF, la manutenzione e la risoluzione dei problemi.
 
 Il capitolo *Riferimento della configurazione* raccoglie tutte le chiavi del file `.conf.json` con il loro significato, utile quando si sa già cosa cercare.
 
