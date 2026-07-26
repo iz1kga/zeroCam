@@ -27,6 +27,7 @@ from lib.helpers import (
     get_raspberry_pi_stats,
     saveImage
 )
+from lib import paths
 from lib.version import get_version
 from settingsManager import run_settings_manager
 
@@ -197,10 +198,10 @@ class ZeroCamApp:
         try:
             now = datetime.datetime.now()
             filename = now.strftime('%Y%m%d-%H%M%S')
-            os.makedirs("./images", exist_ok=True)
+            os.makedirs(paths.IMAGES_DIR, exist_ok=True)
             
             # Save image
-            with open(f'./images/{filename}.jpg', 'wb') as f:
+            with open(os.path.join(paths.IMAGES_DIR, f'{filename}.jpg'), 'wb') as f:
                 f.write(image_buffer.getvalue())
             
             # Save metadata
@@ -215,7 +216,7 @@ class ZeroCamApp:
                 },
                 "image_metadata": metadata
             }
-            with open(f'./images/{filename}.json', 'w') as f:
+            with open(os.path.join(paths.IMAGES_DIR, f'{filename}.json'), 'w') as f:
                 json.dump(archive_meta, f, indent=4)
         except Exception as e:
             self.logger.error(f"Failed to archive image: {e}", exc_info=True)
@@ -360,8 +361,8 @@ def setup_logging(log_level_str):
         logger.addHandler(console_handler)
 
         # Rotating File Handler
-        log_file_path = "/usr/local/zerocam/app/logs/zerocam.log"
-        os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+        log_file_path = paths.LOG_FILE
+        os.makedirs(paths.LOG_DIR, exist_ok=True)
         file_handler = logging.handlers.TimedRotatingFileHandler(log_file_path, when="D", interval=1, backupCount=7)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -401,9 +402,17 @@ def run_pre_start_checks(logger):
     return device_id
 
 if __name__ == "__main__":
+    # Prima di tutto: configurazione e log vivono nella cartella dei dati, e
+    # un'installazione aggiornata da una versione precedente li ha ancora in
+    # quella dell'applicazione. Il logger non esiste ancora, perché il suo
+    # file è fra le cose da spostare.
+    migration_messages = paths.migrate_legacy_data()
+
     log_level = os.getenv("LOG_LEVEL", "INFO")
     main_logger = setup_logging(log_level)
-    
+    for message in migration_messages:
+        main_logger.warning(message)
+
     print_banner(main_logger)
     
     device_id = run_pre_start_checks(main_logger)

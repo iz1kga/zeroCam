@@ -12,10 +12,10 @@ from PIL import Image, ImageDraw
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
-from lib import config_backup
+from lib import config_backup, paths
 from lib.version import get_version
 
-PRIVACY_MASK_PATH = '.privacy_mask.json'
+PRIVACY_MASK_PATH = paths.PRIVACY_MASK_FILE
 
 # La classe User ora è disaccoppiata dall'oggetto zerocam globale.
 class User(UserMixin):
@@ -161,7 +161,7 @@ class SettingsManager:
 
     @login_required
     def latest_image(self):
-        return send_file('./latest.jpg', mimetype='image/jpeg')
+        return send_file(paths.LATEST_IMAGE, mimetype='image/jpeg')
 
     @login_required
     def stream_latest_image(self):
@@ -338,7 +338,7 @@ class SettingsManager:
     @login_required
     def get_log(self):
         try:
-            with open('./logs/zerocam.log', 'r') as f:
+            with open(paths.LOG_FILE, 'r') as f:
                 return Response(f.read(), mimetype='text/plain')
         except FileNotFoundError:
             return Response("Log file not found.", status=404, mimetype='text/plain')

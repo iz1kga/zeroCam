@@ -40,6 +40,19 @@ Una volta completata l'installazione, puoi accedere all'interfaccia web del disp
 
 Ora puoi configurare la tua telecamera e iniziare a usarla!
 
+### Dove stanno i dati
+
+L'installazione è divisa in due cartelle:
+
+```
+/usr/local/zerocam/app     codice, cancellato e riscritto a ogni aggiornamento
+/usr/local/zerocam/data    configurazione, .env, log, fotogrammi, immagini
+```
+
+L'installer rimuove `app/` prima di estrarre la nuova versione: tutto ciò che deve sopravvivere sta in `data/`, che non viene mai toccata. Ci trovi `.conf.json`, `.privacy_mask.json`, `.env`, `.capture_info`, `logs/`, `images/`, `timelapse_frames/` e `timelapse/`.
+
+Chi aggiorna da una versione precedente non deve fare nulla: l'installer sposta i file rimasti in `app/` prima di rimuoverla, e al primo avvio l'applicazione fa lo stesso controllo per sicurezza, scrivendolo nel log. I percorsi relativi rimasti in configurazione (per esempio `./timelapse_frames`) vengono risolti dentro `data/`; quelli assoluti restano dove sono, quindi si possono ancora tenere i fotogrammi su un disco esterno. `ZEROCAM_DATA_DIR` permette di spostare l'intera cartella dei dati altrove.
+
 ### Diretta YouTube automatica
 
 Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi la sola chiave di streaming non fa andare in onda nulla finché non si apre la Live Control Room. zeroCAM può creare e collegare il broadcast da solo, con avvio automatico e senza interruzione automatica, così la diretta parte da sé e sopravvive alle pause di pochi secondi durante la cattura della foto.
@@ -154,6 +167,19 @@ Once the installation is complete, you can access the device's web interface:
 * **Password:** The one you provided during installation.
 
 Now you can configure your camera and start using it!
+
+### Where the data lives
+
+The installation is split in two directories:
+
+```
+/usr/local/zerocam/app     code, wiped and rewritten on every upgrade
+/usr/local/zerocam/data    configuration, .env, logs, frames, images
+```
+
+The installer removes `app/` before extracting the new version, so everything that must survive lives in `data/`, which is never touched: `.conf.json`, `.privacy_mask.json`, `.env`, `.capture_info`, `logs/`, `images/`, `timelapse_frames/` and `timelapse/`.
+
+Upgrading from an earlier version needs no manual step: the installer moves whatever is left in `app/` before removing it, and on the first start the application runs the same check as a safety net, logging what it moves. Relative paths still stored in the configuration (`./timelapse_frames`, for instance) resolve inside `data/`; absolute ones are honoured as they are, so frames can still live on an external disk. `ZEROCAM_DATA_DIR` moves the whole data directory elsewhere.
 
 ### Automatic YouTube broadcast
 

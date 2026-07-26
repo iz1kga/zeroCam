@@ -17,7 +17,7 @@ from lib.helpers import (
     centered_view,
     FramePrivacyMasker,
 )
-from lib import stream_overlay
+from lib import paths, stream_overlay
 import random
 import threading
 import subprocess
@@ -123,7 +123,7 @@ class PiCameraDevice:
         Gestisce l'assenza del file o un formato obsoleto.
         """
         try:
-            with open('.capture_info', 'r') as f:
+            with open(paths.CAPTURE_INFO_FILE, 'r') as f:
                 data = json.load(f)
                 self.last_known_exposure_index = data.get('exposure_index', 8)
                 self.last_known_gain_index = data.get('gain_index', 0)
@@ -148,7 +148,7 @@ class PiCameraDevice:
             'gain_index': self.last_known_gain_index
         }
         try:
-            with open('.capture_info', 'w') as f:
+            with open(paths.CAPTURE_INFO_FILE, 'w') as f:
                 json.dump(data_to_store, f, indent=4)
                 self.logger.info(
                     f"Salvati nuovi indici: Esposizione={data_to_store['exposure_index']}, "

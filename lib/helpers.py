@@ -21,7 +21,7 @@ import logging
 import cv2
 import numpy as np
 
-PRIVACY_MASK_PATH = '.privacy_mask.json'
+from lib.paths import LATEST_IMAGE, PRIVACY_MASK_FILE as PRIVACY_MASK_PATH
 
 
 def load_privacy_rois(logger=None):
@@ -441,7 +441,7 @@ class DayPeriodCalculator:
 # functions
 def saveImage(logger, image_buffer):
     image = Image.open(image_buffer)
-    image.save("latest.jpg", format="JPEG")
+    image.save(LATEST_IMAGE, format="JPEG")
 
 def unsharpMask(logger, image_buffer, radius=3, percent=75, threshold=5):
     image = Image.open(image_buffer)

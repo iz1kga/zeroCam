@@ -25,6 +25,7 @@ from datetime import datetime, timedelta
 import requests
 from PIL import Image
 
+from lib import paths
 from lib.youtube_auth import UPLOAD_BASE
 
 FRAME_PATTERN = "%Y%m%d-%H%M%S"
@@ -55,11 +56,14 @@ class TimelapseManager:
 
     @property
     def frames_dir(self):
-        return self.cfg.get("frames_dir", "./timelapse_frames")
+        # I percorsi relativi rimasti in configurazione ('./timelapse_frames')
+        # puntavano dentro la cartella dell'applicazione, che l'aggiornamento
+        # cancella: vengono riportati nella cartella dei dati.
+        return paths.resolve(self.cfg.get("frames_dir"), paths.TIMELAPSE_FRAMES_DIR)
 
     @property
     def output_dir(self):
-        return self.cfg.get("output_dir", "./timelapse")
+        return paths.resolve(self.cfg.get("output_dir"), paths.TIMELAPSE_OUTPUT_DIR)
 
     # --- Raccolta dei fotogrammi ----------------------------------------
 
