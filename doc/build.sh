@@ -52,7 +52,7 @@ case "$FORMAT" in
             command -v "$candidate" >/dev/null && { ENGINE="$candidate"; break; }
         done
         if [ -z "$ENGINE" ]; then
-            echo "Nessun motore LaTeX trovato:  sudo apt install texlive-xetex texlive-fonts-recommended" >&2
+            echo "Nessun motore LaTeX trovato:  sudo apt install texlive-xetex texlive-fonts-recommended lmodern" >&2
             echo "In alternativa:  ./build.sh html" >&2
             exit 1
         fi

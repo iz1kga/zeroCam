@@ -24,9 +24,11 @@ jobs:
       - name: Install manual toolchain
         run: |
           sudo apt-get update
+          # lmodern va chiesto per nome: il template di pandoc lo carica sempre,
+          # ma con --no-install-recommends non arriva come dipendenza di TeX Live.
           sudo apt-get install -y --no-install-recommends \
             pandoc texlive-xetex texlive-latex-base texlive-latex-recommended \
-            texlive-latex-extra texlive-fonts-recommended python3-pil
+            texlive-latex-extra texlive-fonts-recommended lmodern python3-pil
 
       - name: Build manual
         env:

@@ -31,7 +31,7 @@ Stanno in [img/](img/). I diagrammi si rigenerano da sorgente con `img/genera-di
 ## Costruire il PDF
 
 ```bash
-sudo apt install pandoc texlive-xetex texlive-fonts-recommended
+sudo apt install pandoc texlive-xetex texlive-fonts-recommended lmodern
 ./build.sh
 ```
 
