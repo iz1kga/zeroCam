@@ -184,6 +184,9 @@ class PiCameraDevice:
         """
         with self.camera_lock:
             self.logger.info(f"--- Inizio cattura per '{dayperiod}' ---")
+            # Nelle fasi scure il bracketing puo' durare minuti: i tempi finiscono
+            # nel log a ogni passo, cosi' si vede che la cattura sta lavorando.
+            capture_started = time.monotonic()
             params = copy.deepcopy(self.params.get(dayperiod, {}))
             
             # Costanti per il bracketing
@@ -216,14 +219,19 @@ class PiCameraDevice:
                     self.camera.capture_file(output_buffer, format="jpeg")
                     metadata = self.camera.capture_metadata()
                     self.logger.info(
-                        f"Cattura diurna completata. Gain: {metadata.get('AnalogueGain'):.2f}, "
+                        f"Cattura diurna completata in {time.monotonic() - capture_started:.1f}s. "
+                        f"Gain: {metadata.get('AnalogueGain'):.2f}, "
                         f"Esposizione: {metadata.get('ExposureTime')/1000000:.4f}s"
                     )
                     return output_buffer, metadata
 
                 else:
                     # --- LOGICA PER SCATTI NOTTURNI/CREPUSCOLO (CON AGGIUNTA DEL GAIN) ---
-                    self.logger.info("Modalità crepuscolo/notte: bracketing manuale su Esposizione e Gain.")
+                    self.logger.info(
+                        "Modalità crepuscolo/notte: bracketing manuale su Esposizione e Gain. "
+                        "Ogni tentativo costa 2s di stabilizzazione più il tempo di posa, "
+                        "quindi la cattura può richiedere minuti."
+                    )
                     shutter_speeds_us = [int(s * 1_000_000) for s in SHUTTER_SPEEDS_SECONDS]
                     
                     # Carica l'ultimo stato noto per esposizione E gain
@@ -258,8 +266,9 @@ class PiCameraDevice:
                         exposure_us = shutter_speeds_us[shutter_idx]
                         gain = ANALOG_GAINS[gain_idx]
                         
+                        attempt_started = time.monotonic()
                         self.logger.info(
-                            f"Tentativo {attempt + 1}/{max_attempts}: "
+                            f"[{attempt_started - capture_started:.0f}s] Tentativo {attempt + 1}/{max_attempts}: "
                             f"Idx Esp={shutter_idx}, Idx Gain={gain_idx} "
                             f"({exposure_us/1_000_000:.3f}s, Gain={gain:.1f}x)"
                         )
@@ -281,12 +290,20 @@ class PiCameraDevice:
                         with Image.open(current_buffer) as img:
                             brightness = ImageStat.Stat(img.convert('L')).mean[0]
 
-                        self.logger.info(f"Luminosità misurata: {brightness:.2f}")
+                        self.logger.info(
+                            f"Tentativo {attempt + 1} concluso in {time.monotonic() - attempt_started:.1f}s, "
+                            f"luminosità misurata: {brightness:.2f} "
+                            f"(obiettivo {BRIGHTNESS_TARGET_MIN}-{BRIGHTNESS_TARGET_MAX})"
+                        )
                         
                         exp_results[current_state] = {"brightness": brightness, "metadata": metadata, "image": current_buffer}
 
                         if BRIGHTNESS_TARGET_MIN <= brightness <= BRIGHTNESS_TARGET_MAX:
-                            self.logger.info(f"Esposizione ottimale trovata! Salvo lo stato (shutter_idx={shutter_idx}, gain_idx={gain_idx}).")
+                            self.logger.info(
+                                f"Esposizione ottimale trovata in {time.monotonic() - capture_started:.1f}s "
+                                f"con {attempt + 1} tentativi. "
+                                f"Salvo lo stato (shutter_idx={shutter_idx}, gain_idx={gain_idx})."
+                            )
                             self.last_known_exposure_index = shutter_idx
                             self.last_known_gain_index = gain_idx
                             self._store_capture_indices()
@@ -321,7 +338,11 @@ class PiCameraDevice:
                     best_state = min(exp_results.keys(), key=lambda state: abs(exp_results[state]['brightness'] - target_br))
                     best_result = exp_results[best_state]
                     
-                    self.logger.info(f"Scatto migliore: Idx Esp={best_state[0]}, Idx Gain={best_state[1]}, Luminosità={best_result['brightness']:.2f}")
+                    self.logger.info(
+                        f"Scatto migliore dopo {time.monotonic() - capture_started:.1f}s e {len(exp_results)} tentativi: "
+                        f"Idx Esp={best_state[0]}, Idx Gain={best_state[1]}, "
+                        f"Luminosità={best_result['brightness']:.2f}"
+                    )
                     self.last_known_exposure_index = best_state[0]
                     self.last_known_gain_index = best_state[1]
                     self._store_capture_indices() # Salva lo stato migliore trovato

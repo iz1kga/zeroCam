@@ -103,6 +103,7 @@ const startApp = async () => {
         activeStreamTab: 'dawn',
         focusAidActive: false,
         isCapturing: false,
+        captureElapsed: 0,
         captureStatusTimer: null,
         streamRunning: false,
         livePreview: false,
@@ -251,6 +252,7 @@ const startApp = async () => {
           .then(res => res.json())
           .then(data => {
             this.isCapturing = data.is_capturing;
+            this.captureElapsed = data.elapsed || 0;
 
             // 2. Controlla se lo stato è appena cambiato da true a false
             if (wasCapturing && !this.isCapturing) {
@@ -538,12 +540,20 @@ const startApp = async () => {
       streamRunning: { type: Boolean, default: false },
       livePreview: { type: Boolean, default: false },
       isCapturing: { type: Boolean, default: false },
+      captureElapsed: { type: Number, default: 0 },
       focusAidActive: { type: Boolean, default: false }
     },
     emits: ['take-photo', 'start-focus-aid', 'restart-app', 'toggle-live-preview'],
     computed: {
       displayedImageUrl() {
         return this.livePreview && this.previewUrl ? this.previewUrl : this.imageUrl;
+      },
+      captureElapsedLabel() {
+        // Di notte la cattura dura minuti: il tempo trascorso dice che sta
+        // ancora lavorando invece di lasciar pensare a un blocco.
+        const s = this.captureElapsed;
+        if (!s) return '';
+        return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
       }
     },
     data() {

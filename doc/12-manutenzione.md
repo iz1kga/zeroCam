@@ -32,7 +32,9 @@ Righe da conoscere:
 
 | Messaggio | Significato |
 |---|---|
-| `Capture job finished.` | Ciclo di scatto concluso |
+| `[12s] Tentativo 3/40: ...` | Bracketing in corso: fra parentesi il tempo dall'inizio della cattura |
+| `Esposizione ottimale trovata in 58.7s con 4 tentativi.` | Ricerca conclusa con successo |
+| `Capture job finished in 71.2s.` | Ciclo di scatto concluso, con la sua durata |
 | `Nessuna esposizione perfetta trovata` | Il bracketing si è fermato sul risultato più vicino |
 | `Broken pipe with ffmpeg` | Lo streaming si è interrotto; riparte al ciclo successivo |
 | `No YouTube liveStream matches the configured stream key` | Chiave di streaming errata o non presente nell'account |

@@ -360,7 +360,16 @@ class SettingsManager:
         
     @login_required
     def get_capture_status(self):
-        return jsonify({"is_capturing": self.zerocam.capture_lock.locked()})
+        """
+        Stato della cattura, con i secondi trascorsi.
+
+        Di notte il bracketing dura minuti: senza il tempo trascorso la
+        pagina sembra bloccata e non si distingue una cattura lunga da un
+        guasto.
+        """
+        started = self.zerocam.capture_started_at
+        elapsed = round(time.monotonic() - started) if started else 0
+        return jsonify({"is_capturing": self.zerocam.capture_lock.locked(), "elapsed": elapsed})
 
     @login_required
     def get_stream_status(self):

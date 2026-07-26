@@ -52,6 +52,25 @@ Gli indici dell'ultima posa riuscita vengono salvati in `data/.capture_info`: il
 
 > **Conseguenza pratica** — uno scatto notturno può richiedere minuti: ogni tentativo comporta due secondi di riscaldamento del sensore più il tempo di posa. Con un intervallo di scatto molto breve la notte può capitare che un ciclo non sia ancora finito quando parte il successivo. Un intervallo di 5–10 minuti è un buon compromesso.
 
+### Seguire una cattura lunga
+
+Perché un'attesa di minuti non si confonda con un blocco, ogni passo della ricerca finisce nel log con i propri tempi:
+
+```
+Modalità crepuscolo/notte: bracketing manuale su Esposizione e Gain.
+Ogni tentativo costa 2s di stabilizzazione più il tempo di posa,
+quindi la cattura può richiedere minuti.
+[0s] Tentativo 1/40: Idx Esp=8, Idx Gain=0 (8.000s, Gain=1.0x)
+Tentativo 1 concluso in 10.3s, luminosità misurata: 22.14 (obiettivo 40-55)
+[10s] Tentativo 2/40: Idx Esp=9, Idx Gain=0 (10.000s, Gain=1.0x)
+Tentativo 2 concluso in 12.4s, luminosità misurata: 31.02 (obiettivo 40-55)
+...
+Esposizione ottimale trovata in 58.7s con 4 tentativi.
+Capture job finished in 71.2s.
+```
+
+Il numero fra parentesi quadre è il tempo trascorso dall'inizio della cattura: se avanza, il software sta lavorando. Nell'interfaccia lo stesso conteggio compare sul pulsante di **Cam Control**, che durante il ciclo diventa *Scatto in corso — 1m 12s*.
+
 ## Ritaglio
 
 **Configuration → Camera → Crop** ritaglia un rettangolo dell'immagine: si indicano larghezza e altezza in pixel e, se serve, uno spostamento rispetto al centro. Il ritaglio è centrato sull'immagine e traslato dagli offset, e viene applicato prima di maschere e annotazioni: tutte le coordinate successive (privacy mask, loghi) si riferiscono all'immagine già ritagliata.

@@ -53,6 +53,7 @@ class ZeroCamApp:
         
         # Core application state
         self.shot_counter = 0
+        self.capture_started_at = None
         self.diagnostic_data = {}
         self.streaming_was_active = False
 
@@ -130,66 +131,76 @@ class ZeroCamApp:
 
             self.config_manager.load_config() # Refresh config before each capture
             self.publish_diagnostic("Capturing Image")
-            
+
             day_period = self.components.day_period_calc.get_day_period()
             if day_period == "unknown":
                 self.logger.error("Day period is 'unknown', skipping capture.")
                 return
 
             self.logger.info(f"Capture started for day period: {day_period}")
+            # Da qui in avanti la cattura è in corso: l'istante di inizio serve
+            # all'interfaccia per dire da quanto sta lavorando, visto che di
+            # notte il bracketing può durare minuti.
+            self.capture_started_at = time.monotonic()
+            try:
             
-            # Stop stream if running
-            if hasattr(self.components.camera, 'running') and self.components.camera.running:
-                self.components.camera.streamStop()
+                # Stop stream if running
+                if hasattr(self.components.camera, 'running') and self.components.camera.running:
+                    self.components.camera.streamStop()
 
-            image_buffer, metadata = self.components.camera.takePicture(day_period)
+                image_buffer, metadata = self.components.camera.takePicture(day_period)
             
-            if image_buffer is None:
-                self.logger.error("Failed to capture image (buffer is None).")
-                self.publish_diagnostic("Error: Capture Failed")
+                if image_buffer is None:
+                    self.logger.error("Failed to capture image (buffer is None).")
+                    self.publish_diagnostic("Error: Capture Failed")
+                    self._restart_stream_if_enabled(day_period)
+                    return
+            
+                self.shot_counter += 1
+                self.logger.info(f"Image captured successfully. Shot counter: {self.shot_counter}")
+
+                if self.config_manager.get("cameraParameters", {}).get("unsharpMask", False):
+                    self.publish_diagnostic("Applying unsharp mask")
+                    unsharpMask(self.logger, image_buffer)
+
+                self.publish_diagnostic("Annotating and Overlaying")
+                self.logger.info(f"Crop settings: {self.components.cropper.crop_settings}")
+                self.logger.info(f"Crop enabled: {self.components.cropper.crop_settings.get('enabled', 'Crop Not ENABLED')}")
+                if self.components.cropper and self.components.cropper.crop_settings.get("enabled", False):
+                    image_buffer = self.components.cropper.crop(image_buffer)
+
+                if self.components.privacy_masker:
+                    image_buffer = self.components.privacy_masker.apply_masks(image_buffer)
+
+                image_buffer = self.components.annotator.annotate(image_buffer)
+                image_buffer = self.components.overlay.add_overlays(image_buffer)
+
+                self.publish_diagnostic("Uploading Image")
+                self.components.ftp_uploader.upload(image_buffer, metadata)
+                image_buffer.seek(0)
+                self.components.http_uploader.upload(image_buffer, metadata)
+
+                saveImage(self.logger, image_buffer) # Save latest image locally
+                self._archive_image_if_enabled(image_buffer, metadata, day_period)
+                # Fotogramma per il timelapse settimanale: immagine finale, già
+                # ritagliata, mascherata e annotata come quella pubblicata.
+                self.components.timelapse.store_frame(image_buffer)
+
+                self.publish_diagnostic("Capture Completed")
+                self.logger.info(f"Capture job finished in {time.monotonic() - self.capture_started_at:.1f}s.")
+                self.diagnostic_data["lastCapture"] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+                self.diagnostic_data["lastCapture_dayperiod"] = day_period
+                time.sleep(1) # Small delay before status change
+                self.publish_diagnostic("Idle")
+            
+                self._check_for_hard_reset()
                 self._restart_stream_if_enabled(day_period)
-                return
             
-            self.shot_counter += 1
-            self.logger.info(f"Image captured successfully. Shot counter: {self.shot_counter}")
+            finally:
+                elapsed = time.monotonic() - (self.capture_started_at or time.monotonic())
+                self.capture_started_at = None
+                self.logger.info(f"Capture cycle for '{day_period}' ended after {elapsed:.1f}s.")
 
-            if self.config_manager.get("cameraParameters", {}).get("unsharpMask", False):
-                self.publish_diagnostic("Applying unsharp mask")
-                unsharpMask(self.logger, image_buffer)
-
-            self.publish_diagnostic("Annotating and Overlaying")
-            self.logger.info(f"Crop settings: {self.components.cropper.crop_settings}")
-            self.logger.info(f"Crop enabled: {self.components.cropper.crop_settings.get('enabled', 'Crop Not ENABLED')}")
-            if self.components.cropper and self.components.cropper.crop_settings.get("enabled", False):
-                image_buffer = self.components.cropper.crop(image_buffer)
-
-            if self.components.privacy_masker:
-                image_buffer = self.components.privacy_masker.apply_masks(image_buffer)
-
-            image_buffer = self.components.annotator.annotate(image_buffer)
-            image_buffer = self.components.overlay.add_overlays(image_buffer)
-
-            self.publish_diagnostic("Uploading Image")
-            self.components.ftp_uploader.upload(image_buffer, metadata)
-            image_buffer.seek(0)
-            self.components.http_uploader.upload(image_buffer, metadata)
-
-            saveImage(self.logger, image_buffer) # Save latest image locally
-            self._archive_image_if_enabled(image_buffer, metadata, day_period)
-            # Fotogramma per il timelapse settimanale: immagine finale, già
-            # ritagliata, mascherata e annotata come quella pubblicata.
-            self.components.timelapse.store_frame(image_buffer)
-
-            self.publish_diagnostic("Capture Completed")
-            self.logger.info("Capture job finished.")
-            self.diagnostic_data["lastCapture"] = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-            self.diagnostic_data["lastCapture_dayperiod"] = day_period
-            time.sleep(1) # Small delay before status change
-            self.publish_diagnostic("Idle")
-            
-            self._check_for_hard_reset()
-            self._restart_stream_if_enabled(day_period)
-            
     def _archive_image_if_enabled(self, image_buffer, metadata, day_period):
         """Saves the image and metadata to a local archive if configured."""
         if not self.config_manager.get("cameraParameters", {}).get("archiveImages", False):
