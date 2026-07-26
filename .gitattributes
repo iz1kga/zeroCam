@@ -3,3 +3,19 @@ VERSION export-subst
 # Fuori dall'archivio installato sul dispositivo: servono al progetto, non all'app.
 doc/ export-ignore
 .github/ export-ignore
+hardware/ export-ignore
+
+# Sorgenti CAD ed esportazioni STEP: binari pesanti, che senza Git LFS
+# resterebbero per intero nella storia a ogni revisione. Serve `git lfs install`.
+*.sldprt filter=lfs diff=lfs merge=lfs -text
+*.SLDPRT filter=lfs diff=lfs merge=lfs -text
+*.sldasm filter=lfs diff=lfs merge=lfs -text
+*.SLDASM filter=lfs diff=lfs merge=lfs -text
+*.slddrw filter=lfs diff=lfs merge=lfs -text
+*.SLDDRW filter=lfs diff=lfs merge=lfs -text
+*.step filter=lfs diff=lfs merge=lfs -text
+*.stp filter=lfs diff=lfs merge=lfs -text
+
+# 3MF e STL restano in git: sono più leggeri e GitHub li mostra in 3D nel browser.
+*.3mf -text
+*.stl -text

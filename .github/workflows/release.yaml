@@ -37,13 +37,28 @@ jobs:
           ./doc/build.sh
           mv doc/zeroCAM-manuale.pdf zeroCAM-manuale_${{ github.ref_name }}.pdf
 
+      # Pacco meccanico: STEP, file di stampa e istruzioni. Creato solo quando
+      # c'e' davvero qualcosa da spedire, cosi' finche' il CAD non e' pronto la
+      # release non porta un allegato vuoto.
+      - name: Package hardware files
+        run: |
+          if [ -n "$(find hardware/step hardware/print -type f ! -name '.gitkeep' 2>/dev/null)" ]; then
+            zip -r zeroCam-hardware_${{ github.ref_name }}.zip \
+              hardware/step hardware/print hardware/img \
+              hardware/README.md hardware/CHANGELOG.md -x '*/.gitkeep'
+          else
+            echo "Nessun file meccanico da allegare."
+          fi
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
+          fail_on_unmatched_files: false
           files: |
             zeroCam_${{ github.ref_name }}.zip
             zeroCAM-manuale_${{ github.ref_name }}.pdf
+            zeroCam-hardware_${{ github.ref_name }}.zip
           body: "Release ${{ github.ref_name }}"
           draft: false
           prerelease: false
