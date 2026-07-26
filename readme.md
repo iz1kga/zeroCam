@@ -79,6 +79,8 @@ La spunta *Annotazione e loghi nella diretta*, sempre in **Config → Stream**, 
 
 Il disegno lo fa ffmpeg con i suoi filtri mentre già ricodifica, quindi il costo in CPU è trascurabile e i frame non passano da Python. L'orologio è aggiornato fotogramma per fotogramma, non congelato all'avvio della diretta, e i loghi vengono scaricati una volta sola e tenuti in cache. Le privacy mask restano applicate prima, quindi testo e loghi non finiscono mai sotto la sfocatura.
 
+Il campo *opacity* dei loghi vale per entrambi: moltiplica la trasparenza del PNG sia sullo scatto sia in diretta. Anche la scala si comporta allo stesso modo nei due casi, cioè riduce e basta: valori sopra il 100% lasciano il logo alla sua dimensione originale.
+
 Se lo streaming inquadra una porzione di sensore diversa dalla foto, la posizione dei loghi può risultare spostata di qualche pixel rispetto allo scatto: le coordinate sono riscalate, non riproiettate.
 
 ### Timelapse settimanale
@@ -206,6 +208,8 @@ Under **Config → Stream**, the *Destinazioni aggiuntive* field takes extra RTM
 The *Annotazione e loghi nella diretta* checkbox, again under **Config → Stream**, draws the bar with the text and the clock from the **Annotation** page and the logos enabled in **Overlay Images** onto the live video. There is no second configuration to fill in: font, coordinates and scale are the ones used for the still image, rescaled by the ratio between the stream width and the capture width.
 
 The drawing is done by ffmpeg filters while it is already re-encoding, so the CPU cost is negligible and frames never travel through Python for it. The clock updates frame by frame instead of freezing at stream start, and logos are downloaded once and cached. Privacy masks are still applied first, so text and logos never end up under the blur.
+
+The logo *opacity* field applies to both: it multiplies the PNG transparency on the capture as well as on the live feed. Scale behaves the same way in both places too, that is it only shrinks: values above 100% leave the logo at its native size.
 
 If the stream frames a different portion of the sensor than the still image, logo positions can be off by a few pixels compared to the capture: the coordinates are rescaled, not reprojected.
 

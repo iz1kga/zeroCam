@@ -241,11 +241,33 @@ class ImageOverlay:
             try:
                 fd = urllib.request.urlopen(OverlayImage["url"])
                 OlImg = io.BytesIO(fd.read())
-                OverlayImage["image"] = Image.open(OlImg)
+                # RGBA anche per i formati senza trasparenza: serve un canale
+                # alfa su cui applicare l'opacità configurata.
+                OverlayImage["image"] = Image.open(OlImg).convert("RGBA")
                 self.logger.info(f"Downloaded {OverlayImage['name']}")
             except Exception as e:
                 self.logger.error(f"Failed to download {OverlayImage['name']} from {OverlayImage['url']}: {e}")
         
+    @staticmethod
+    def _with_opacity(image, opacity):
+        """
+        Scala il canale alfa del logo per l'opacità configurata (0-100).
+
+        La trasparenza del PNG resta rispettata: l'opacità la moltiplica,
+        come fa colorchannelmixer sullo streaming.
+        """
+        try:
+            percent = max(0, min(100, int(opacity)))
+        except (TypeError, ValueError):
+            percent = 100
+        if percent >= 100:
+            return image
+
+        image = image.convert("RGBA")
+        alpha = image.getchannel("A").point(lambda a: round(a * percent / 100))
+        image.putalpha(alpha)
+        return image
+
     def add_overlays(self, image_buffer):
         try:
             image = Image.open(image_buffer)
@@ -257,11 +279,15 @@ class ImageOverlay:
             if not OverlayImage["enabled"]:
                 continue
             try:
-                olImg = OverlayImage["image"]
+                # Si lavora su una copia: thumbnail() ridimensiona in place e
+                # sull'originale in cache lo scatto successivo ripartirebbe da
+                # un logo già rimpicciolito.
+                olImg = OverlayImage["image"].copy()
                 width, height = olImg.size
                 width = width * int(OverlayImage["scale"])/100
                 height = height * int(OverlayImage["scale"])/100
                 olImg.thumbnail((width, height), Image.LANCZOS)
+                olImg = self._with_opacity(olImg, OverlayImage.get("opacity", 100))
                 image.paste(olImg, (OverlayImage["X"], OverlayImage["Y"]), olImg)
                 self.logger.info(f"Added {OverlayImage['name']} at {OverlayImage['X']}, {OverlayImage['Y']}")
             except Exception as e:
