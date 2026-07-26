@@ -46,7 +46,8 @@ Parametri per fase, fase `day`:
 |---|---|
 | `AeEnable` | Esposizione automatica |
 | `AeMeteringMode` | Misurazione: centrata, spot, matrix |
-| `AwbMode` | Bilanciamento del bianco |
+| `AwbMode` | Modalità di bilanciamento del bianco (vedi sotto) |
+| `ColourGainRed`, `ColourGainBlue` | Guadagni fissi di rosso e blu; con entrambi > 0 l'AWB viene spento |
 | `HdrMode` | HDR: off, singola esposizione, multipla |
 | `AnalogueGain`, `ExposureTime`, `ExposureValue` | Valori di partenza |
 | `NoiseReductionMode`, `Sharpness` | Riduzione rumore e nitidezza |
@@ -56,7 +57,20 @@ Parametri per fase, fasi `dawn`, `dusk`, `night`:
 | Chiave | Significato |
 |---|---|
 | `MinTargetBrightness`, `MaxTargetBrightness` | Intervallo di luminosità media cercato (0–255) |
-| `AwbMode`, `NoiseReductionMode`, `Sharpness` | Come sopra |
+| `AwbMode`, `ColourGainRed`, `ColourGainBlue` | Bilanciamento del bianco, come sopra |
+| `NoiseReductionMode`, `Sharpness` | Come sopra |
+
+I valori di `AwbMode` sono quelli di libcamera:
+
+| Valore | Modalità |
+|---:|---|
+| 0 | Auto |
+| 1 | Incandescent |
+| 2 | Tungsten |
+| 3 | Fluorescent |
+| 4 | Indoor |
+| 5 | Daylight |
+| 6 | Cloudy |
 
 ## streamParameters
 

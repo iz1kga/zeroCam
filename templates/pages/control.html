@@ -48,7 +48,7 @@
           <span v-if="isCapturing" class="spinner-border spinner-border-sm me-1" role="status"
             aria-hidden="true"></span>
           <i v-else class="bi bi-camera me-1"></i>
-          [[ isCapturing ? 'Scatto...' : 'Take Photo' ]]
+          [[ isCapturing ? ('Scatto in corso' + (captureElapsedLabel ? ' — ' + captureElapsedLabel : '')) : 'Take Photo' ]]
         </button>
         <button class="btn btn-info me-2" @click="$emit('start-focus-aid')" :disabled="isCapturing">
           <i class="bi bi-bullseye me-1"></i> Start Focus Aid

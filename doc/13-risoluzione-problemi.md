@@ -23,7 +23,7 @@ All'avvio l'applicazione attende la connessione a Internet, riprovando ogni 60 s
 ## Non vengono scattate foto
 
 * Controllare che la fase del giorno sia riconosciuta: `Day period is 'unknown', skipping capture` indica coordinate o offset incoerenti in Device Details.
-* Uno scatto notturno può durare minuti: il bracketing prova più combinazioni con due secondi di riscaldamento ciascuna. Se l'intervallo di scatto è breve, i cicli si accodano.
+* Uno scatto notturno può durare minuti: il bracketing prova più combinazioni con due secondi di riscaldamento ciascuna. Se l'intervallo di scatto è breve, i cicli si accodano. Per distinguere una cattura lunga da un blocco basta il log: le righe `[Ns] Tentativo k/40` avanzano finché il software lavora, e il pulsante di Cam Control mostra da quanto tempo è in corso lo scatto. Se invece il tempo si ferma su un tentativo per molti minuti, il problema è nel sensore.
 * `Failed to capture image (buffer is None)` indica un problema del sensore: se si ripete, un *hard reset* automatico (o un riavvio) di solito lo risolve.
 * Con la pagina Focus Aid aperta il ciclo di scatto è in pausa per costruzione.
 

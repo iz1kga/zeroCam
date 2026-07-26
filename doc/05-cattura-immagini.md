@@ -36,7 +36,7 @@ Il ciclo di scatto prevede anche il reset periodico della camera, l'archiviazion
 
 ### Giorno
 
-Nella fase `day` la camera lavora in automatico: esposizione e bilanciamento del bianco sono gestiti da libcamera. I parametri configurabili sono modalità di bilanciamento (`AwbMode`), misurazione (`AeMeteringMode`), HDR (`HdrMode`), riduzione del rumore e nitidezza. Dopo l'avvio del sensore il software attende due secondi perché l'automatismo si stabilizzi, poi scatta.
+Nella fase `day` la camera lavora in automatico: esposizione e bilanciamento del bianco sono gestiti da libcamera. I parametri configurabili sono modalità di bilanciamento (*AWB Mode*), misurazione (*Metering Mode*), HDR, riduzione del rumore e nitidezza. Dopo l'avvio del sensore il software attende due secondi perché l'automatismo si stabilizzi, poi scatta.
 
 ### Alba, tramonto e notte
 
@@ -51,6 +51,42 @@ La ricerca privilegia il tempo di posa: se l'immagine è troppo scura allunga la
 Gli indici dell'ultima posa riuscita vengono salvati in `data/.capture_info`: il ciclo successivo riparte da lì invece che da capo, il che rende la ricerca molto più breve nelle notti stabili.
 
 > **Conseguenza pratica** — uno scatto notturno può richiedere minuti: ogni tentativo comporta due secondi di riscaldamento del sensore più il tempo di posa. Con un intervallo di scatto molto breve la notte può capitare che un ciclo non sia ancora finito quando parte il successivo. Un intervallo di 5–10 minuti è un buon compromesso.
+
+### Seguire una cattura lunga
+
+Perché un'attesa di minuti non si confonda con un blocco, ogni passo della ricerca finisce nel log con i propri tempi:
+
+```
+Modalità crepuscolo/notte: bracketing manuale su Esposizione e Gain.
+Ogni tentativo costa 2s di stabilizzazione più il tempo di posa,
+quindi la cattura può richiedere minuti.
+[0s] Tentativo 1/40: Idx Esp=8, Idx Gain=0 (8.000s, Gain=1.0x)
+Tentativo 1 concluso in 10.3s, luminosità misurata: 22.14 (obiettivo 40-55)
+[10s] Tentativo 2/40: Idx Esp=9, Idx Gain=0 (10.000s, Gain=1.0x)
+Tentativo 2 concluso in 12.4s, luminosità misurata: 31.02 (obiettivo 40-55)
+...
+Esposizione ottimale trovata in 58.7s con 4 tentativi.
+Capture job finished in 71.2s.
+```
+
+Il numero fra parentesi quadre è il tempo trascorso dall'inizio della cattura: se avanza, il software sta lavorando. Nell'interfaccia lo stesso conteggio compare sul pulsante di **Cam Control**, che durante il ciclo diventa *Scatto in corso — 1m 12s*.
+
+## Bilanciamento del bianco
+
+Ogni fase ha il proprio *AWB Mode*: automatico, incandescenza, tungsteno, fluorescenza, interni, luce diurna, nuvoloso. Sono le modalità di libcamera, e la scelta vale per lo scatto di quella fase.
+
+L'automatismo però ha bisogno di un riferimento neutro nell'inquadratura. Di notte quel riferimento non c'è, e le luci stradali al sodio — arancioni per natura — lo portano fuori strada: l'AWB tenta di correggere una dominante che non è un errore, e vira l'intera immagine.
+
+Per questo ogni fase ha anche **Guadagno rosso** e **Guadagno blu**: valorizzandoli entrambi l'automatismo viene spento e il bilanciamento resta fisso su quei valori. Con entrambi a zero vale la modalità AWB scelta.
+
+Come trovare i valori di partenza: si prende uno scatto venuto bene, si legge il campo `ColourGains` nei suoi metadati — l'archivio di diagnosi salva un `.json` accanto a ogni immagine — e si riportano i due numeri nei campi. Da lì si aggiusta: alzare il guadagno rosso scalda l'immagine, alzare il blu la raffredda. I valori tipici stanno fra 1 e 4.
+
+Il log dice sempre quale via è in uso:
+
+```
+Bilanciamento del bianco manuale: guadagni R=2.40, B=1.30
+Bilanciamento del bianco automatico, modalità 2
+```
 
 ## Ritaglio
 

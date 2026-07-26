@@ -42,8 +42,10 @@
   "username": { "type": "text" },
   "AwbMode": {
     "type": "select",
-    "options": ["Auto", "Tungsten", "Fluorescent", "Indoor", "Daylight", "Cloudy"]
+    "options": ["Auto", "Incandescent", "Tungsten", "Fluorescent", "Indoor", "Daylight", "Cloudy"]
   },
+  "ColourGainRed": { "type": "number" },
+  "ColourGainBlue": { "type": "number" },
   "enabled": { "type": "boolean" },
   "hflip": { "type": "boolean" },
   "vflip": { "type": "boolean" },
