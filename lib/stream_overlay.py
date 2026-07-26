@@ -136,7 +136,12 @@ def _logo_filters(overlay_images, scale, work_dir, first_input_index, logger):
             logger.error(f"Failed to prepare the stream overlay '{name}': {e}")
             continue
 
-        width = round(source_width * int(image_config.get("scale", 100)) / 100 * scale)
+        # Sulla foto il ridimensionamento passa da Image.thumbnail(), che
+        # rimpicciolisce e basta: una scala sopra il 100% non ha effetto sullo
+        # scatto e non deve averne qui, altrimenti il logo esce più grande in
+        # diretta che sulla foto.
+        percent = min(100, max(1, int(image_config.get("scale", 100))))
+        width = round(source_width * percent / 100 * scale)
         if width < 2:
             logger.warning(f"Stream overlay '{name}' scales down to nothing, skipping it.")
             continue
