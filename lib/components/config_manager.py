@@ -2,6 +2,7 @@ import os
 import json
 import threading
 
+from lib import paths
 from lib.helpers import CryptoHelper
 
 # Sezioni introdotte dopo il rilascio iniziale: se mancano dal file di
@@ -10,6 +11,7 @@ from lib.helpers import CryptoHelper
 DEFAULT_SECTIONS = {
     "streamParameters": {
         "extra_destinations": [],
+        "overlay": False,
     },
     "youtubeLive": {
         "enabled": False,
@@ -24,6 +26,7 @@ DEFAULT_SECTIONS = {
         "record": True,
         "made_for_kids": False,
         "end_on_shutdown": False,
+        "daily_reset_time": "",
         "timeout": 10,
     },
     "timelapse": {
@@ -52,9 +55,9 @@ DEFAULT_SECTIONS = {
 class ConfigManager:
     """Handles loading, saving, and decrypting application configuration."""
 
-    def __init__(self, logger, secret_key, config_path='.conf.json'):
+    def __init__(self, logger, secret_key, config_path=None):
         self.logger = logger
-        self.config_path = config_path
+        self.config_path = config_path or paths.CONFIG_FILE
         self.config_lock = threading.RLock()
         self.crypto_helper = CryptoHelper(secret_key, self.logger)
         self.config = {}

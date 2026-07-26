@@ -73,7 +73,7 @@ const startApp = async () => {
     controlTemplate,
     statusTemplate,
     logTemplate,
-    securityTemplate,
+    systemTemplate,
     licenseTemplate,
     timelapseTemplate
   ] = await Promise.all([
@@ -81,7 +81,7 @@ const startApp = async () => {
     loadTemplate('control'),
     loadTemplate('status'),
     loadTemplate('log'),
-    loadTemplate('security'),
+    loadTemplate('system'),
     loadTemplate('license'),
     loadTemplate('timelapse')
   ]);
@@ -104,6 +104,10 @@ const startApp = async () => {
         focusAidActive: false,
         isCapturing: false,
         captureStatusTimer: null,
+        streamRunning: false,
+        livePreview: false,
+        previewUrl: '',
+        previewTimer: null,
         passwords: {
           current: '',
           new: '',
@@ -146,13 +150,14 @@ const startApp = async () => {
       });
 
       if (this.page === 'control') {
-        this.fetchCaptureStatus();
-        this.captureStatusTimer = setInterval(this.fetchCaptureStatus, 2000);
+        this.pollControlStatus();
+        this.captureStatusTimer = setInterval(this.pollControlStatus, 2000);
       }
     },
     beforeUnmount() {
       clearInterval(this.imageInterval);
       clearInterval(this.captureStatusTimer);
+      clearInterval(this.previewTimer);
       clearInterval(this.statsTimer);
       clearInterval(this.timelapseTimer);
     },
@@ -260,6 +265,38 @@ const startApp = async () => {
               this.isCapturing = false;
             }
           });
+      },
+      pollControlStatus() {
+        this.fetchCaptureStatus();
+        this.fetchStreamStatus();
+      },
+      fetchStreamStatus() {
+        secureFetch('/api/status/stream')
+          .then(res => res.json())
+          .then(data => {
+            this.streamRunning = !!data.running;
+            // Lo streaming si ferma a ogni scatto: senza fotogrammi freschi
+            // si torna all'ultima immagine invece di mostrarne uno vecchio.
+            if (!this.streamRunning && this.livePreview) this.setLivePreview(false);
+          })
+          .catch(err => {
+            if (err.message !== 'Session expired') {
+              console.error('Errore recupero stato streaming:', err);
+              this.streamRunning = false;
+            }
+          });
+      },
+      setLivePreview(active) {
+        this.livePreview = !!active;
+        clearInterval(this.previewTimer);
+        this.previewTimer = null;
+        if (this.livePreview) {
+          this.refreshPreview();
+          this.previewTimer = setInterval(this.refreshPreview, 1000);
+        }
+      },
+      refreshPreview() {
+        this.previewUrl = `/stream_latest.jpg?_=${Date.now()}`;
       },
       startLogPolling() {
         this.fetchLog();
@@ -444,11 +481,13 @@ const startApp = async () => {
         }
 
         if (newVal === 'control') {
-          this.fetchCaptureStatus();
-          this.captureStatusTimer = setInterval(this.fetchCaptureStatus, 2000);
+          this.pollControlStatus();
+          this.captureStatusTimer = setInterval(this.pollControlStatus, 2000);
         } else if (oldVal === 'control') {
           clearInterval(this.captureStatusTimer);
           this.captureStatusTimer = null;
+          // L'anteprima non serve fuori dalla pagina: si spegne il timer
+          this.setLivePreview(false);
         }
       },
       stats(newStats) {
@@ -495,10 +534,18 @@ const startApp = async () => {
   app.component('page-control', {
     props: {
       imageUrl: { type: String, required: true },
+      previewUrl: { type: String, default: '' },
+      streamRunning: { type: Boolean, default: false },
+      livePreview: { type: Boolean, default: false },
       isCapturing: { type: Boolean, default: false },
       focusAidActive: { type: Boolean, default: false }
     },
-    emits: ['take-photo', 'start-focus-aid', 'restart-app'],
+    emits: ['take-photo', 'start-focus-aid', 'restart-app', 'toggle-live-preview'],
+    computed: {
+      displayedImageUrl() {
+        return this.livePreview && this.previewUrl ? this.previewUrl : this.imageUrl;
+      }
+    },
     data() {
       return {
         rois: [],
@@ -522,6 +569,9 @@ const startApp = async () => {
           width: img.clientWidth,
           height: img.clientHeight,
         };
+        // Sull'anteprima in diretta le ROI non si disegnano: l'inquadratura
+        // dello streaming non coincide con quella dello scatto.
+        if (this.livePreview) return;
         // NUOVO: Ricarica/ridisegna le ROI con le dimensioni corrette
         this.loadPrivacyMask();
       },
@@ -656,10 +706,104 @@ const startApp = async () => {
     props: ['logContent'],
     template: logTemplate
   });
-  app.component('page-security', {
-    template: securityTemplate,
+  app.component('page-system', {
+    template: systemTemplate,
     props: ['passwords', 'isLoading', 'message', 'messageClass'],
-    emits: ['change-password']
+    emits: ['change-password'],
+    data() {
+      return {
+        backupPassphrase: '',
+        backupBusy: false,
+        backupMessage: '',
+        backupSuccess: false,
+        restoreFile: null,
+        restorePassphrase: '',
+        restoreBusy: false
+      };
+    },
+    methods: {
+      setBackupMessage(text, success) {
+        this.backupMessage = text;
+        this.backupSuccess = success;
+      },
+      async downloadBackup() {
+        this.backupBusy = true;
+        this.setBackupMessage('', false);
+        try {
+          const response = await secureFetch('/api/config/backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passphrase: this.backupPassphrase })
+          });
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            this.setBackupMessage(result.message || 'Backup non riuscito.', false);
+            return;
+          }
+
+          // Il file arriva come blob: lo si salva senza lasciare la pagina.
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = (response.headers.get('Content-Disposition') || '')
+            .split('filename=')[1] || 'zerocam-backup.json';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+
+          this.backupPassphrase = '';
+          this.setBackupMessage('Backup scaricato. Conserva la passphrase: senza non è recuperabile.', true);
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setBackupMessage('Errore di connessione durante il backup.', false);
+          }
+        } finally {
+          this.backupBusy = false;
+        }
+      },
+      pickBackupFile(event) {
+        this.restoreFile = event.target.files[0] || null;
+      },
+      async uploadRestore() {
+        if (!this.restoreFile) return;
+        if (!confirm('La configurazione attuale verrà sovrascritta. Procedere?')) return;
+
+        this.restoreBusy = true;
+        this.setBackupMessage('', false);
+        try {
+          let backup;
+          try {
+            backup = JSON.parse(await this.restoreFile.text());
+          } catch (e) {
+            this.setBackupMessage('Il file selezionato non è un JSON valido.', false);
+            return;
+          }
+
+          const response = await secureFetch('/api/config/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ backup: backup, passphrase: this.restorePassphrase })
+          });
+          const result = await response.json().catch(() => ({}));
+          this.setBackupMessage(result.message || 'Ripristino non riuscito.', response.ok);
+
+          if (response.ok) {
+            this.restorePassphrase = '';
+            this.restoreFile = null;
+            // Ricarica per mostrare la configurazione appena ripristinata.
+            setTimeout(() => window.location.reload(), 2000);
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setBackupMessage('Errore di connessione durante il ripristino.', false);
+          }
+        } finally {
+          this.restoreBusy = false;
+        }
+      }
+    }
   });
   app.component('page-license', {
     template: licenseTemplate
@@ -691,8 +835,9 @@ const startApp = async () => {
       }
     },
     created() {
-      // Timer non reattivo, come per i grafici
+      // Timer e cache dei fotogrammi: non reattivi, come per i grafici
       this.galleryTimer = null;
+      this.galleryPreload = new Map();
     },
     mounted() {
       this.loadGalleryDays();
@@ -735,6 +880,8 @@ const startApp = async () => {
           this.galleryDay = day;
           this.galleryFrames = data.frames || [];
           this.galleryIndex = 0;
+          // Cambiando giorno le promesse del giorno precedente non servono piu'
+          this.galleryPreload.clear();
         } catch (error) {
           if (error.message !== 'Session expired') {
             console.error('Errore nel caricare i fotogrammi:', error);
@@ -758,16 +905,47 @@ const startApp = async () => {
         // Riparte dall'inizio se siamo gia' in fondo
         if (this.galleryIndex >= this.galleryFrames.length - 1) this.galleryIndex = 0;
         this.galleryPlaying = true;
-        this.galleryTimer = setInterval(() => {
-          if (this.galleryIndex >= this.galleryFrames.length - 1) {
-            this.stopGalleryPlay();
-            return;
-          }
-          this.galleryIndex += 1;
-        }, 1000 / this.gallerySpeed);
+        this.playGalleryFrame();
+      },
+      playGalleryFrame() {
+        // L'indice avanza solo quando il fotogramma successivo e' gia' in
+        // cache: con un intervallo fisso le richieste si accodavano piu' in
+        // fretta di quanto il dispositivo le servisse e l'immagine restava
+        // ferma sull'ultima scaricata, mentre cursore ed etichetta correvano.
+        const next = this.galleryIndex + 1;
+        if (next > this.galleryFrames.length - 1) {
+          this.stopGalleryPlay();
+          return;
+        }
+
+        const startedAt = Date.now();
+        this.preloadGalleryFrame(next).then(() => {
+          if (!this.galleryPlaying) return;
+          this.galleryIndex = next;
+          // Tiene un fotogramma di vantaggio, cosi' il prossimo scatto e' pronto
+          this.preloadGalleryFrame(next + 1);
+          const wait = Math.max(0, (1000 / this.gallerySpeed) - (Date.now() - startedAt));
+          this.galleryTimer = setTimeout(this.playGalleryFrame, wait);
+        });
+      },
+      preloadGalleryFrame(index) {
+        const name = this.galleryFrames[index];
+        if (!name) return Promise.resolve();
+        // Il fotogramma gia' richiesto non viene riscaricato: la stessa
+        // promessa serve sia al prefetch sia all'attesa prima di mostrarlo.
+        if (this.galleryPreload.has(name)) return this.galleryPreload.get(name);
+
+        const pending = new Promise(resolve => {
+          const img = new Image();
+          // Anche un fotogramma illeggibile deve lasciar proseguire la riproduzione
+          img.onload = img.onerror = resolve;
+          img.src = `/timelapse/frame/${name}`;
+        });
+        this.galleryPreload.set(name, pending);
+        return pending;
       },
       stopGalleryPlay() {
-        clearInterval(this.galleryTimer);
+        clearTimeout(this.galleryTimer);
         this.galleryPlaying = false;
       },
       formatBytes(bytes) {

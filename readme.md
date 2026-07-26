@@ -40,6 +40,19 @@ Una volta completata l'installazione, puoi accedere all'interfaccia web del disp
 
 Ora puoi configurare la tua telecamera e iniziare a usarla!
 
+### Dove stanno i dati
+
+L'installazione è divisa in due cartelle:
+
+```
+/usr/local/zerocam/app     codice, cancellato e riscritto a ogni aggiornamento
+/usr/local/zerocam/data    configurazione, .env, log, fotogrammi, immagini
+```
+
+L'installer rimuove `app/` prima di estrarre la nuova versione: tutto ciò che deve sopravvivere sta in `data/`, che non viene mai toccata. Ci trovi `.conf.json`, `.privacy_mask.json`, `.env`, `.capture_info`, `logs/`, `images/`, `timelapse_frames/` e `timelapse/`.
+
+Chi aggiorna da una versione precedente non deve fare nulla: l'installer sposta i file rimasti in `app/` prima di rimuoverla, e al primo avvio l'applicazione fa lo stesso controllo per sicurezza, scrivendolo nel log. I percorsi relativi rimasti in configurazione (per esempio `./timelapse_frames`) vengono risolti dentro `data/`; quelli assoluti restano dove sono, quindi si possono ancora tenere i fotogrammi su un disco esterno. `ZEROCAM_DATA_DIR` permette di spostare l'intera cartella dei dati altrove.
+
 ### Diretta YouTube automatica
 
 Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi la sola chiave di streaming non fa andare in onda nulla finché non si apre la Live Control Room. zeroCAM può creare e collegare il broadcast da solo, con avvio automatico e senza interruzione automatica, così la diretta parte da sé e sopravvive alle pause di pochi secondi durante la cattura della foto.
@@ -54,9 +67,21 @@ Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi
 
 Nel titolo della diretta puoi usare i segnaposto `{date}` e `{time}`. Il broadcast viene riusato finché resta valido e ricreato automaticamente quando YouTube lo chiude (limite di 12 ore).
 
+Il campo **Nuova diretta alle (HH:MM)** forza il ricambio giornaliero: se valorizzato (es. `00:00`), al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con titolo aggiornato dai segnaposto. Lasciandolo vuoto il comportamento resta quello precedente (ricambio solo quando YouTube chiude la diretta).
+
 ### Ritrasmissione su più destinazioni
 
 In **Config → Stream**, nel campo *Destinazioni aggiuntive*, puoi elencare altri URL RTMP (uno per riga) verso cui inviare lo stesso flusso: Twitch, un server tuo, un'altra piattaforma. Il video viene codificato una volta sola e semplicemente duplicato, quindi il carico sulla CPU non cambia. Una destinazione irraggiungibile non interrompe le altre.
+
+### Annotazione e loghi nella diretta
+
+La spunta *Annotazione e loghi nella diretta*, sempre in **Config → Stream**, riporta sul video in diretta la barra con testo e data/ora della pagina **Annotation** e i loghi abilitati in **Overlay Images**. Non c'è una seconda configurazione da compilare: font, coordinate e scala sono quelli della foto, riscalati per il rapporto fra la larghezza dello streaming e quella dello scatto.
+
+Il disegno lo fa ffmpeg con i suoi filtri mentre già ricodifica, quindi il costo in CPU è trascurabile e i frame non passano da Python. L'orologio è aggiornato fotogramma per fotogramma, non congelato all'avvio della diretta, e i loghi vengono scaricati una volta sola e tenuti in cache. Le privacy mask restano applicate prima, quindi testo e loghi non finiscono mai sotto la sfocatura.
+
+Il campo *opacity* dei loghi vale per entrambi: moltiplica la trasparenza del PNG sia sullo scatto sia in diretta. Anche la scala si comporta allo stesso modo nei due casi, cioè riduce e basta: valori sopra il 100% lasciano il logo alla sua dimensione originale.
+
+Se lo streaming inquadra una porzione di sensore diversa dalla foto, la posizione dei loghi può risultare spostata di qualche pixel rispetto allo scatto: le coordinate sono riscalate, non riproiettate.
 
 ### Timelapse settimanale
 
@@ -72,6 +97,20 @@ Due note pratiche:
 Il pulsante *Genera e pubblica ora* monta subito il timelapse senza aspettare la scadenza settimanale, utile per provare la configurazione.
 
 Nella stessa pagina c'è una galleria per scorrere i fotogrammi raccolti: si sceglie il giorno, si scorre con il cursore o con le frecce, e il pulsante *Riproduci* fa un'anteprima animata a 2, 5 o 10 fotogrammi al secondo. È il modo più rapido per controllare cosa finirà nel video prima di montarlo.
+
+### Anteprima della diretta in Cam Control
+
+Quando lo streaming è in corso, sopra l'immagine compare l'interruttore *Anteprima diretta*: mostra un fotogramma al secondo preso dal flusso video al posto dell'ultimo scatto. È lo stesso fotogramma che alimenta ONVIF, privacy mask già applicate, salvato su tmpfs per non consumare la SD.
+
+L'interruttore appare solo se il fotogramma è fresco: lo streaming si ferma a ogni scatto, e in quei secondi l'anteprima torna da sola all'ultima immagine. Sull'anteprima le privacy mask non sono modificabili, perché l'inquadratura dello streaming non coincide con quella della foto: per ridisegnarle si torna all'ultimo scatto.
+
+### Backup e ripristino della configurazione
+
+Nella pagina **Sicurezza** si può scaricare l'intera configurazione (privacy mask compresa) in un unico file JSON e reimportarla in caso di SD morta o reinstallazione.
+
+Sul dispositivo i segreti sono cifrati con `ZEROCAM_SECRET_KEY`, che vive nell'ambiente del servizio: copiare il `.conf.json` così com'è darebbe un backup illeggibile su un'installazione nuova. Il backup viene quindi costruito dalla configurazione decifrata e richiuso subito con una **passphrase scelta al momento del download** (PBKDF2-SHA256 + Fernet, salt casuale): il file non contiene nulla in chiaro ed è ripristinabile su qualsiasi dispositivo, anche con secret key diversa. La passphrase non è recuperabile: se si perde, il backup è carta straccia.
+
+Il ripristino chiede file e passphrase, riscrive la configurazione ricifrando i segreti con la chiave locale e sovrascrive la privacy mask. Restano esclusi password di accesso all'interfaccia e chiave di sessione Flask, che rimangono quelle del dispositivo su cui si ripristina: un backup vecchio non rimette in uso credenziali di login superate. Conviene riavviare dalla pagina Controllo per applicare tutto.
 
 ---
 
@@ -137,6 +176,19 @@ Once the installation is complete, you can access the device's web interface:
 
 Now you can configure your camera and start using it!
 
+### Where the data lives
+
+The installation is split in two directories:
+
+```
+/usr/local/zerocam/app     code, wiped and rewritten on every upgrade
+/usr/local/zerocam/data    configuration, .env, logs, frames, images
+```
+
+The installer removes `app/` before extracting the new version, so everything that must survive lives in `data/`, which is never touched: `.conf.json`, `.privacy_mask.json`, `.env`, `.capture_info`, `logs/`, `images/`, `timelapse_frames/` and `timelapse/`.
+
+Upgrading from an earlier version needs no manual step: the installer moves whatever is left in `app/` before removing it, and on the first start the application runs the same check as a safety net, logging what it moves. Relative paths still stored in the configuration (`./timelapse_frames`, for instance) resolve inside `data/`; absolute ones are honoured as they are, so frames can still live on an external disk. `ZEROCAM_DATA_DIR` moves the whole data directory elsewhere.
+
 ### Automatic YouTube broadcast
 
 The RTMP push alone is no longer enough: YouTube retired "Stream now", so the stream key by itself never goes on air until someone opens the Live Control Room. zeroCAM can create and bind the broadcast on its own, with auto-start enabled and auto-stop disabled, so the stream goes live by itself and survives the few-second pauses taken to capture the still image.
@@ -151,9 +203,21 @@ The RTMP push alone is no longer enough: YouTube retired "Stream now", so the st
 
 The broadcast title supports the `{date}` and `{time}` placeholders. An existing broadcast is reused while valid and recreated automatically once YouTube closes it (12 hour limit).
 
+The **Nuova diretta alle (HH:MM)** field forces a daily rollover: when set (e.g. `00:00`), the first capture after that local time closes the running broadcast and starts a fresh one, with the title placeholders re-evaluated. Leave it empty to keep the previous behaviour (a new broadcast only when YouTube ends the current one).
+
 ### Restreaming to several destinations
 
 Under **Config → Stream**, the *Destinazioni aggiuntive* field takes extra RTMP URLs (one per line) to push the same feed to: Twitch, your own server, another platform. The video is encoded once and simply duplicated, so CPU usage does not change. An unreachable destination does not bring the others down.
+
+### Annotation and logos on the live stream
+
+The *Annotazione e loghi nella diretta* checkbox, again under **Config → Stream**, draws the bar with the text and the clock from the **Annotation** page and the logos enabled in **Overlay Images** onto the live video. There is no second configuration to fill in: font, coordinates and scale are the ones used for the still image, rescaled by the ratio between the stream width and the capture width.
+
+The drawing is done by ffmpeg filters while it is already re-encoding, so the CPU cost is negligible and frames never travel through Python for it. The clock updates frame by frame instead of freezing at stream start, and logos are downloaded once and cached. Privacy masks are still applied first, so text and logos never end up under the blur.
+
+The logo *opacity* field applies to both: it multiplies the PNG transparency on the capture as well as on the live feed. Scale behaves the same way in both places too, that is it only shrinks: values above 100% leave the logo at its native size.
+
+If the stream frames a different portion of the sensor than the still image, logo positions can be off by a few pixels compared to the capture: the coordinates are rescaled, not reprojected.
 
 ### Weekly timelapse
 
@@ -169,6 +233,20 @@ Two practical notes:
 The *Genera e pubblica ora* button builds the timelapse immediately instead of waiting for the weekly schedule, which is handy to check the configuration.
 
 The same page holds a gallery to browse the collected frames: pick a day, scrub with the slider or the arrows, and the *Riproduci* button plays an animated preview at 2, 5 or 10 frames per second. It is the quickest way to check what will end up in the video before building it.
+
+### Live preview in Cam Control
+
+While the stream is running, an *Anteprima diretta* switch appears above the image: it shows one frame per second taken from the video feed instead of the last capture. It is the very frame that feeds ONVIF, privacy masks already applied, written to tmpfs so the SD card is spared.
+
+The switch only shows up while the frame is fresh: the stream stops at every capture, and during those seconds the preview falls back to the last image on its own. Privacy masks cannot be edited on the preview, because the stream frames a different portion of the sensor than the photo: switch back to the capture to redraw them.
+
+### Configuration backup and restore
+
+The **Sicurezza** page downloads the whole configuration (privacy mask included) as a single JSON file and imports it back after a dead SD card or a reinstall.
+
+On the device the secrets are encrypted with `ZEROCAM_SECRET_KEY`, which lives in the service environment: copying `.conf.json` as it is would produce a backup no fresh installation can read. The backup is therefore built from the decrypted configuration and immediately sealed again with a **passphrase chosen at download time** (PBKDF2-SHA256 + Fernet, random salt): nothing travels in clear text and the file restores on any device, even with a different secret key. The passphrase cannot be recovered: lose it and the backup is worthless.
+
+The restore asks for file and passphrase, rewrites the configuration re-encrypting the secrets with the local key, and overwrites the privacy mask. The web login password and the Flask session key are left out and stay those of the device being restored, so an old backup never brings back outdated login credentials. Reboot from the Controllo page afterwards to apply everything.
 
 ---
 

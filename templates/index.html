@@ -44,6 +44,7 @@
             <a href="#" class="nav-link" :class="{ active: configPage === 'streamParameters' }" @click.prevent="configPage = 'streamParameters'">Stream</a>
             <a href="#" class="nav-link" :class="{ active: configPage === 'overlayImages' }" @click.prevent="configPage = 'overlayImages'">Overlays</a>
             <a href="#" class="nav-link" :class="{ active: configPage === 'annotation' }" @click.prevent="configPage = 'annotation'">Annotation</a>
+            <a href="#" class="nav-link" :class="{ active: configPage === 'timelapse' }" @click.prevent="configPage = 'timelapse'">Timelapse</a>
           </div>
 
           <a href="#" class="nav-link" :class="{ active: page === 'control' }" @click.prevent="page = 'control'">
@@ -58,8 +59,8 @@
           <a href="#" class="nav-link" :class="{ active: page === 'log' }" @click.prevent="page = 'log'">
             <i class="bi bi-terminal me-2"></i>Log
           </a>
-          <a href="#" class="nav-link" :class="{ active: page === 'security' }" @click.prevent="page = 'security'">
-            <i class="bi bi-shield-lock me-2"></i>Security
+          <a href="#" class="nav-link" :class="{ active: page === 'system' }" @click.prevent="page = 'system'">
+            <i class="bi bi-sliders me-2"></i>System
           </a>
           <a href="#" class="nav-link" :class="{ active: page === 'license' }" @click.prevent="page = 'license'">
             <i class="bi bi-file-earmark-text me-2"></i>License
@@ -104,13 +105,16 @@
                     v-on:start-focus-aid="startFocusAid"
                     v-on:stop-focus-aid="stopFocusAid"
                     v-on:save-config="saveConfig"
+                    :preview-url="previewUrl"
+                    :stream-running="streamRunning"
+                    :live-preview="livePreview"
+                    @toggle-live-preview="setLivePreview"
                     :passwords="passwords"
                     :is-loading="isChangingPassword"
                     :message="changePasswordMessage"
                     :message-class="changePasswordSuccess ? 'alert-success' : 'alert-danger'"
                     @change-password="changePassword"
         ></component>
-        </div>
       </main>
     </div>
     <footer>

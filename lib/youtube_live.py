@@ -11,10 +11,15 @@ Questo modulo crea e collega il broadcast via API, impostando
 enableAutoStart=true / enableAutoStop=false: la diretta parte da sola
 quando ffmpeg inizia a pubblicare e sopravvive alle interruzioni di
 pochi secondi dovute alla cattura della foto.
+
+Un broadcast riutilizzabile viene riusato all'infinito, a meno che sia
+configurata l'ora di reset giornaliero (youtubeLive.daily_reset_time):
+in quel caso la diretta nata prima di quell'ora viene chiusa e
+rimpiazzata da una nuova al primo scatto successivo.
 """
 
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time as dtime, timedelta, timezone
 
 import requests
 
@@ -22,6 +27,31 @@ from lib.youtube_auth import YouTubeAuth
 
 # Stati di un broadcast riutilizzabile: già in onda o pronto a partire.
 REUSABLE_STATES = ("active", "upcoming")
+
+
+def _parse_iso(value):
+    """Converte un timestamp ISO 8601 di YouTube in datetime aware (UTC)."""
+    if not value:
+        return None
+    text = value.strip().replace("Z", "+00:00")
+    try:
+        parsed = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def _parse_hhmm(value):
+    """Converte 'HH:MM' in un oggetto time; None se vuoto o malformato."""
+    if not value:
+        return None
+    try:
+        hour, minute = str(value).strip().split(":")
+        return dtime(int(hour), int(minute))
+    except (ValueError, AttributeError):
+        return None
 
 
 class YouTubeLiveManager:
@@ -107,11 +137,80 @@ class YouTubeLiveManager:
             for item in data.get("items", []):
                 if item.get("contentDetails", {}).get("boundStreamId") == stream_id:
                     self.logger.info(
-                        f"Reusing YouTube broadcast '{item['snippet'].get('title')}' "
-                        f"(id={item['id']}, status={status})"
+                        f"Found YouTube broadcast '{item['snippet'].get('title')}' "
+                        f"bound to the stream (id={item['id']}, status={status})"
                     )
                     return item
         return None
+
+    def _rollover_boundary(self):
+        """
+        Ultimo passaggio dell'ora di reset giornaliero (locale, aware).
+
+        Ritorna None se il reset è disattivato: in quel caso il broadcast
+        esistente viene riusato all'infinito, come prima.
+        """
+        reset = _parse_hhmm(self.cfg.get("daily_reset_time"))
+        if reset is None:
+            return None
+
+        now = datetime.now().astimezone()
+        boundary = now.replace(hour=reset.hour, minute=reset.minute,
+                               second=0, microsecond=0)
+        if boundary > now:
+            boundary -= timedelta(days=1)
+        return boundary
+
+    def _is_stale(self, broadcast):
+        """True se il broadcast è nato prima dell'ultima ora di reset."""
+        boundary = self._rollover_boundary()
+        if boundary is None:
+            return False
+
+        snippet = broadcast.get("snippet", {})
+        started = (_parse_iso(snippet.get("actualStartTime"))
+                   or _parse_iso(snippet.get("scheduledStartTime"))
+                   or _parse_iso(snippet.get("publishedAt")))
+        if started is None:
+            # Senza data affidabile meglio riusarlo che ricrearlo a ogni scatto.
+            self.logger.warning(
+                f"Broadcast {broadcast.get('id')} has no usable start time, skipping daily reset."
+            )
+            return False
+
+        if started >= boundary:
+            return False
+
+        self.logger.info(
+            f"Broadcast {broadcast.get('id')} started at {started.astimezone().strftime('%d/%m/%Y %H:%M')}, "
+            f"before the daily reset of {boundary.strftime('%d/%m/%Y %H:%M')}: creating a new one."
+        )
+        return True
+
+    def _retire(self, broadcast):
+        """
+        Toglie di mezzo un broadcast scaduto.
+
+        Se è in onda lo si porta a 'complete'; se non è mai partito lo si
+        elimina, perché la transizione su un broadcast 'upcoming' fallisce.
+        """
+        broadcast_id = broadcast.get("id")
+        lifecycle = broadcast.get("status", {}).get("lifeCycleStatus")
+        try:
+            if lifecycle == "upcoming":
+                self._api("DELETE", "liveBroadcasts", params={"id": broadcast_id})
+                self.logger.info(f"Deleted stale YouTube broadcast {broadcast_id} (never went live).")
+            else:
+                self._api("POST", "liveBroadcasts/transition", params={
+                    "id": broadcast_id,
+                    "broadcastStatus": "complete",
+                    "part": "id,status",
+                })
+                self.logger.info(f"Completed stale YouTube broadcast {broadcast_id}.")
+        except Exception as e:
+            # Il bind del nuovo broadcast stacca comunque il vecchio dallo
+            # stream, quindi si può proseguire.
+            self.logger.warning(f"Could not retire stale broadcast {broadcast_id}: {e}")
 
     def _build_title(self):
         now = datetime.now()
@@ -181,8 +280,15 @@ class YouTubeLiveManager:
                     return False
 
                 broadcast = self._find_bound_broadcast(stream_id)
+                if broadcast and self._is_stale(broadcast):
+                    self._retire(broadcast)
+                    if self._broadcast_id == broadcast["id"]:
+                        self._broadcast_id = None
+                    broadcast = None
+
                 if broadcast:
                     self._broadcast_id = broadcast["id"]
+                    self.logger.info(f"Reusing YouTube broadcast {self._broadcast_id}.")
                     return True
 
                 broadcast = self._create_broadcast()

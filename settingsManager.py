@@ -5,13 +5,17 @@ import logging
 import threading
 import time
 import io
+from datetime import datetime
 from flask import Flask, Response, send_file, request, jsonify, render_template, redirect, url_for, flash
 from waitress import serve
 from PIL import Image, ImageDraw
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
+from lib import config_backup, paths
 from lib.version import get_version
+
+PRIVACY_MASK_PATH = paths.PRIVACY_MASK_FILE
 
 # La classe User ora è disaccoppiata dall'oggetto zerocam globale.
 class User(UserMixin):
@@ -95,9 +99,12 @@ class SettingsManager:
         self.app.add_url_rule('/api/change-password', 'change_password', self.change_password, methods=['POST'])
         self.app.add_url_rule('/api/config', 'handle_config', self.handle_config, methods=['GET', 'POST'])
         self.app.add_url_rule('/api/schema', 'get_schema', self.get_schema)
+        self.app.add_url_rule('/api/config/backup', 'backup_config', self.backup_config, methods=['POST'])
+        self.app.add_url_rule('/api/config/restore', 'restore_config', self.restore_config, methods=['POST'])
         self.app.add_url_rule('/api/log', 'get_log', self.get_log)
         self.app.add_url_rule('/api/stats', 'get_stats', self.get_stats)
         self.app.add_url_rule('/api/status/capture', 'get_capture_status', self.get_capture_status)
+        self.app.add_url_rule('/api/status/stream', 'get_stream_status', self.get_stream_status)
         self.app.add_url_rule('/api/take_photo', 'take_photo', self.take_photo, methods=['POST'])
         self.app.add_url_rule('/api/timelapse', 'get_timelapse', self.get_timelapse, methods=['GET'])
         self.app.add_url_rule('/api/timelapse/run', 'run_timelapse', self.run_timelapse, methods=['POST'])
@@ -155,12 +162,14 @@ class SettingsManager:
 
     @login_required
     def latest_image(self):
-        return send_file('./latest.jpg', mimetype='image/jpeg')
+        return send_file(paths.LATEST_IMAGE, mimetype='image/jpeg')
 
     @login_required
     def stream_latest_image(self):
         # Assicurati che il percorso sia corretto
-        return send_file('./shmem/stream_latest.jpg', mimetype='image/jpeg')
+        # L'anteprima cambia ogni secondo: nessuna cache, altrimenti il
+        # browser continuerebbe a mostrare il fotogramma già scaricato.
+        return send_file(paths.STREAM_PREVIEW, mimetype='image/jpeg', max_age=0, conditional=False)
 
     @login_required
     def serve_page_template(self, page_name):
@@ -172,6 +181,18 @@ class SettingsManager:
 
     # --- API Method Implementations ---
 
+    def _read_privacy_mask(self):
+        """Privacy mask on disk, or an empty list when missing/corrupted."""
+        try:
+            with open(PRIVACY_MASK_PATH, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            self.logger.info(f"{PRIVACY_MASK_PATH} not found, returning empty list.")
+            return []
+        except json.JSONDecodeError:
+            self.logger.error(f"{PRIVACY_MASK_PATH} is corrupted. Returning empty list.")
+            return []
+
     @login_required
     def get_privacy_mask(self):
         """
@@ -179,15 +200,7 @@ class SettingsManager:
         Returns an empty list if the file does not exist.
         """
         try:
-            with open('.privacy_mask.json', 'r') as f:
-                data = json.load(f)
-                return jsonify(data)
-        except FileNotFoundError:
-            self.logger.info(".privacy_mask.json not found, returning empty list.")
-            return jsonify([])
-        except json.JSONDecodeError:
-            self.logger.error(".privacy_mask.json is corrupted. Returning empty list.")
-            return jsonify([])
+            return jsonify(self._read_privacy_mask())
         except Exception as e:
             self.logger.error(f"Failed to load privacy mask: {e}", exc_info=True)
             return jsonify({"error": "Failed to load privacy mask"}), 500
@@ -206,7 +219,7 @@ class SettingsManager:
 
         try:
             # Save the data to the specified file
-            with open('.privacy_mask.json', 'w') as f:
+            with open(PRIVACY_MASK_PATH, 'w') as f:
                 json.dump(data, f, indent=4)
             
             self.logger.info("Privacy mask saved successfully to .privacy_mask.json")
@@ -258,9 +271,77 @@ class SettingsManager:
             return jsonify({})
 
     @login_required
+    def backup_config(self):
+        """
+        Returns the configuration as a passphrase-encrypted backup file.
+
+        The passphrase never leaves this request: it only derives the key
+        used to seal the payload.
+        """
+        data = request.json or {}
+        try:
+            envelope = config_backup.build(
+                self.zerocam.config_manager.decrypted_config,
+                self._read_privacy_mask(),
+                data.get('passphrase') or '',
+                get_version(),
+            )
+        except config_backup.BackupError as e:
+            return jsonify(success=False, message=str(e)), 400
+        except Exception as e:
+            self.logger.error(f"Failed to build configuration backup: {e}", exc_info=True)
+            return jsonify(success=False, message="Backup non riuscito, controlla i log."), 500
+
+        filename = f"zerocam-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+        self.logger.warning(f"Configuration backup downloaded as {filename}.")
+        return Response(
+            json.dumps(envelope, indent=2),
+            mimetype='application/json',
+            headers={'Content-Disposition': f'attachment; filename={filename}'},
+        )
+
+    @login_required
+    def restore_config(self):
+        """
+        Replaces the configuration with the one held in a backup file.
+
+        The security section is kept as it is on this machine, so the web
+        credentials in use now keep working after the restore.
+        """
+        data = request.json or {}
+        try:
+            restored, mask = config_backup.read(data.get('backup'), data.get('passphrase') or '')
+        except config_backup.BackupError as e:
+            self.logger.warning(f"Configuration restore rejected: {e}")
+            return jsonify(success=False, message=str(e)), 400
+
+        current = self.zerocam.config_manager.config
+        for section in config_backup.EXCLUDED_SECTIONS:
+            if section in current:
+                restored[section] = json.loads(json.dumps(current[section]))
+
+        if not self.zerocam.config_manager.save_config(restored):
+            return jsonify(success=False, message="Salvataggio della configurazione ripristinata non riuscito."), 500
+
+        if mask is not None:
+            try:
+                with open(PRIVACY_MASK_PATH, 'w') as f:
+                    json.dump(mask, f, indent=4)
+            except Exception as e:
+                self.logger.error(f"Restored config but failed to write privacy mask: {e}", exc_info=True)
+                return jsonify(
+                    success=False,
+                    message="Configurazione ripristinata, ma la privacy mask non è stata scritta."
+                ), 500
+
+        self.zerocam.apply_updated_config()
+        self.logger.warning("Configuration restored from backup file.")
+        return jsonify(success=True, message="Configurazione ripristinata. Riavvia per applicarla del tutto.")
+
+    @login_required
     def get_log(self):
         try:
-            with open('./logs/zerocam.log', 'r') as f:
+            with open(paths.LOG_FILE, 'r') as f:
                 return Response(f.read(), mimetype='text/plain')
         except FileNotFoundError:
             return Response("Log file not found.", status=404, mimetype='text/plain')
@@ -280,6 +361,28 @@ class SettingsManager:
     @login_required
     def get_capture_status(self):
         return jsonify({"is_capturing": self.zerocam.capture_lock.locked()})
+
+    @login_required
+    def get_stream_status(self):
+        """
+        Tells whether a live preview is available right now.
+
+        'running' vale solo se il fotogramma condiviso è recente: lo stream
+        si ferma a ogni scatto e il file su tmpfs resta lì, quindi la sola
+        presenza non basta a dire che l'anteprima è viva.
+        """
+        camera = self.zerocam.components.camera
+        running = bool(getattr(camera, 'running', False))
+        fresh = False
+        if running:
+            try:
+                fresh = (time.time() - os.path.getmtime(paths.STREAM_PREVIEW)) < 10
+            except OSError:
+                fresh = False
+
+        enabled = (self.zerocam.config_manager.get('streamParameters', {}).get('enabled', False)
+                   or self.zerocam.config_manager.get('onvif', {}).get('enabled', False))
+        return jsonify(enabled=bool(enabled), running=running and fresh)
 
     @login_required
     def take_photo(self):
@@ -329,7 +432,9 @@ class SettingsManager:
         path = self.zerocam.components.timelapse.frame_path(name)
         if not path:
             return "Frame not found", 404
-        return send_file(path, mimetype='image/jpeg')
+        # I fotogrammi non cambiano mai: lasciarli in cache al browser evita
+        # di riscaricarli a ogni passaggio della galleria.
+        return send_file(path, mimetype='image/jpeg', max_age=86400, conditional=True)
 
     # --- Focus Aid ---
     

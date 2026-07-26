@@ -77,6 +77,8 @@ class ComponentManager:
                 self.config("onvif", {}),
                 self.config("deviceDetails"),
                 self.logger,
+                annotation=self.config("Annotation", {}),
+                overlayImages=self.config("OverlayImages", []),
             )
         self.camera = self._init_with_feedback("Camera", _init)
     
@@ -86,7 +88,9 @@ class ComponentManager:
             self.camera.update_config(
                 new_config.get('cameraParameters'),
                 new_config.get('streamParameters'),
-                new_config.get('deviceDetails')
+                new_config.get('deviceDetails'),
+                new_config.get('Annotation', {}),
+                new_config.get('OverlayImages', [])
             )
             self.cropper.update_config(new_config.get('cameraParameters', {}).get('crop', {}))
 

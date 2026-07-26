@@ -14,10 +14,22 @@
 <div v-if="!focusAidActive">
   <div class="roi-editor-container roi-editor-component">
     <div class="image-column">
+      <div v-if="streamRunning" class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="livePreviewToggle"
+          :checked="livePreview" @change="$emit('toggle-live-preview', $event.target.checked)">
+        <label class="form-check-label" for="livePreviewToggle">
+          Anteprima diretta
+          <span class="text-muted small">(un fotogramma al secondo dallo stream)</span>
+        </label>
+      </div>
       <div class="image-container mb-3" ref="imageContainer">
-        <img :src="imageUrl" @error="onImageError" @load="onImageLoad" alt="Ultima immagine"
+        <img :src="displayedImageUrl" @error="onImageError" @load="onImageLoad" alt="Ultima immagine"
           class="img-fluid rounded border" style="max-height: 720px;" />
-        <svg v-if="imageDimensions.width > 0" :width="imageDimensions.width" :height="imageDimensions.height"
+        <div v-if="livePreview" class="form-text mb-0">
+          Le privacy mask non sono modificabili sull'anteprima: l'inquadratura dello streaming
+          &egrave; diversa da quella dello scatto. Torna all'ultima immagine per ridisegnarle.
+        </div>
+        <svg v-if="imageDimensions.width > 0 && !livePreview" :width="imageDimensions.width" :height="imageDimensions.height"
           @click="handleSvgClick" @dblclick="completeCurrentRoi" class="drawing-overlay">
           <polygon v-for="roi in rois" :key="roi.id" :points="formatPoints(roi.points)"
             :class="roi.mode === 'filled' ? 'completed-roi filled-roi' : 'completed-roi'" />

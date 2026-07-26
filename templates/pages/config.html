@@ -263,6 +263,18 @@
                     </div>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <field-renderer :model="config.streamParameters" key-name="overlay" :schema="schema"
+                        label="Annotazione e loghi nella diretta" />
+                    <div class="form-text">
+                        Disegna sul video in diretta la stessa barra con testo e data/ora della pagina
+                        <em>Annotation</em> e i loghi abilitati in <em>Overlay Images</em>, riscalati dal formato
+                        della foto a quello dello streaming. Il lavoro lo fa ffmpeg mentre codifica, quindi il
+                        costo in CPU &egrave; minimo. L'orologio &egrave; aggiornato in tempo reale.
+                    </div>
+                </div>
+            </div>
 
             <!-- Diretta automatica: gestione del broadcast via YouTube Data API -->
             <hr>
@@ -305,6 +317,8 @@
                     </div>
                     <div class="col-md-3"><label class="form-label">Timeout API (s)</label><field-renderer
                             :model="config.youtubeLive" key-name="timeout" :schema="schema" /></div>
+                    <div class="col-md-3"><label class="form-label">Nuova diretta alle (HH:MM)</label><field-renderer
+                            :model="config.youtubeLive" key-name="daily_reset_time" :schema="schema" /></div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="dvr" :schema="schema"
@@ -322,6 +336,9 @@
                     della foto, senza aprire il browser. Le credenziali si ottengono una volta sola con
                     <code>installation_tools/yt_oauth_setup.py</code>.
                     Nel titolo puoi usare i segnaposto <code>{date}</code> e <code>{time}</code>.
+                    Con &laquo;Nuova diretta alle&raquo; valorizzato (es. <code>00:00</code>) la diretta in corso
+                    viene chiusa e ricreata al primo scatto successivo a quell'ora; lasciandolo vuoto la stessa
+                    diretta resta attiva finch&eacute; YouTube la mantiene.
                 </div>
             </div>
 
@@ -415,9 +432,104 @@
         </div>
     </div>
 
+    <!-- Timelapse -->
+    <div v-if="configPage === 'timelapse' && config.timelapse">
+        <h4>Timelapse</h4>
+        <div class="card card-body mb-3">
+            <div class="row align-items-end mb-3">
+                <div class="col-md-3">
+                    <field-renderer :model="config.timelapse" key-name="enabled" :schema="schema"
+                        label="Timelapse attivo" />
+                </div>
+                <div class="col-md-3"><label class="form-label">Giorno</label>
+                    <select class="form-select" v-model="config.timelapse.day">
+                        <option value="monday">Luned&igrave;</option>
+                        <option value="tuesday">Marted&igrave;</option>
+                        <option value="wednesday">Mercoled&igrave;</option>
+                        <option value="thursday">Gioved&igrave;</option>
+                        <option value="friday">Venerd&igrave;</option>
+                        <option value="saturday">Sabato</option>
+                        <option value="sunday">Domenica</option>
+                    </select>
+                </div>
+                <div class="col-md-3"><label class="form-label">Ora (HH:MM)</label><field-renderer
+                        :model="config.timelapse" key-name="time" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Conserva i frame (settimane)</label><field-renderer
+                        :model="config.timelapse" key-name="retention_weeks" :schema="schema" /></div>
+            </div>
+            <div class="form-text">
+                Ogni scatto lascia una copia ridimensionata in una cartella dedicata. Una volta a settimana i fotogrammi
+                vengono montati e il video caricato su YouTube con le credenziali della sezione
+                <strong>Stream</strong>. L'archivio di debug (<em>Camera &rarr; Archive Images</em>) &egrave; un'altra
+                cosa e non serve a questo.
+            </div>
+        </div>
+
+        <div class="card card-body mb-3">
+            <h5>Fotogrammi</h5>
+            <div class="row align-items-end">
+                <div class="col-md-3"><label class="form-label">Larghezza (px)</label><field-renderer
+                        :model="config.timelapse" key-name="frame_width" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Qualit&agrave; JPEG</label><field-renderer
+                        :model="config.timelapse" key-name="frame_quality" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Minimo per montare</label><field-renderer
+                        :model="config.timelapse" key-name="min_frames" :schema="schema" /></div>
+            </div>
+            <div class="form-text">
+                I fotogrammi sono salvati gi&agrave; alla risoluzione finale del video: il montaggio &egrave; pi&ugrave;
+                rapido e lo spazio occupato prevedibile. Alzare la larghezza aumenta in proporzione l'occupazione su disco.
+            </div>
+        </div>
+
+        <div class="card card-body mb-3">
+            <h5>Video</h5>
+            <div class="row align-items-end mb-3">
+                <div class="col-md-2"><label class="form-label">FPS</label><input type="number" class="form-control"
+                        v-model.number="config.timelapse.fps" /></div>
+                <div class="col-md-2"><label class="form-label">CRF</label><field-renderer :model="config.timelapse"
+                        key-name="crf" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Preset x264</label>
+                    <select class="form-select" v-model="config.timelapse.preset">
+                        <option value="ultrafast">ultrafast</option>
+                        <option value="veryfast">veryfast</option>
+                        <option value="fast">fast</option>
+                        <option value="medium">medium</option>
+                        <option value="slow">slow</option>
+                    </select>
+                </div>
+                <div class="col-md-2"><label class="form-label">Thread</label><field-renderer :model="config.timelapse"
+                        key-name="threads" :schema="schema" /></div>
+                <div class="col-md-3 align-self-center"><field-renderer :model="config.timelapse" key-name="keep_local"
+                        :schema="schema" label="Tieni il file sul Pi" /></div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6"><label class="form-label">Titolo</label><field-renderer :model="config.timelapse"
+                        key-name="title" :schema="schema" /></div>
+                <div class="col-md-6"><label class="form-label">Descrizione</label><field-renderer
+                        :model="config.timelapse" key-name="description" :schema="schema" /></div>
+            </div>
+            <div class="row align-items-end">
+                <div class="col-md-3"><label class="form-label">Privacy</label>
+                    <select class="form-select" v-model="config.timelapse.privacy">
+                        <option value="public">Pubblico</option>
+                        <option value="unlisted">Non in elenco</option>
+                        <option value="private">Privato</option>
+                    </select>
+                </div>
+                <div class="col-md-3"><field-renderer :model="config.timelapse" key-name="made_for_kids" :schema="schema"
+                        label="Contenuto per bambini" /></div>
+            </div>
+            <div class="form-text mt-2">
+                Nel titolo e nella descrizione puoi usare <code>{from}</code>, <code>{to}</code>, <code>{date}</code> e
+                <code>{frames}</code>. Il montaggio gira con priorit&agrave; bassa per non disturbare lo streaming:
+                preset e thread regolano quanto pesa sulla CPU.
+            </div>
+        </div>
+    </div>
+
     <div class="mt-4 text-end">
         <button class="btn btn-success me-2" @click="$emit('save-config')">
-            <i class="bi bi-save me-1"></i> Salva Configurazione
+            Salva Configurazione
         </button>
     </div>
 </div>

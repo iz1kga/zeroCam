@@ -5,17 +5,20 @@ from collections import deque
 
 import pandas as pd
 
+from lib import paths
 from lib.helpers import get_raspberry_pi_stats
 
 class StatsCollector:
     """Collects, aggregates, and persists hardware statistics."""
 
-    def __init__(self, logger, history_file='/usr/local/zerocam/app/logs/stats.json', maxlen=288):
+    def __init__(self, logger, history_file=None, maxlen=288):
         self.logger = logger
         self.history_length = maxlen
         self.stats_history = deque(maxlen=maxlen)
         self.stats_buffer = []
-        self.history_file = history_file
+        # Nella cartella dei dati: dentro quella dell'applicazione lo storico
+        # spariva a ogni aggiornamento.
+        self.history_file = history_file or paths.STATS_FILE
         self._load_stats_from_disk()
 
     def _load_stats_from_disk(self):
@@ -38,6 +41,7 @@ class StatsCollector:
         Ensures the file does not exceed self.history_length lines by removing the oldest records.
         """
         try:
+            os.makedirs(os.path.dirname(self.history_file), exist_ok=True)
             lines = []
             if os.path.exists(self.history_file):
                 with open(self.history_file, 'r') as f:

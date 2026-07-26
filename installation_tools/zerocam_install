@@ -13,6 +13,12 @@ set -e # Esce immediatamente se un comando fallisce
 INSTALL_DIR="/usr/local/zerocam"
 APP_DIR="$INSTALL_DIR/app"
 VENV_DIR="$INSTALL_DIR/venv"
+# Dati che devono sopravvivere agli aggiornamenti: configurazione, .env, log,
+# fotogrammi del timelapse, immagini archiviate. Stanno fuori da APP_DIR, che
+# a ogni installazione viene rimossa e riscritta.
+DATA_DIR="$INSTALL_DIR/data"
+# Quanto le versioni fino alla 'app-only' tenevano dentro APP_DIR.
+LEGACY_DATA_ITEMS=(.conf.json .privacy_mask.json .env .capture_info latest.jpg logs images timelapse_frames timelapse)
 
 # --- Funzioni di Utility per l'Output ---
 echo_step() {
@@ -99,14 +105,13 @@ else
     echo_success "Ambiente virtuale creato in $VENV_DIR."
 fi
 
-# Passo 5: Backup e pulizia di una eventuale installazione precedente
+# Passo 5: Messa al sicuro dei dati e pulizia di una installazione precedente
 # ==============================================================================
 echo_step "Passo 5: Gestione di installazioni precedenti..."
+mkdir -p "$DATA_DIR"
 if [ -d "$APP_DIR" ]; then
-    echo_warning "Trovata un'installazione precedente. Eseguo il backup della configurazione."
-    BACKUP_DIR="$INSTALL_DIR/backup_$(date +%Y%m%d%H%M%S)"
-    mkdir -p "$BACKUP_DIR"
-    
+    echo_warning "Trovata un'installazione precedente."
+
     # Esegue l'unmount di shmem se necessario
     if mountpoint -q "$APP_DIR/shmem"; then
         echo_info "Eseguo l'unmount di $APP_DIR/shmem..."
@@ -114,18 +119,17 @@ if [ -d "$APP_DIR" ]; then
         echo_success "Unmount completato."
     fi
 
-    if [ -f "$APP_DIR/.conf.json" ]; then
-        mv "$APP_DIR/.conf.json" "$BACKUP_DIR/"
-        echo_success "Backup di .conf.json eseguito."
-    fi
-    if [ -f "$APP_DIR/.privacy_mask.json" ]; then
-        mv "$APP_DIR/.privacy_mask.json" "$BACKUP_DIR/"
-        echo_success "Backup di .privacy_mask.json eseguito."
-    fi
-    if [ -f "$APP_DIR/.env" ]; then
-        mv "$APP_DIR/.env" "$BACKUP_DIR/"
-        echo_success "Backup di .env eseguito."
-    fi
+    # Fino alla versione precedente configurazione, log e fotogrammi stavano
+    # dentro la cartella dell'applicazione, che qui viene rimossa: quello che
+    # non è ancora nella cartella dei dati va spostato adesso, altrimenti si
+    # perde (è così che sono spariti i fotogrammi del timelapse).
+    for ITEM in "${LEGACY_DATA_ITEMS[@]}"; do
+        if [ -e "$APP_DIR/$ITEM" ] && [ ! -e "$DATA_DIR/$ITEM" ]; then
+            mv "$APP_DIR/$ITEM" "$DATA_DIR/"
+            echo_success "$ITEM spostato in $DATA_DIR."
+        fi
+    done
+
     rm -rf "$APP_DIR"
     echo_info "Vecchia directory dell'applicazione rimossa."
 fi
@@ -143,30 +147,25 @@ rm "$TEMP_ZIP"
 echo "$RELEASE_TAG" > "$APP_DIR/VERSION"
 echo_success "Applicazione $RELEASE_TAG estratta in $APP_DIR."
 
-# Passo 7: Ripristino della configurazione dal backup
+# Passo 7: Configurazione nella cartella dei dati
 # ==============================================================================
-echo_step "Passo 7: Ripristino della configurazione..."
-BACKUP_DIR_LATEST=$(ls -td -- "$INSTALL_DIR"/backup_* 2>/dev/null | head -n 1)
-if [ -d "$BACKUP_DIR_LATEST" ]; then
-    # Ripristina .env
-    if [ -f "$BACKUP_DIR_LATEST/.env" ]; then
-        mv "$BACKUP_DIR_LATEST/.env" "$APP_DIR/"
-        echo_success "File .env ripristinato."
-    fi
-    # Ripristina .privacy_mask.json
-    if [ -f "$BACKUP_DIR_LATEST/.privacy_mask.json" ]; then
-        mv "$BACKUP_DIR_LATEST/.privacy_mask.json" "$APP_DIR/"
-        echo_success "File .privacy_mask.json ripristinato."
-    fi
-    # Unisce .conf.json
-    if [ -f "$BACKUP_DIR_LATEST/.conf.json" ]; then
+echo_step "Passo 7: Configurazione..."
+# La release porta con sé una configurazione di default: se ne esiste già una
+# le si sovrappone, così le chiavi nuove entrano senza toccare le impostazioni
+# in uso. La copia della release non serve oltre.
+if [ -f "$APP_DIR/.conf.json" ]; then
+    if [ -f "$DATA_DIR/.conf.json" ]; then
         TEMP_MERGED=$(mktemp)
-        jq -s '.[0] * .[1]' "$APP_DIR/.conf.json" "$BACKUP_DIR_LATEST/.conf.json" > "$TEMP_MERGED"
-        mv "$TEMP_MERGED" "$APP_DIR/.conf.json"
-        echo_success "File .conf.json unito e ripristinato."
+        jq -s '.[0] * .[1]' "$APP_DIR/.conf.json" "$DATA_DIR/.conf.json" > "$TEMP_MERGED"
+        mv "$TEMP_MERGED" "$DATA_DIR/.conf.json"
+        echo_success "Configurazione esistente aggiornata con le chiavi della nuova versione."
+    else
+        mv "$APP_DIR/.conf.json" "$DATA_DIR/.conf.json"
+        echo_success "Configurazione iniziale installata in $DATA_DIR."
     fi
+    rm -f "$APP_DIR/.conf.json"
 fi
-chown -R "$SUDO_USER:$SUDO_USER" "$APP_DIR"
+chown -R "$SUDO_USER:$SUDO_USER" "$APP_DIR" "$DATA_DIR"
 
 # Passo 8: Configurazione della memoria condivisa (tmpfs)
 # ==============================================================================
@@ -195,7 +194,7 @@ fi
 # ==============================================================================
 echo_step "Passo 10: Configurazione iniziale e sicurezza..."
 
-ENV_FILE="$APP_DIR/.env"
+ENV_FILE="$DATA_DIR/.env"
 
 if [ ! -f "$ENV_FILE" ]; then
     echo_info "File .env non trovato. Lo creo da zero..."
@@ -227,8 +226,8 @@ fi
 
 # Controlla se la password è già impostata nel file .conf.json
 PASSWORD_SET="false"
-if [ -f "$APP_DIR/.conf.json" ]; then
-    PASSWORD_SET=$(jq 'if .security and .security.password and (.security.password | length > 0) then true else false end' "$APP_DIR/.conf.json")
+if [ -f "$DATA_DIR/.conf.json" ]; then
+    PASSWORD_SET=$(jq 'if .security and .security.password and (.security.password | length > 0) then true else false end' "$DATA_DIR/.conf.json")
 fi
 
 if [ "$PASSWORD_SET" != "true" ]; then
@@ -245,8 +244,8 @@ if [ "$PASSWORD_SET" != "true" ]; then
         fi
     done
     PASSWORD_HASH=$("$VENV_DIR/bin/python" -c "from werkzeug.security import generate_password_hash; print(generate_password_hash('$PASSWORD'))")
-    jq ".security.password = \"$PASSWORD_HASH\"" "$APP_DIR/.conf.json" > "${APP_DIR}/.conf.json.tmp" && mv "${APP_DIR}/.conf.json.tmp" "$APP_DIR/.conf.json"
-    chown "$SUDO_USER:$SUDO_USER" "$APP_DIR/.conf.json" # Assicura la proprietà corretta dopo la modifica
+    jq ".security.password = \"$PASSWORD_HASH\"" "$DATA_DIR/.conf.json" > "${DATA_DIR}/.conf.json.tmp" && mv "${DATA_DIR}/.conf.json.tmp" "$DATA_DIR/.conf.json"
+    chown "$SUDO_USER:$SUDO_USER" "$DATA_DIR/.conf.json" # Assicura la proprietà corretta dopo la modifica
     echo_success "Password dell'applicazione impostata e salvata."
 else
     echo_info "Una password per l'applicazione è già impostata. Salto questo passaggio."
@@ -277,7 +276,8 @@ After=network.target
 User=$SUDO_USER
 Group=$SUDO_USER
 WorkingDirectory=$APP_DIR
-EnvironmentFile=$APP_DIR/.env
+Environment=ZEROCAM_DATA_DIR=$DATA_DIR
+EnvironmentFile=$DATA_DIR/.env
 ExecStart=$VENV_DIR/bin/python zeroCam.py
 Restart=on-failure
 RestartSec=5
