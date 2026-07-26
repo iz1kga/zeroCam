@@ -26,6 +26,8 @@ I fotogrammi sono salvati già alla risoluzione finale del video: il montaggio �
 | Titolo, Descrizione | Testi del video, con segnaposto |
 | Privacy, Contenuto per bambini | Impostazioni di pubblicazione su YouTube |
 
+![La pagina Timelapse della configurazione: pianificazione, fotogrammi e parametri del video.](img/ui-config-timelapse.png){ width=100% }
+
 Nei testi si possono usare `{from}`, `{to}`, `{date}` e `{frames}`, sostituiti rispettivamente con la data del primo e dell'ultimo fotogramma, la data del montaggio e il numero di fotogrammi.
 
 Il montaggio gira con priorità bassa (`nice 19`) per non disturbare lo streaming: preset e numero di thread regolano quanto pesa sulla CPU. Su un Pi 5, `medium` con 2 thread è un buon compromesso.
@@ -55,6 +57,8 @@ Il montaggio dura diversi minuti e prosegue in background: l'esito compare nel r
 ## Galleria
 
 Nella stessa pagina una galleria permette di scorrere i fotogrammi raccolti: si sceglie il giorno, si scorre con il cursore o con le frecce, e il pulsante *Riproduci* fa un'anteprima animata a 2, 5 o 10 fotogrammi al secondo.
+
+![La galleria: scelta del giorno, cursore, comandi di riproduzione e velocità.](img/ui-timelapse-galleria.png){ width=100% }
 
 La riproduzione avanza solo quando l'immagine successiva è arrivata dal dispositivo: alla prima passata può risultare più lenta della velocità scelta, poi i fotogrammi restano nella cache del browser e scorrono fluidi. È il modo più rapido per accorgersi di una giornata di fotogrammi rovinati prima di montare il video.
 

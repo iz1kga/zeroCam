@@ -17,9 +17,13 @@ In **Cam Control**, sull'ultima immagine:
 2. si chiude la figura con un doppio clic;
 3. nella colonna di destra la maschera compare nell'elenco, dove si sceglie *Sfocata* o *Coperta* e la si può eliminare.
 
+![Due maschere in corso di definizione: il poligono numerato indica l'ordine, il pannello a destra ne governa modalità e cancellazione.](img/ui-cam-control.png){ width=100% }
+
 Servono almeno tre punti. Le maschere vengono salvate subito in `data/.privacy_mask.json` come coordinate relative alle dimensioni dell'immagine, non in pixel: restano valide anche cambiando risoluzione dello scatto.
 
 Se l'anteprima della diretta è attiva, il disegno è disabilitato: l'inquadratura dello streaming non coincide con quella della foto. Per modificare le maschere si torna all'ultimo scatto.
+
+![Le due modalità a confronto su uno scatto pubblicato: in basso a sinistra una zona sfocata, al centro a destra una coperta.](img/foto-privacy.png){ width=100% }
 
 ## Sulla foto
 

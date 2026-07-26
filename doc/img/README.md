@@ -16,9 +16,9 @@ sudo apt install graphviz python3-matplotlib
 | `pipeline-streaming.dot` | `pipeline-streaming.png` | 09 Streaming |
 | `fasi-giorno.py` | `fasi-giorno.png` | 04 Configurazione di base |
 
-## Schermate da acquisire
+## Schermate
 
-Vanno prese dal dispositivo in funzione, che è l'unico posto dove l'interfaccia mostra dati veri. Regole comuni:
+Sono state acquisite dal dispositivo in funzione, unico posto dove l'interfaccia mostra dati veri. Vanno rifatte quando la pagina corrispondente cambia aspetto. Regole di acquisizione:
 
 * browser a **1400 px** di larghezza, zoom al 100%, finestra senza barre di sviluppo;
 * ritagliare solo l'area utile (non serve la barra del browser), formato **PNG**;
@@ -39,7 +39,7 @@ Vanno prese dal dispositivo in funzione, che è l'unico posto dove l'interfaccia
 | `foto-annotata.png` | Uno scatto pubblicato, con barra di annotazione e logo | 07 |
 | `foto-privacy.png` | Uno scatto con una zona sfocata e una coperta, ben riconoscibili | 06 |
 
-Una volta messi i file qui, le figure vanno inserite nei capitoli con:
+Tutte le schermate dell'elenco sono presenti e già inserite nei capitoli indicati. Per aggiungerne altre:
 
 ```markdown
 ![Didascalia che spiega cosa guardare.](img/ui-cam-control.png){ width=95% }

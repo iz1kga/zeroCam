@@ -20,6 +20,8 @@ Lo streaming si ferma a ogni scatto e riparte subito dopo: la camera non può se
 | Destinazioni aggiuntive | Altri URL RTMP verso cui ritrasmettere |
 | Annotazione e loghi nella diretta | Disegna barra, orologio e loghi sul video |
 
+![La pagina Stream: chiave, risoluzione, destinazioni aggiuntive, overlay e le impostazioni della diretta automatica.](img/ui-config-stream.png){ width=100% }
+
 Nelle schede per fase del giorno si impostano frequenza dei fotogrammi (`framerate`), guadagno, bilanciamento del bianco, riduzione del rumore e nitidezza: di notte conviene un framerate basso (4–5) e un guadagno alto, di giorno il contrario.
 
 Bitrate e buffer (`bitrate`, `buffer`) governano la qualità: 4000–4500 kbit/s per il 1440p sono un punto di partenza sensato. La codifica usa il preset `veryfast` e un gruppo di immagini pari a due secondi, come richiesto dalle piattaforme di live.
@@ -73,6 +75,8 @@ Il campo **Nuova diretta alle (HH:MM)** forza invece un ricambio quotidiano: al 
 ## Anteprima nell'interfaccia
 
 Mentre lo streaming è attivo, in **Cam Control** compare l'interruttore **Anteprima diretta**: mostra un fotogramma al secondo preso dal flusso video al posto dell'ultimo scatto. È lo stesso fotogramma che alimenta ONVIF, con le maschere privacy già applicate, scritto su tmpfs per non consumare la microSD.
+
+![Anteprima attiva: l'immagine viene dal flusso video e il disegno delle maschere è disabilitato.](img/ui-cam-control-anteprima.png){ width=100% }
 
 L'interruttore compare solo se il fotogramma è recente: nei secondi in cui lo streaming è fermo per lo scatto l'anteprima torna da sola all'ultima immagine.
 

@@ -13,6 +13,8 @@
 | Font Size | Corpo del carattere in pixel |
 | Date/Time Format | Formato della data, con i codici `strftime` |
 
+![La pagina Annotation: colori della fascia, colore e corpo del testo, formato della data.](img/ui-config-annotation.png){ width=100% }
+
 L'altezza della fascia è calcolata come corpo del carattere più due volte l'offset: per una barra più alta si aumenta l'offset, per un testo più grande il corpo.
 
 Formati di data più comuni:
@@ -24,6 +26,8 @@ Formati di data più comuni:
 | `%A %d %B %Y` | nome del giorno e del mese, secondo la lingua di sistema |
 
 Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
+
+![Uno scatto pubblicato: barra con testo a sinistra e data/ora a destra, logo in alto a destra.](img/foto-annotata.png){ width=100% }
 
 ## I loghi
 

@@ -22,15 +22,23 @@ Uno scatto può essere avviato a mano da **Cam Control → Take Photo**: il cicl
 
 ## Parametri della camera
 
-**Configuration → Camera** ha una scheda per ciascuna fase del giorno, più alcune impostazioni generali.
+**Configuration → Camera** ha una scheda per ciascuna fase del giorno, più le impostazioni generali e il ritaglio.
 
-| Impostazione generale | Significato |
+![La pagina Camera: impostazioni generali, ritaglio e la scheda della fase notturna con le soglie di luminosità.](img/ui-config-camera.png){ width=100% }
+
+| Impostazione in pagina | Significato |
 |---|---|
-| Shot Interval | Secondi fra uno scatto e il successivo |
-| Hard Reset Interval | Ogni quanti scatti reinizializzare completamente la camera (0 = mai) |
-| Archive Images | Conserva ogni scatto in `data/images/` con i relativi metadati |
-| Unsharp Mask | Applica una maschera di contrasto all'immagine |
 | Type | Tipo di camera: `piCamera` in esercizio, `fakeCamera` per prove senza hardware |
+| Shot Interval | Secondi fra uno scatto e il successivo |
+| Crop Enabled, Crop Size, Crop Offset | Ritaglio dell'immagine (vedi più avanti) |
+
+Tre impostazioni esistono solo nel file di configurazione, senza campo nell'interfaccia:
+
+| Chiave in `.conf.json` | Significato |
+|---|---|
+| `cameraParameters.hardResetInterval` | Ogni quanti scatti reinizializzare completamente la camera (0 = mai) |
+| `cameraParameters.archiveImages` | Conserva ogni scatto in `data/images/` con i relativi metadati |
+| `cameraParameters.unsharpMask` | Applica una maschera di contrasto all'immagine |
 
 ### Giorno
 

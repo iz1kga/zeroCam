@@ -6,6 +6,8 @@ Dalla pagina **System** si scarica l'intera configurazione — privacy mask comp
 
 Sul dispositivo i segreti sono cifrati con `ZEROCAM_SECRET_KEY`, che vive nell'ambiente del servizio: copiare `.conf.json` così com'è darebbe un backup illeggibile su un'installazione nuova. Il backup viene quindi costruito dalla configurazione decifrata e richiuso subito con una **passphrase scelta al momento del download** (PBKDF2-SHA256 e Fernet, con sale casuale). Il file non contiene nulla in chiaro ed è ripristinabile su qualunque dispositivo, anche con una chiave segreta diversa.
 
+![La sezione di backup e ripristino nella pagina System.](img/ui-system-backup.png){ width=100% }
+
 > **La passphrase non è recuperabile.** Se si perde, il backup è inutilizzabile. Va conservata separatamente dal file.
 
 Il ripristino chiede file e passphrase, riscrive la configurazione ricifrando i segreti con la chiave locale e sovrascrive le maschere privacy. Restano fuori la password di accesso all'interfaccia e la chiave di sessione, che rimangono quelle del dispositivo su cui si ripristina: un backup vecchio non rimette mai in uso credenziali di login superate. Dopo il ripristino conviene riavviare.
@@ -40,6 +42,8 @@ Righe da conoscere:
 ## Statistiche hardware
 
 La pagina **Status** mostra temperatura e uso della CPU con indicatori e grafici. I dati vengono letti ogni secondo, aggregati (minimo, massimo, media) e conservati in `data/logs/stats.json`, che tiene gli ultimi 288 record: circa un giorno di storico. Il file sopravvive agli aggiornamenti.
+
+![La pagina Status: indicatori istantanei, occupazione di disco e memoria, storico dell'ultima ora.](img/ui-status.png){ width=100% }
 
 Su un Pi 5 in cassetta esterna la temperatura è il valore da tenere d'occhio: sopra i 70 °C conviene rivedere ventilazione o esposizione al sole della custodia.
 
