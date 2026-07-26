@@ -5,13 +5,17 @@ import logging
 import threading
 import time
 import io
+from datetime import datetime
 from flask import Flask, Response, send_file, request, jsonify, render_template, redirect, url_for, flash
 from waitress import serve
 from PIL import Image, ImageDraw
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
+from lib import config_backup
 from lib.version import get_version
+
+PRIVACY_MASK_PATH = '.privacy_mask.json'
 
 # La classe User ora è disaccoppiata dall'oggetto zerocam globale.
 class User(UserMixin):
@@ -95,6 +99,8 @@ class SettingsManager:
         self.app.add_url_rule('/api/change-password', 'change_password', self.change_password, methods=['POST'])
         self.app.add_url_rule('/api/config', 'handle_config', self.handle_config, methods=['GET', 'POST'])
         self.app.add_url_rule('/api/schema', 'get_schema', self.get_schema)
+        self.app.add_url_rule('/api/config/backup', 'backup_config', self.backup_config, methods=['POST'])
+        self.app.add_url_rule('/api/config/restore', 'restore_config', self.restore_config, methods=['POST'])
         self.app.add_url_rule('/api/log', 'get_log', self.get_log)
         self.app.add_url_rule('/api/stats', 'get_stats', self.get_stats)
         self.app.add_url_rule('/api/status/capture', 'get_capture_status', self.get_capture_status)
@@ -172,6 +178,18 @@ class SettingsManager:
 
     # --- API Method Implementations ---
 
+    def _read_privacy_mask(self):
+        """Privacy mask on disk, or an empty list when missing/corrupted."""
+        try:
+            with open(PRIVACY_MASK_PATH, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            self.logger.info(f"{PRIVACY_MASK_PATH} not found, returning empty list.")
+            return []
+        except json.JSONDecodeError:
+            self.logger.error(f"{PRIVACY_MASK_PATH} is corrupted. Returning empty list.")
+            return []
+
     @login_required
     def get_privacy_mask(self):
         """
@@ -179,15 +197,7 @@ class SettingsManager:
         Returns an empty list if the file does not exist.
         """
         try:
-            with open('.privacy_mask.json', 'r') as f:
-                data = json.load(f)
-                return jsonify(data)
-        except FileNotFoundError:
-            self.logger.info(".privacy_mask.json not found, returning empty list.")
-            return jsonify([])
-        except json.JSONDecodeError:
-            self.logger.error(".privacy_mask.json is corrupted. Returning empty list.")
-            return jsonify([])
+            return jsonify(self._read_privacy_mask())
         except Exception as e:
             self.logger.error(f"Failed to load privacy mask: {e}", exc_info=True)
             return jsonify({"error": "Failed to load privacy mask"}), 500
@@ -206,7 +216,7 @@ class SettingsManager:
 
         try:
             # Save the data to the specified file
-            with open('.privacy_mask.json', 'w') as f:
+            with open(PRIVACY_MASK_PATH, 'w') as f:
                 json.dump(data, f, indent=4)
             
             self.logger.info("Privacy mask saved successfully to .privacy_mask.json")
@@ -256,6 +266,74 @@ class SettingsManager:
                 return jsonify(json.load(f))
         except FileNotFoundError:
             return jsonify({})
+
+    @login_required
+    def backup_config(self):
+        """
+        Returns the configuration as a passphrase-encrypted backup file.
+
+        The passphrase never leaves this request: it only derives the key
+        used to seal the payload.
+        """
+        data = request.json or {}
+        try:
+            envelope = config_backup.build(
+                self.zerocam.config_manager.decrypted_config,
+                self._read_privacy_mask(),
+                data.get('passphrase') or '',
+                get_version(),
+            )
+        except config_backup.BackupError as e:
+            return jsonify(success=False, message=str(e)), 400
+        except Exception as e:
+            self.logger.error(f"Failed to build configuration backup: {e}", exc_info=True)
+            return jsonify(success=False, message="Backup non riuscito, controlla i log."), 500
+
+        filename = f"zerocam-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+        self.logger.warning(f"Configuration backup downloaded as {filename}.")
+        return Response(
+            json.dumps(envelope, indent=2),
+            mimetype='application/json',
+            headers={'Content-Disposition': f'attachment; filename={filename}'},
+        )
+
+    @login_required
+    def restore_config(self):
+        """
+        Replaces the configuration with the one held in a backup file.
+
+        The security section is kept as it is on this machine, so the web
+        credentials in use now keep working after the restore.
+        """
+        data = request.json or {}
+        try:
+            restored, mask = config_backup.read(data.get('backup'), data.get('passphrase') or '')
+        except config_backup.BackupError as e:
+            self.logger.warning(f"Configuration restore rejected: {e}")
+            return jsonify(success=False, message=str(e)), 400
+
+        current = self.zerocam.config_manager.config
+        for section in config_backup.EXCLUDED_SECTIONS:
+            if section in current:
+                restored[section] = json.loads(json.dumps(current[section]))
+
+        if not self.zerocam.config_manager.save_config(restored):
+            return jsonify(success=False, message="Salvataggio della configurazione ripristinata non riuscito."), 500
+
+        if mask is not None:
+            try:
+                with open(PRIVACY_MASK_PATH, 'w') as f:
+                    json.dump(mask, f, indent=4)
+            except Exception as e:
+                self.logger.error(f"Restored config but failed to write privacy mask: {e}", exc_info=True)
+                return jsonify(
+                    success=False,
+                    message="Configurazione ripristinata, ma la privacy mask non è stata scritta."
+                ), 500
+
+        self.zerocam.apply_updated_config()
+        self.logger.warning("Configuration restored from backup file.")
+        return jsonify(success=True, message="Configurazione ripristinata. Riavvia per applicarla del tutto.")
 
     @login_required
     def get_log(self):

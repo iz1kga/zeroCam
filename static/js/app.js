@@ -659,7 +659,101 @@ const startApp = async () => {
   app.component('page-security', {
     template: securityTemplate,
     props: ['passwords', 'isLoading', 'message', 'messageClass'],
-    emits: ['change-password']
+    emits: ['change-password'],
+    data() {
+      return {
+        backupPassphrase: '',
+        backupBusy: false,
+        backupMessage: '',
+        backupSuccess: false,
+        restoreFile: null,
+        restorePassphrase: '',
+        restoreBusy: false
+      };
+    },
+    methods: {
+      setBackupMessage(text, success) {
+        this.backupMessage = text;
+        this.backupSuccess = success;
+      },
+      async downloadBackup() {
+        this.backupBusy = true;
+        this.setBackupMessage('', false);
+        try {
+          const response = await secureFetch('/api/config/backup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passphrase: this.backupPassphrase })
+          });
+          if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            this.setBackupMessage(result.message || 'Backup non riuscito.', false);
+            return;
+          }
+
+          // Il file arriva come blob: lo si salva senza lasciare la pagina.
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = (response.headers.get('Content-Disposition') || '')
+            .split('filename=')[1] || 'zerocam-backup.json';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(url);
+
+          this.backupPassphrase = '';
+          this.setBackupMessage('Backup scaricato. Conserva la passphrase: senza non è recuperabile.', true);
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setBackupMessage('Errore di connessione durante il backup.', false);
+          }
+        } finally {
+          this.backupBusy = false;
+        }
+      },
+      pickBackupFile(event) {
+        this.restoreFile = event.target.files[0] || null;
+      },
+      async uploadRestore() {
+        if (!this.restoreFile) return;
+        if (!confirm('La configurazione attuale verrà sovrascritta. Procedere?')) return;
+
+        this.restoreBusy = true;
+        this.setBackupMessage('', false);
+        try {
+          let backup;
+          try {
+            backup = JSON.parse(await this.restoreFile.text());
+          } catch (e) {
+            this.setBackupMessage('Il file selezionato non è un JSON valido.', false);
+            return;
+          }
+
+          const response = await secureFetch('/api/config/restore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ backup: backup, passphrase: this.restorePassphrase })
+          });
+          const result = await response.json().catch(() => ({}));
+          this.setBackupMessage(result.message || 'Ripristino non riuscito.', response.ok);
+
+          if (response.ok) {
+            this.restorePassphrase = '';
+            this.restoreFile = null;
+            // Ricarica per mostrare la configurazione appena ripristinata.
+            setTimeout(() => window.location.reload(), 2000);
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setBackupMessage('Errore di connessione durante il ripristino.', false);
+          }
+        } finally {
+          this.restoreBusy = false;
+        }
+      }
+    }
   });
   app.component('page-license', {
     template: licenseTemplate

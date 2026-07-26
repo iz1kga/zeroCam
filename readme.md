@@ -75,6 +75,14 @@ Il pulsante *Genera e pubblica ora* monta subito il timelapse senza aspettare la
 
 Nella stessa pagina c'è una galleria per scorrere i fotogrammi raccolti: si sceglie il giorno, si scorre con il cursore o con le frecce, e il pulsante *Riproduci* fa un'anteprima animata a 2, 5 o 10 fotogrammi al secondo. È il modo più rapido per controllare cosa finirà nel video prima di montarlo.
 
+### Backup e ripristino della configurazione
+
+Nella pagina **Sicurezza** si può scaricare l'intera configurazione (privacy mask compresa) in un unico file JSON e reimportarla in caso di SD morta o reinstallazione.
+
+Sul dispositivo i segreti sono cifrati con `ZEROCAM_SECRET_KEY`, che vive nell'ambiente del servizio: copiare il `.conf.json` così com'è darebbe un backup illeggibile su un'installazione nuova. Il backup viene quindi costruito dalla configurazione decifrata e richiuso subito con una **passphrase scelta al momento del download** (PBKDF2-SHA256 + Fernet, salt casuale): il file non contiene nulla in chiaro ed è ripristinabile su qualsiasi dispositivo, anche con secret key diversa. La passphrase non è recuperabile: se si perde, il backup è carta straccia.
+
+Il ripristino chiede file e passphrase, riscrive la configurazione ricifrando i segreti con la chiave locale e sovrascrive la privacy mask. Restano esclusi password di accesso all'interfaccia e chiave di sessione Flask, che rimangono quelle del dispositivo su cui si ripristina: un backup vecchio non rimette in uso credenziali di login superate. Conviene riavviare dalla pagina Controllo per applicare tutto.
+
 ---
 
 ## 📜 Licenza
@@ -173,6 +181,14 @@ Two practical notes:
 The *Genera e pubblica ora* button builds the timelapse immediately instead of waiting for the weekly schedule, which is handy to check the configuration.
 
 The same page holds a gallery to browse the collected frames: pick a day, scrub with the slider or the arrows, and the *Riproduci* button plays an animated preview at 2, 5 or 10 frames per second. It is the quickest way to check what will end up in the video before building it.
+
+### Configuration backup and restore
+
+The **Sicurezza** page downloads the whole configuration (privacy mask included) as a single JSON file and imports it back after a dead SD card or a reinstall.
+
+On the device the secrets are encrypted with `ZEROCAM_SECRET_KEY`, which lives in the service environment: copying `.conf.json` as it is would produce a backup no fresh installation can read. The backup is therefore built from the decrypted configuration and immediately sealed again with a **passphrase chosen at download time** (PBKDF2-SHA256 + Fernet, random salt): nothing travels in clear text and the file restores on any device, even with a different secret key. The passphrase cannot be recovered: lose it and the backup is worthless.
+
+The restore asks for file and passphrase, rewrites the configuration re-encrypting the secrets with the local key, and overwrites the privacy mask. The web login password and the Flask session key are left out and stay those of the device being restored, so an old backup never brings back outdated login credentials. Reboot from the Controllo page afterwards to apply everything.
 
 ---
 

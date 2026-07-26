@@ -22,4 +22,58 @@
             </button>
         </div>
     </div>
+
+    <h4 class="mt-4">Backup e ripristino configurazione</h4>
+    <div class="card">
+        <div class="card-body">
+            <div v-if="backupMessage" class="alert" :class="backupSuccess ? 'alert-success' : 'alert-danger'"
+                role="alert">[[ backupMessage ]]</div>
+
+            <h6>Backup</h6>
+            <div class="row align-items-end mb-2">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Passphrase (min. 8 caratteri)</label>
+                    <input type="password" class="form-control" v-model="backupPassphrase"
+                        autocomplete="new-password">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <button class="btn btn-primary" @click="downloadBackup" :disabled="backupBusy">
+                        <span v-if="backupBusy" class="spinner-border spinner-border-sm me-1" role="status"
+                            aria-hidden="true"></span>
+                        Scarica backup
+                    </button>
+                </div>
+            </div>
+            <div class="form-text mb-4">
+                Il file contiene tutta la configurazione (password MQTT/FTP/ONVIF, stream key, credenziali YouTube)
+                e la privacy mask, cifrate con questa passphrase: senza di essa il backup non è recuperabile,
+                quindi conservala separatamente. Restano fuori la password di accesso all'interfaccia web e la
+                chiave di sessione, che rimangono quelle del dispositivo su cui ripristini.
+            </div>
+
+            <hr>
+            <h6>Ripristino</h6>
+            <div class="row align-items-end mb-2">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">File di backup</label>
+                    <input type="file" class="form-control" accept="application/json,.json"
+                        @change="pickBackupFile">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label">Passphrase del backup</label>
+                    <input type="password" class="form-control" v-model="restorePassphrase"
+                        autocomplete="off">
+                </div>
+            </div>
+            <button class="btn btn-danger" @click="uploadRestore" :disabled="restoreBusy || !restoreFile">
+                <span v-if="restoreBusy" class="spinner-border spinner-border-sm me-1" role="status"
+                    aria-hidden="true"></span>
+                Ripristina configurazione
+            </button>
+            <div class="form-text">
+                Sovrascrive la configurazione attuale e la privacy mask: operazione non annullabile.
+                Dopo il ripristino conviene riavviare il dispositivo dalla pagina Controllo.
+            </div>
+        </div>
+    </div>
 </div>
