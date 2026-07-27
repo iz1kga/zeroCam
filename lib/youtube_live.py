@@ -161,6 +161,16 @@ class YouTubeLiveManager:
             boundary -= timedelta(days=1)
         return boundary
 
+    def _rollover_note(self):
+        """Spiega nel log perché un broadcast viene riusato invece che ricreato."""
+        configured = str(self.cfg.get("daily_reset_time") or "").strip()
+        if _parse_hhmm(configured) is None:
+            if configured:
+                return f"daily reset '{configured}' is not a valid HH:MM, rollover disabled"
+            return "daily reset not configured"
+        boundary = self._rollover_boundary()
+        return f"started after the daily reset of {boundary.strftime('%d/%m/%Y %H:%M')}"
+
     def _is_stale(self, broadcast):
         """True se il broadcast è nato prima dell'ultima ora di reset."""
         boundary = self._rollover_boundary()
@@ -288,7 +298,9 @@ class YouTubeLiveManager:
 
                 if broadcast:
                     self._broadcast_id = broadcast["id"]
-                    self.logger.info(f"Reusing YouTube broadcast {self._broadcast_id}.")
+                    self.logger.info(
+                        f"Reusing YouTube broadcast {self._broadcast_id} ({self._rollover_note()})."
+                    )
                     return True
 
                 broadcast = self._create_broadcast()

@@ -40,6 +40,7 @@ Se il problema si presenta solo nelle ore di passaggio, il colpevole sono di sol
 * **La diretta va in "testing"**: succede quando il monitor stream è attivo sul broadcast; quelli creati da zeroCAM lo disattivano, ma un broadcast creato a mano nella Live Control Room può averlo.
 * **Lo streaming si interrompe di continuo**: cercare `Broken pipe with ffmpeg`. Se compare a ogni ciclo, il comando di ffmpeg fallisce all'avvio — chiave errata, destinazione aggiuntiva malformata, o filtro mancante (vedi sotto).
 * **Frame skipped for YouTube (ffmpeg busy)**: la codifica non sta al passo. Ridurre risoluzione, framerate o bitrate.
+* **La diretta ha ancora la data di ieri nel titolo**: il ricambio giornaliero è disattivato o l'orario non è valido. A ogni ripartenza il log lo dichiara: `Reusing YouTube broadcast <id> (daily reset not configured)` oppure `(daily reset '25:70' is not a valid HH:MM, rollover disabled)`. Con il campo compilato correttamente compare invece `(started after the daily reset of 27/07/2026 00:00)` finché la diretta è più recente dell'orario, e al primo scatto successivo `Broadcast <id> started at ..., before the daily reset of ...: creating a new one`.
 
 ## L'annotazione non compare sul video
 

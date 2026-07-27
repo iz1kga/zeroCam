@@ -72,7 +72,14 @@ Il broadcast viene creato con avvio automatico e senza interruzione automatica: 
 
 Prima di ogni ripartenza dello streaming il software cerca un broadcast già collegato alla stream key e in stato `active` o `upcoming`, e lo riusa. Ne crea uno nuovo solo quando non ne trova, cosa che accade tipicamente quando YouTube chiude la diretta al limite delle 12 ore.
 
-Il campo **Nuova diretta alle (HH:MM)** forza invece un ricambio quotidiano: al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con il titolo rivalutato dai segnaposto. Impostandolo a `00:00` si ottiene una diretta al giorno, con la data corretta nel titolo. Lasciando il campo vuoto il comportamento resta quello precedente.
+Il campo **Nuova diretta alle (HH:MM)** forza invece un ricambio quotidiano: al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con il titolo rivalutato dai segnaposto. Impostandolo a `00:00` si ottiene una diretta al giorno, con la data corretta nel titolo. Lasciando il campo vuoto il comportamento resta quello precedente: il campo è vuoto anche nelle installazioni nuove, quindi il ricambio va abilitato esplicitamente.
+
+Ogni volta che una diretta viene riusata il log dice perché non è stata sostituita, così è immediato capire se il ricambio è attivo:
+
+```
+Reusing YouTube broadcast Xy1z2 (daily reset not configured).
+Reusing YouTube broadcast Xy1z2 (started after the daily reset of 27/07/2026 00:00).
+```
 
 ## Anteprima nell'interfaccia
 
