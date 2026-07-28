@@ -16,14 +16,18 @@
 
   
   <!-- File CSS Locale -->
-  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', filename='brand/zc_logo_primary.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/zc_logo_primary.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
   <div id="app" class="d-flex flex-column h-100">
     <header class="navbar navbar-light bg-light px-3 border-bottom">
-      <span class="navbar-brand mb-0 h1">zeroCAM - Console</span>
+      <span class="navbar-brand mb-0 d-flex align-items-center gap-2">
+        <img src="{{ url_for('static', filename='brand/zc_logo_big.svg') }}" alt="zeroCAM" class="brand-logo">
+        <span class="text-muted">Console</span>
+      </span>
       <span class="text-muted small">{{ version }}</span>
     </header>
     <div class="d-flex flex-grow-1">

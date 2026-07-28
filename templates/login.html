@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>zeroCAM - Login</title>
-    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ url_for('static', filename='brand/zc_logo_primary.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/zc_logo_primary.png') }}">
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <style>
         body {
@@ -20,12 +21,19 @@
             margin: auto;
             text-align: center;
         }
+        .login-logo {
+            width: 220px;
+            max-width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
     <main class="login-form">
         <form method="POST" action="{{ url_for('login') }}">
-            <h1 class="h3 mb-3 fw-normal">zeroCAM - Accesso</h1>
+            <img src="{{ url_for('static', filename='brand/zc_logo_big.svg') }}" alt="zeroCAM"
+                 class="login-logo mb-4">
+            <h1 class="h5 mb-3 fw-normal text-muted">Accesso alla console</h1>
 
             {% with messages = get_flashed_messages() %}
               {% if messages %}
@@ -45,7 +53,7 @@
             </div>
 
             <button class="w-100 btn btn-lg btn-primary" type="submit">Accedi</button>
-            <p class="mt-5 mb-3 text-muted">&copy; 2025 zeroCAM</p>
+            <p class="mt-5 mb-3 text-muted small">&copy; zeroCAM &mdash; live landscape cam</p>
         </form>
     </main>
 </body>

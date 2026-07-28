@@ -16,6 +16,15 @@ html, body {
   flex: 1; /* Allow this container to fill available vertical space */
 }
 
+/* === Marchio === */
+/* Il logo esteso è largo più di tre volte l'altezza: si vincola l'altezza e
+   si lascia libera la larghezza, così resta leggibile anche su schermi
+   stretti senza deformarsi. */
+.brand-logo {
+  height: 36px;
+  width: auto;
+}
+
 /* === Status === */
 .gauge-wrapper {
   max-width: 200px;

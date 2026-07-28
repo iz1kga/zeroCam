@@ -14,6 +14,8 @@ Il servizio non usa HTTPS: se l'interfaccia deve essere raggiungibile da fuori c
 
 ## Le pagine
 
+In alto compaiono il marchio e la parola *Console*, con la versione in esecuzione all'estremità destra: è il primo posto da guardare per sapere quale versione sta girando davvero.
+
 ![La pagina Cam Control: menu a sinistra, ultima immagine con le maschere privacy disegnate sopra, elenco delle maschere a destra.](img/ui-cam-control.png){ width=100% }
 
 **Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Host, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Assets. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
