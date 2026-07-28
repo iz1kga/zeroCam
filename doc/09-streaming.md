@@ -22,7 +22,7 @@ Lo streaming si ferma a ogni scatto e riparte subito dopo: la camera non può se
 | Audio di sottofondo | Brano ripetuto in loop al posto del silenzio |
 | Volume | Attenuazione del brano, in percentuale |
 
-![La pagina Stream: chiave, risoluzione, destinazioni aggiuntive, overlay e le impostazioni della diretta automatica.](img/ui-config-stream.png){ width=100% }
+![La pagina Stream: chiave, risoluzione, destinazioni aggiuntive, overlay, audio e le impostazioni della diretta automatica. I riquadri neri coprono la destinazione aggiuntiva e il Client ID, che sono dati del singolo impianto.](img/ui-config-stream.png){ width=100% }
 
 Nelle schede per fase del giorno si impostano frequenza dei fotogrammi (`framerate`), guadagno, bilanciamento del bianco, riduzione del rumore e nitidezza: di notte conviene un framerate basso (4–5) e un guadagno alto, di giorno il contrario.
 

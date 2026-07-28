@@ -26,7 +26,7 @@ I fotogrammi sono salvati gi√† alla risoluzione finale del video: il montaggio √
 | Titolo, Descrizione | Testi del video, con segnaposto |
 | Privacy, Contenuto per bambini | Impostazioni di pubblicazione su YouTube |
 
-![La pagina Timelapse della configurazione: pianificazione, fotogrammi e parametri del video.](img/ui-config-timelapse.png){ width=100% }
+![La pagina Timelapse della configurazione: pianificazione, fotogrammi, parametri del video e brano di sottofondo.](img/ui-config-timelapse.png){ width=100% }
 
 Nei testi si possono usare `{from}`, `{to}`, `{date}` e `{frames}`, sostituiti rispettivamente con la data del primo e dell'ultimo fotogramma, la data del montaggio e il numero di fotogrammi.
 

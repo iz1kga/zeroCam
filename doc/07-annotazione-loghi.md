@@ -42,6 +42,8 @@ Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
 | Scale | Percentuale di ridimensionamento |
 | Opacity | Opacità in percentuale |
 
+![La pagina Overlays: due loghi, entrambi presi dagli assets, con l'anteprima accanto alla tendina.](img/ui-config-overlays.png){ width=100% }
+
 L'indirizzo può essere un URL http, come è sempre stato, oppure un file caricato in **Configuration → Assets**: in quel caso, invece di scriverlo a mano, si sceglie dal menu *...oppure un logo caricato*, che compila il campo URL con un riferimento del tipo `asset:logo/nome.png` e mostra l'anteprima. Un logo caricato è preferibile a uno remoto: non dipende da un sito che può cambiare o sparire, e funziona anche con la webcam senza accesso a internet in uscita.
 
 I loghi vengono scaricati e tenuti in memoria, e riscaricati a ogni salvataggio della configurazione: sostituendo un file all'origine, o fra gli assets, basta salvare per farlo riprendere: non serve riavviare.
@@ -79,6 +81,8 @@ Il caricamento chiede la categoria e il file. Sono ammessi:
 Il limite per file è di 32 MB. Il nome viene ripulito da accenti, spazi e caratteri speciali, perché finisce in una riga di comando di ffmpeg: *Brano Estivo (2026).mp3* diventa `Brano-Estivo-2026-.mp3`.
 
 L'elenco mostra dimensione e anteprima — un lettore per l'audio, la miniatura per le immagini — e permette di eliminare. Il filtro in alto restringe a una sola categoria.
+
+![La pagina Assets: caricamento in alto, elenco del materiale con anteprima ed eliminazione sotto.](img/ui-config-assets.png){ width=100% }
 
 Nelle altre pagine gli assets non si scrivono a mano: compaiono nelle tendine *Audio di sottofondo* (Stream), *Brano di sottofondo* (Timelapse) e *...oppure un logo caricato* (Overlays). In configurazione vengono salvati come `asset:categoria/nome`, un riferimento indipendente dal percorso di installazione: un backup della configurazione ripristinato su un altro Raspberry continua a puntare al file giusto, **purché quel file sia stato ricaricato**. Il backup della configurazione contiene le impostazioni, non i file degli assets: quelli vanno copiati a parte, o ricaricati dall'interfaccia.
 

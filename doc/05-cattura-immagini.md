@@ -24,7 +24,7 @@ Uno scatto può essere avviato a mano da **Cam Control → Take Photo**: il cicl
 
 **Configuration → Camera** ha una scheda per ciascuna fase del giorno, più le impostazioni generali e il ritaglio.
 
-![La pagina Camera: impostazioni generali, ritaglio e la scheda della fase notturna con le soglie di luminosità.](img/ui-config-camera.png){ width=100% }
+![La pagina Camera: impostazioni generali, ritaglio e la scheda di una fase, con le soglie di luminosità e il bilanciamento del bianco. I campi dei guadagni sono in grigio perché la modalità AWB non è *Manuale*.](img/ui-config-camera.png){ width=100% }
 
 | Impostazione in pagina | Significato |
 |---|---|
