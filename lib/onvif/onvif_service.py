@@ -43,6 +43,33 @@ class ONVIFService:
         self.image_width, self.image_height = 1920, 1080
         self.update_resolution()
         
+    def _client_view(self):
+        """
+        Indirizzo e porta da cui il client ci sta raggiungendo.
+
+        Gli URL dichiarati nelle risposte ONVIF devono essere raggiungibili
+        da chi li legge, non da noi: annunciare l'indirizzo rilevato al
+        volo sul Raspberry funziona solo per chi sta sulla stessa
+        sottorete, e lascia 'No route to host' a chiunque arrivi da una
+        VPN, da un'altra rete o da un nome pubblico. L'header Host dice
+        invece esattamente dove il client crede di stare parlando.
+        """
+        host = (request.host or "").strip()
+        if not host:
+            return self.announce_ip, self.server_port
+
+        # L'IPv6 fra parentesi quadre non va spezzato sui due punti
+        if host.startswith("["):
+            address, _, port = host.partition("]")
+            address = address + "]"
+            port = port.lstrip(":")
+        else:
+            address, _, port = host.partition(":")
+
+        if not address:
+            return self.announce_ip, self.server_port
+        return address, (port or self.server_port)
+
     def _get_local_ip(self):
         """Tries to determine the local IP of the machine for ONVIF announcement."""
         try:
@@ -166,7 +193,8 @@ class ONVIFService:
 
             response_body = ""
             if "GetCapabilities" in soap_action:
-                response_body = onvif_responses.get_capabilities_response(self.announce_ip, self.server_port)
+                host, port = self._client_view()
+                response_body = onvif_responses.get_capabilities_response(host, port)
             elif "GetDeviceInformation" in soap_action:
                 response_body = onvif_responses.get_device_information_response()
             elif "GetHostname" in soap_action:
@@ -300,7 +328,10 @@ class ONVIFService:
                 return Response(self.generate_soap_response(response_body), content_type="application/soap+xml")
             
             elif "GetStreamUri" in soap_action:
-                response_body = onvif_responses.handle_get_stream_uri(onvif_data.PROFILES_DATA, request.data, self.announce_ip, self.rtsp_port, self.logger)
+                # L'RTSP ha una porta sua, ma l'indirizzo resta quello da cui il
+                # client ci vede: e' l'unico che sa raggiungere.
+                host, _ = self._client_view()
+                response_body = onvif_responses.handle_get_stream_uri(onvif_data.PROFILES_DATA, request.data, host, self.rtsp_port, self.logger)
                 soap_response = self.generate_soap_response(response_body)
                 if response_body is None:
                     return Response(self.generate_soap_response("<soap:Fault>Not Supported</soap:Fault>"),
@@ -315,7 +346,8 @@ class ONVIFService:
                 token = token_element.text if token_element is not None else ''
                 self.logger.info(f"Richiesto GetSnapshotUri per il token: {token}")
                 if "Profile_Snapshot" in token:
-                    response_body = onvif_responses.get_snapshot_uri_response(self.announce_ip, self.server_port)
+                    host, port = self._client_view()
+                    response_body = onvif_responses.get_snapshot_uri_response(host, port)
                 else:
                     response_body = ""
                 return Response(self.generate_soap_response(response_body),

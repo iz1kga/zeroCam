@@ -18,9 +18,11 @@ Il servizio si innesta sulla stessa porta HTTP dell'interfaccia web (8080) e ris
 |---|---|
 | `/onvif/device_service` | Servizio dispositivo (capacità, informazioni, data e ora) |
 | `/onvif/media_service` | Servizio media (profili, URI dello stream, URI dell'istantanea) |
+| `/snapshot.jpg` | Istantanea corrente in JPEG |
 
 ONVIF non parla TLS: se in **System** si spegne l'ascolto in chiaro per lasciare solo l'HTTPS, il servizio resta registrato ma nessun client riesce più a raggiungerlo.
-| `/snapshot.jpg` | Istantanea corrente in JPEG |
+
+Gli indirizzi che il servizio dichiara nelle risposte — quello del servizio media, dell'istantanea, dello stream — sono costruiti sull'indirizzo con cui il client ha raggiunto la webcam, non su quello che il Raspberry si rileva da solo. Così funzionano anche da una VPN, da un'altra sottorete o attraverso un nome pubblico, dove l'indirizzo locale non sarebbe instradabile.
 
 L'istantanea è il fotogramma condiviso prodotto dallo streaming, aggiornato una volta al secondo, con le maschere privacy già applicate. **Ne consegue che le istantanee ONVIF sono disponibili solo mentre lo streaming è attivo**: a streaming fermo il servizio restituisce l'ultimo fotogramma disponibile.
 

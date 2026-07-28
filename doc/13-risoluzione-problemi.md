@@ -46,6 +46,12 @@ Se il problema si presenta solo nelle ore di passaggio, il colpevole sono di sol
 * **Tutto funziona per una settimana, poi la diretta non parte più**: la schermata di consenso OAuth è rimasta in stato *Testing*, dove Google revoca i refresh token dopo sette giorni. Portare l'app **In produzione** e rigenerare il token.
 * **La diretta ha ancora la data di ieri nel titolo**: il ricambio giornaliero è disattivato o l'orario non è valido. A ogni ripartenza il log lo dichiara: `Reusing YouTube broadcast <id> (daily reset not configured)` oppure `(daily reset '25:70' is not a valid HH:MM, rollover disabled)`. Con il campo compilato correttamente compare invece `(started after the daily reset of 27/07/2026 00:00)` finché la diretta è più recente dell'orario, e al primo scatto successivo `Broadcast <id> started at ..., before the daily reset of ...: creating a new one`.
 
+## ONVIF non funziona del tutto
+
+* **Le informazioni del dispositivo arrivano, i profili media no** (`No route to host` verso un indirizzo `192.168.x.x`): il client sta seguendo un indirizzo che zeroCAM gli ha dichiarato e che dal suo punto di rete non esiste. Dalle versioni recenti gli indirizzi dichiarati seguono quello con cui il client ha contattato la webcam; se l'errore persiste, il client sta usando un URL memorizzato in precedenza e va ricreato.
+* **Nessun URI dell'istantanea**: `/snapshot.jpg` esiste solo con lo streaming attivo, perché è il fotogramma condiviso che lo streaming produce.
+* **Il client chiede le credenziali in continuazione**: l'utente è `onvif` e la password quella della pagina ONVIF; con *allow_unsecure* l'istantanea è invece libera.
+
 ## L'interfaccia in HTTPS
 
 * **`ERR_CONNECTION_RESET` o «connessione reimpostata»**: succedeva aprendo `http://` sulla porta dell'HTTPS. Ora quella richiesta riceve un redirect verso `https://`; se l'errore si ripresenta, la porta indicata non è quella dell'HTTPS o davanti c'è un firewall.
