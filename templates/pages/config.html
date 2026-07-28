@@ -336,8 +336,35 @@
                 <div class="row mb-3">
                     <div class="col-md-6"><label class="form-label">Client Secret</label><field-renderer
                             :model="config.youtubeLive" key-name="client_secret" :schema="schema" /></div>
-                    <div class="col-md-6"><label class="form-label">Refresh Token</label><field-renderer
-                            :model="config.youtubeLive" key-name="refresh_token" :schema="schema" /></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Refresh Token</label>
+                        <div class="input-group">
+                            <field-renderer class="flex-grow-1" :model="config.youtubeLive" key-name="refresh_token"
+                                :schema="schema" />
+                            <button type="button" class="btn btn-outline-primary" @click="startYoutubeAuth"
+                                :disabled="youtubeAuth.active" title="Genera il token autorizzando su Google">
+                                <span v-if="youtubeAuth.active"
+                                    class="spinner-border spinner-border-sm" role="status"></span>
+                                <span v-else><i class="bi bi-google me-1"></i>Autentica</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="youtubeAuth.userCode" class="alert alert-info d-flex align-items-center gap-3 flex-wrap">
+                    <div>
+                        <div>1. Apri <a :href="youtubeAuth.verificationUrl" target="_blank"
+                                rel="noopener">[[ youtubeAuth.verificationUrl ]]</a> su questo o su un altro
+                            dispositivo (telefono, PC).</div>
+                        <div>2. Inserisci questo codice e autorizza l'accesso al canale desiderato.</div>
+                        <div class="small text-muted mt-1">In attesa dell'autorizzazione...</div>
+                    </div>
+                    <span class="badge bg-dark fs-4 user-select-all ms-auto">[[ youtubeAuth.userCode ]]</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        @click="stopYoutubeAuth">Annulla</button>
+                </div>
+                <div v-if="youtubeAuth.message"
+                    :class="youtubeAuth.ok ? 'alert alert-success' : 'alert alert-danger'">
+                    [[ youtubeAuth.message ]]
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-6"><label class="form-label">Titolo diretta</label><field-renderer
@@ -378,8 +405,9 @@
                 <div class="form-text">
                     Crea e collega automaticamente il broadcast alla stream key qui sopra, con avvio automatico e
                     senza interruzione automatica: la diretta parte da sola e sopravvive alle pause per la cattura
-                    della foto, senza aprire il browser. Le credenziali si ottengono una volta sola con
-                    <code>installation_tools/yt_oauth_setup.py</code>.
+                    della foto, senza aprire il browser. Inserisci Client ID e Client Secret di un client OAuth di
+                    tipo &laquo;TV e dispositivi di immissione limitata&raquo; creato sulla Google Cloud Console,
+                    poi premi <strong>Autentica</strong> per ottenere il Refresh Token: non serve reinserirlo a mano.
                     Nel titolo puoi usare i segnaposto <code>{date}</code> e <code>{time}</code>.
                     Con &laquo;Nuova diretta alle&raquo; valorizzato (es. <code>00:00</code>) la diretta in corso
                     viene chiusa e ricreata al primo scatto successivo a quell'ora; lasciandolo vuoto la stessa

@@ -530,6 +530,92 @@ const startApp = async () => {
   // Registra i componenti delle pagine
   app.component('page-config', {
     props: ['config', 'schema', 'configPage', 'activeCameraTab', 'activeStreamTab'],
+    data() {
+      return {
+        youtubeAuth: { active: false, userCode: '', verificationUrl: '', message: '', ok: false }
+      };
+    },
+    created() {
+      // Timer e stato di controllo non reattivi
+      this.youtubeAuthTimer = null;
+      this.youtubeAuthExpiry = 0;
+      this.youtubeAuthPolling = false;
+    },
+    beforeUnmount() {
+      this.stopYoutubeAuth();
+    },
+    methods: {
+      async startYoutubeAuth() {
+        const yl = this.config.youtubeLive || {};
+        if (!yl.client_id || !yl.client_secret) {
+          this.youtubeAuth.message = 'Inserisci prima Client ID e Client Secret.';
+          this.youtubeAuth.ok = false;
+          return;
+        }
+        this.stopYoutubeAuth();
+        this.youtubeAuth = { active: true, userCode: '', verificationUrl: '', message: '', ok: false };
+        try {
+          const res = await secureFetch('/api/youtube/device/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: yl.client_id, client_secret: yl.client_secret })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            this.youtubeAuth.active = false;
+            this.youtubeAuth.message = data.error || 'Avvio autenticazione fallito.';
+            this.youtubeAuth.ok = false;
+            return;
+          }
+          this.youtubeAuth.userCode = data.user_code;
+          this.youtubeAuth.verificationUrl = data.verification_url;
+          this.youtubeAuthExpiry = Date.now() + (data.expires_in || 1800) * 1000;
+          const interval = Math.max(3, data.interval || 5);
+          this.youtubeAuthTimer = setInterval(this.pollYoutubeAuth, interval * 1000);
+        } catch (error) {
+          this.youtubeAuth.active = false;
+          if (error.message !== 'Session expired') {
+            this.youtubeAuth.message = 'Errore di rete durante l\'avvio.';
+            this.youtubeAuth.ok = false;
+          }
+        }
+      },
+      async pollYoutubeAuth() {
+        if (this.youtubeAuthPolling) return; // evita richieste sovrapposte
+        if (Date.now() > this.youtubeAuthExpiry) {
+          this.stopYoutubeAuth();
+          this.youtubeAuth.message = 'Codice scaduto, riprova.';
+          this.youtubeAuth.ok = false;
+          return;
+        }
+        this.youtubeAuthPolling = true;
+        try {
+          const res = await secureFetch('/api/youtube/device/poll', { method: 'POST' });
+          const data = await res.json();
+          if (data.status === 'authorized') {
+            this.config.youtubeLive.refresh_token = data.refresh_token;
+            this.stopYoutubeAuth();
+            this.youtubeAuth.message = 'Autenticazione completata. Ricordati di salvare la configurazione.';
+            this.youtubeAuth.ok = true;
+          } else if (data.status !== 'pending') {
+            this.stopYoutubeAuth();
+            this.youtubeAuth.message = 'Autenticazione non riuscita: ' + (data.error || data.status);
+            this.youtubeAuth.ok = false;
+          }
+        } catch (error) {
+          if (error.message === 'Session expired') this.stopYoutubeAuth();
+          // un errore singolo di rete non interrompe l'attesa
+        } finally {
+          this.youtubeAuthPolling = false;
+        }
+      },
+      stopYoutubeAuth() {
+        clearInterval(this.youtubeAuthTimer);
+        this.youtubeAuthTimer = null;
+        this.youtubeAuth.active = false;
+        this.youtubeAuth.userCode = '';
+      }
+    },
     template: configTemplate,
     components: { FieldRenderer }
   });

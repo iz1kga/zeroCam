@@ -14,6 +14,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 
 from lib import config_backup, paths
 from lib.version import get_version
+from lib.youtube_auth import YouTubeDeviceFlow
 
 PRIVACY_MASK_PATH = paths.PRIVACY_MASK_FILE
 
@@ -42,6 +43,7 @@ class SettingsManager:
         self.zerocam = zerocam_instance
         self.logger = self.zerocam.logger
         self.focus_aid_running = False
+        self.youtube_device_flow = YouTubeDeviceFlow(self.logger)
         
         self.app = Flask(__name__, template_folder='templates', static_folder='static')
         self.logger.info("Initializing SettingsManager...")
@@ -108,6 +110,8 @@ class SettingsManager:
         self.app.add_url_rule('/api/take_photo', 'take_photo', self.take_photo, methods=['POST'])
         self.app.add_url_rule('/api/timelapse', 'get_timelapse', self.get_timelapse, methods=['GET'])
         self.app.add_url_rule('/api/timelapse/run', 'run_timelapse', self.run_timelapse, methods=['POST'])
+        self.app.add_url_rule('/api/youtube/device/start', 'youtube_device_start', self.youtube_device_start, methods=['POST'])
+        self.app.add_url_rule('/api/youtube/device/poll', 'youtube_device_poll', self.youtube_device_poll, methods=['POST'])
         self.app.add_url_rule('/api/timelapse/frames', 'timelapse_frames', self.timelapse_frames, methods=['GET'])
         self.app.add_url_rule('/timelapse/frame/<name>', 'timelapse_frame', self.timelapse_frame)
         self.app.add_url_rule('/api/privacy_mask', 'get_privacy_mask', self.get_privacy_mask, methods=['GET'])
@@ -399,6 +403,35 @@ class SettingsManager:
         threading.Thread(target=self.zerocam.capture_job).start()
         return jsonify(success=True)
         
+    # --- YouTube device flow ---
+
+    @login_required
+    def youtube_device_start(self):
+        """
+        Starts the OAuth device flow with the credentials from the form.
+
+        The credentials come straight from the request so the user can
+        authenticate before saving the configuration.
+        """
+        data = request.json or {}
+        try:
+            info = self.youtube_device_flow.start(data.get('client_id'), data.get('client_secret'))
+            return jsonify(success=True, **info)
+        except ValueError as e:
+            return jsonify(success=False, error=str(e)), 400
+        except Exception as e:
+            self.logger.error(f"YouTube device flow start failed: {e}")
+            return jsonify(success=False, error=str(e)), 400
+
+    @login_required
+    def youtube_device_poll(self):
+        """Checks whether the user has completed the authorization yet."""
+        try:
+            return jsonify(self.youtube_device_flow.poll())
+        except Exception as e:
+            self.logger.error(f"YouTube device flow poll failed: {e}")
+            return jsonify(status='failed', error=str(e))
+
     # --- Timelapse ---
 
     @login_required
