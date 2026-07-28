@@ -25,7 +25,8 @@ from datetime import datetime, timedelta
 import requests
 from PIL import Image
 
-from lib import assets, paths
+from lib import assets, exif, paths
+from lib.version import get_version
 from lib.youtube_auth import UPLOAD_BASE
 
 FRAME_PATTERN = "%Y%m%d-%H%M%S"
@@ -67,7 +68,7 @@ class TimelapseManager:
 
     # --- Raccolta dei fotogrammi ----------------------------------------
 
-    def store_frame(self, image_buffer):
+    def store_frame(self, image_buffer, metadata=None, description="", manual_white_balance=False):
         """
         Salva una copia ridimensionata dello scatto appena elaborato.
 
@@ -75,6 +76,11 @@ class TimelapseManager:
         annotata), così il timelapse mostra esattamente ciò che viene
         pubblicato. Non solleva mai: un errore qui non deve far fallire
         il ciclo di cattura.
+
+        I metadati della cattura vengono riscritti come EXIF: il
+        ridimensionamento con PIL li perderebbe, e senza di essi un
+        fotogramma non dice piu' con quale esposizione o con quali
+        guadagni di bianco e' stato preso.
         """
         if not self.enabled:
             return None
@@ -91,8 +97,16 @@ class TimelapseManager:
                 # yuv420p richiede dimensioni pari
                 image = image.resize((width - width % 2, height - height % 2), Image.LANCZOS)
 
-            path = os.path.join(self.frames_dir, datetime.now().strftime(FRAME_PATTERN) + ".jpg")
-            image.save(path, format="JPEG", quality=int(self.cfg.get("frame_quality", 88)))
+            now = datetime.now()
+            path = os.path.join(self.frames_dir, now.strftime(FRAME_PATTERN) + ".jpg")
+            exif_bytes = exif.build(
+                metadata, now, description=description,
+                software=f"zeroCAM {get_version()}",
+                manual_white_balance=manual_white_balance,
+            )
+            image.save(path, format="JPEG",
+                       quality=int(self.cfg.get("frame_quality", 88)),
+                       exif=exif_bytes)
             self.logger.debug(f"Timelapse frame stored: {path}")
             return path
         except Exception as e:

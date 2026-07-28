@@ -79,7 +79,13 @@ L'automatismo però ha bisogno di un riferimento neutro nell'inquadratura. Di no
 
 Per questo l'elenco delle modalità finisce con **Manuale (guadagni R/B)**: scegliendola l'automatismo viene spento e il bilanciamento resta fisso sui campi **Guadagno rosso** e **Guadagno blu**, che restano disabilitati con qualunque altra modalità. Se si sceglie Manuale senza indicare guadagni validi il software torna all'automatico e lo scrive nel log: meglio una foto automatica che una con i colori a caso.
 
-Come trovare i valori di partenza: si prende uno scatto venuto bene, si legge il campo `ColourGains` nei suoi metadati — l'archivio di diagnosi salva un `.json` accanto a ogni immagine — e si riportano i due numeri nei campi. Da lì si aggiusta: alzare il guadagno rosso scalda l'immagine, alzare il blu la raffredda. I valori tipici stanno fra 1 e 4.
+Come trovare i valori di partenza: si prende uno scatto venuto bene e si legge il campo `ColourGains` nei suoi metadati. I fotogrammi del timelapse li portano scritti negli EXIF, quindi basta uno di quelli:
+
+```bash
+exiftool -UserComment data/timelapse_frames/20260728-004546.jpg
+```
+
+In assenza di `exiftool` la stessa informazione compare, in chiaro, nella descrizione dell'immagine che quasi tutti i visualizzatori mostrano: `ColourGains R=2.31 B=1.47`. Anche l'archivio di diagnosi, se attivo, salva un `.json` accanto a ogni immagine. I due numeri si riportano nei campi. Da lì si aggiusta: alzare il guadagno rosso scalda l'immagine, alzare il blu la raffredda. I valori tipici stanno fra 1 e 4.
 
 Il log dice sempre quale via è in uso:
 
