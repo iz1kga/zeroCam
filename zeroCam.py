@@ -27,7 +27,8 @@ from lib.helpers import (
     get_raspberry_pi_stats,
     saveImage
 )
-from lib import paths
+from cameras import AWB_MANUAL
+from lib import exif, paths
 from lib.version import get_version
 from settingsManager import run_settings_manager
 
@@ -175,6 +176,20 @@ class ZeroCamApp:
                 image_buffer = self.components.annotator.annotate(image_buffer)
                 image_buffer = self.components.overlay.add_overlays(image_buffer)
 
+                # I metadati si rimettono qui, una volta sola: da questo punto
+                # in avanti lo stesso buffer va all'FTP, all'upload HTTP,
+                # all'immagine locale e all'archivio.
+                description = (
+                    f"{self.config_manager.get('deviceDetails', {}).get('name', 'zeroCAM')}"
+                    f" - {day_period}"
+                )
+                manual_wb = self._manual_white_balance(day_period)
+                image_buffer = exif.attach(
+                    image_buffer, metadata, datetime.datetime.now(),
+                    description=description, software=f"zeroCAM {get_version()}",
+                    manual_white_balance=manual_wb,
+                )
+
                 self.publish_diagnostic("Uploading Image")
                 self.components.ftp_uploader.upload(image_buffer, metadata)
                 image_buffer.seek(0)
@@ -183,8 +198,14 @@ class ZeroCamApp:
                 saveImage(self.logger, image_buffer) # Save latest image locally
                 self._archive_image_if_enabled(image_buffer, metadata, day_period)
                 # Fotogramma per il timelapse settimanale: immagine finale, già
-                # ritagliata, mascherata e annotata come quella pubblicata.
-                self.components.timelapse.store_frame(image_buffer)
+                # ritagliata, mascherata e annotata come quella pubblicata. I
+                # metadati della cattura lo accompagnano come EXIF.
+                self.components.timelapse.store_frame(
+                    image_buffer,
+                    metadata=metadata,
+                    description=description,
+                    manual_white_balance=manual_wb,
+                )
 
                 self.publish_diagnostic("Capture Completed")
                 self.logger.info(f"Capture job finished in {time.monotonic() - self.capture_started_at:.1f}s.")
@@ -200,6 +221,14 @@ class ZeroCamApp:
                 elapsed = time.monotonic() - (self.capture_started_at or time.monotonic())
                 self.capture_started_at = None
                 self.logger.info(f"Capture cycle for '{day_period}' ended after {elapsed:.1f}s.")
+
+    def _manual_white_balance(self, day_period):
+        """True se la fase in corso ha il bilanciamento del bianco manuale."""
+        phase = self.config_manager.get("cameraParameters", {}).get(day_period, {})
+        try:
+            return int(phase.get("AwbMode", 0)) == AWB_MANUAL
+        except (TypeError, ValueError):
+            return False
 
     def _archive_image_if_enabled(self, image_buffer, metadata, day_period):
         """Saves the image and metadata to a local archive if configured."""

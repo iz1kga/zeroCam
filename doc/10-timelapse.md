@@ -6,6 +6,23 @@ Ogni scatto lascia una copia ridimensionata in `data/timelapse_frames/`. Una vol
 
 I fotogrammi sono salvati già alla risoluzione finale del video: il montaggio è più rapido e lo spazio occupato è prevedibile. Il fotogramma è l'immagine definitiva — ritagliata, mascherata e annotata — quindi il video mostra esattamente ciò che è stato pubblicato.
 
+### I metadati dei fotogrammi
+
+Ogni fotogramma porta gli EXIF della cattura da cui proviene:
+
+| Campo | Contenuto |
+|---|---|
+| Data e ora | Istante dello scatto |
+| Tempo di esposizione | Quello effettivo, anche i secondi delle pose notturne |
+| ISO | Ricavato dal guadagno analogico (guadagno 8 → ISO 800) |
+| Bilanciamento del bianco | Automatico o manuale |
+| Descrizione | Nome della webcam, fase del giorno e riassunto dei dati di scatto |
+| Commento utente | Tutti i metadati di libcamera in JSON |
+
+L'ultima riga è quella che serve davvero per il bilanciamento del bianco: contiene `ColourGains`, cioè i guadagni di rosso e blu che l'automatismo ha scelto in quel momento, insieme a temperatura colore, luminosità in lux e temperatura del sensore. Sono i numeri da riportare nei campi manuali della pagina Camera quando l'automatico sbaglia. Si leggono con `exiftool`, con `exiv2` o da qualunque libreria; il riassunto in chiaro nella descrizione basta per un colpo d'occhio.
+
+I fotogrammi già archiviati prima di questa versione restano senza metadati: l'informazione non è più recuperabile, perché nasce con la cattura.
+
 ## Configurazione
 
 **Configuration → Timelapse**

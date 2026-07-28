@@ -60,6 +60,7 @@ case "$FORMAT" in
         python3 img/genera-copertina.py --versione "$VERSION" --data "$OGGI" >/dev/null
         pandoc "${COMMON[@]}" --pdf-engine="$ENGINE" \
                --include-in-header=copertina.tex \
+               --include-in-header=stile.tex \
                "${CHAPTERS[@]}" -o "$OUT"
         ;;
     html)
