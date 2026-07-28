@@ -83,6 +83,15 @@ class ComponentManager:
         self.camera = self._init_with_feedback("Camera", _init)
     
     def update_camera_config(self, new_config):
+        """
+        Porta la configurazione appena salvata a tutti i componenti vivi.
+
+        Ognuno tiene la propria copia dalla creazione: senza questo giro
+        resterebbero alle impostazioni con cui è partito il programma e
+        salvare dall'interfaccia richiederebbe un riavvio. Quello che non
+        si può aggiornare a caldo - la pianificazione degli scatti, il
+        server web, il server ONVIF - resta elencato nel manuale.
+        """
         if self.camera:
             self.logger.info("Passing new configuration to camera object...")
             self.camera.update_config(
@@ -90,9 +99,32 @@ class ComponentManager:
                 new_config.get('streamParameters'),
                 new_config.get('deviceDetails'),
                 new_config.get('Annotation', {}),
-                new_config.get('OverlayImages', [])
+                new_config.get('OverlayImages', []),
+                new_config.get('onvif', {})
             )
             self.cropper.update_config(new_config.get('cameraParameters', {}).get('crop', {}))
+
+        if self.day_period_calc:
+            dd = new_config.get('deviceDetails', {})
+            self.day_period_calc.update_config(
+                dd.get('latitude'), dd.get('longitude'), dd.get('elevation'),
+                dd.get('sunRiseOffset', 0), dd.get('sunSetOffset', 0),
+                dd.get('duskOffset', 0), dd.get('dawnOffset', 0)
+            )
+
+        if self.annotator:
+            self.annotator.update_config(new_config.get('Annotation', {}))
+
+        if self.overlay:
+            # Ricarica anche i file: un logo cambiato di indirizzo o scelto
+            # fra gli assets viene preso subito, senza aspettare un riavvio.
+            self.overlay.update_config(new_config.get('OverlayImages', []))
+
+        if self.ftp_uploader:
+            self.ftp_uploader.update_config(new_config.get('FtpHost', {}))
+
+        if self.http_uploader:
+            self.http_uploader.update_config(new_config.get('HttpUploader', {}))
 
         if self.youtube_auth:
             self.youtube_auth.update_config(new_config.get('youtubeLive', {}))

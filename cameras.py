@@ -56,13 +56,15 @@ class fakeCameraDevice:
         self.logger.info("Camera Object Created")
 
     def update_config(self, new_params, new_stream_params, new_device_params,
-                      new_annotation=None, new_overlay_images=None):
+                      new_annotation=None, new_overlay_images=None, new_onvif_params=None):
         self.logger.info("Updating camera configuration with new settings...")
         self.params = new_params
         self.streamParams = new_stream_params
         self.deviceParams = new_device_params
         self.annotation = new_annotation or {}
         self.overlayImages = new_overlay_images or []
+        if new_onvif_params is not None:
+            self.onvifParams = new_onvif_params
 
     def fakeImage(self):
         width = 4000
@@ -164,7 +166,7 @@ class PiCameraDevice:
 
 
     def update_config(self, new_params, new_stream_params, new_device_params,
-                      new_annotation=None, new_overlay_images=None):
+                      new_annotation=None, new_overlay_images=None, new_onvif_params=None):
         with self.camera_lock:
             self.logger.info("Updating camera configuration with new settings...")
             self.params = new_params
@@ -172,6 +174,10 @@ class PiCameraDevice:
             self.deviceParams = new_device_params
             self.annotation = new_annotation or {}
             self.overlayImages = new_overlay_images or []
+            # Larghezza del flusso lores e abilitazione: le legge streamNow,
+            # quindi il cambio entra in vigore al riavvio dello streaming.
+            if new_onvif_params is not None:
+                self.onvifParams = new_onvif_params
 
     def get_image(self ):
         with self.camera_lock:

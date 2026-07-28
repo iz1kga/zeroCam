@@ -356,6 +356,10 @@ class ZeroCamApp:
         self.logger.info("Applying updated configuration to all components...")
         new_config = self.config_manager.decrypted_config
         self.components.update_camera_config(new_config)
+        # Intervallo di scatto e pianificazione del timelapse vivono nel
+        # pianificatore, non nei componenti: vanno ricostruiti a parte.
+        if self.scheduler_manager:
+            self.scheduler_manager.reload_jobs()
 
 # --- Main Execution ---
 def setup_logging(log_level_str):

@@ -44,7 +44,7 @@ Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
 
 L'indirizzo può essere un URL http, come è sempre stato, oppure un file caricato in **Configuration → Assets**: in quel caso, invece di scriverlo a mano, si sceglie dal menu *...oppure un logo caricato*, che compila il campo URL con un riferimento del tipo `asset:logo/nome.png` e mostra l'anteprima. Un logo caricato è preferibile a uno remoto: non dipende da un sito che può cambiare o sparire, e funziona anche con la webcam senza accesso a internet in uscita.
 
-I loghi vengono scaricati all'avvio dell'applicazione e tenuti in memoria: se si cambia l'immagine all'origine mantenendo lo stesso indirizzo, il nuovo file viene preso al riavvio successivo. Vale anche per un logo sostituito fra gli assets con lo stesso nome.
+I loghi vengono scaricati e tenuti in memoria, e riscaricati a ogni salvataggio della configurazione: sostituendo un file all'origine, o fra gli assets, basta salvare per farlo riprendere: non serve riavviare.
 
 Due comportamenti da conoscere:
 

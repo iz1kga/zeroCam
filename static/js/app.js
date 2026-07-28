@@ -164,8 +164,17 @@ const startApp = async () => {
     },
     methods: {
       async saveConfig() {
-        await secureFetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.config) });
-        alert('Configurazione salvata!');
+        try {
+          const res = await secureFetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.config) });
+          const data = await res.json();
+          // Il salvataggio può fallire in scrittura: dirlo, invece di
+          // annunciare un successo che non c'è stato.
+          alert(data.success
+            ? 'Configurazione salvata: le nuove impostazioni valgono dal prossimo scatto.'
+            : 'Salvataggio non riuscito. Controlla i log.');
+        } catch (error) {
+          if (error.message !== 'Session expired') alert('Salvataggio non riuscito. Controlla i log.');
+        }
       },
       async takePhoto() {
         try {

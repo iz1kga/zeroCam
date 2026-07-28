@@ -42,7 +42,7 @@ Vale l'avvertenza dei diritti già vista per la diretta, con un aggravante: un v
 
 Il montaggio parte nel giorno e all'ora impostati. Indipendentemente da esso, ogni giorno alle 04:30 gira una pulizia che elimina i fotogrammi più vecchi della finestra di conservazione: se il montaggio fallisce per settimane, i fotogrammi non si accumulano senza limite.
 
-Cambiare giorno e ora richiede il riavvio dell'applicazione, perché la pianificazione viene costruita all'avvio.
+Cambiando giorno, ora o abilitazione, la pianificazione viene ricostruita al salvataggio: non serve riavviare. Insieme a essa riparte anche il conteggio dell'intervallo di scatto, quindi la foto successiva arriva dopo un intervallo intero.
 
 ## Spazio su disco
 

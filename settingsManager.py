@@ -268,7 +268,9 @@ class SettingsManager:
             success = self.zerocam.config_manager.save_config(request.json)
             if success:
                 self.zerocam.apply_updated_config()
-            return jsonify(success=True)
+            # Dire "salvato" anche quando la scrittura è fallita lascia
+            # l'utente convinto di avere una configurazione che non ha.
+            return jsonify(success=success)
         else:
             # Restituisce la configurazione decifrata dal config_manager
             return jsonify(self.zerocam.config_manager.decrypted_config)

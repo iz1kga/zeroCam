@@ -11,25 +11,60 @@ class SchedulerManager:
         self.shutdown_flag = app.shutdown_flag
         self.capture_active_flag = app.capture_active
         self.scheduler_thread = None
+        # 'schedule' tiene una lista globale di job che non è pensata per
+        # essere toccata da due thread: il lock separa la ricostruzione
+        # fatta dal thread web dal run_pending del thread pianificatore.
+        self._lock = threading.Lock()
+        self._signature = None
+
+    def _schedule_signature(self):
+        """Quel che, cambiando, obbliga a ricostruire la pianificazione."""
+        camera = self.app.config_manager.get("cameraParameters", {})
+        timelapse = self.app.config_manager.get("timelapse", {})
+        return (
+            int(camera.get("shotInterval", 300)),
+            bool(timelapse.get("enabled", False)),
+            str(timelapse.get("day", "monday")).lower(),
+            str(timelapse.get("time", "03:00")),
+        )
 
     def setup_jobs(self):
         """Sets up all recurring jobs based on configuration."""
         self.logger.info("Setting up scheduled jobs...")
-        
+
         # Capture Job
         interval = int(self.app.config_manager.get("cameraParameters", {}).get("shotInterval", 300))
         schedule.every(interval).seconds.do(self._safe_capture_job)
         self.logger.info(f"Capture job scheduled every {interval} seconds.")
-        
+
         # Diagnostic Job
         schedule.every(60).seconds.do(self.app.publish_diagnostic)
         self.logger.info("Diagnostic job scheduled every 60 seconds.")
-        
+
         # Stats Collector Job
         schedule.every(1).seconds.do(self.app.stats_collector.collect_and_process)
         self.logger.info("Stats collection job scheduled every 1 second.")
 
         self._setup_timelapse_job()
+        self._signature = self._schedule_signature()
+
+    def reload_jobs(self):
+        """
+        Ricostruisce la pianificazione se l'orologio è cambiato.
+
+        Solo se serve davvero: rifarla azzera i conteggi, quindi il primo
+        scatto successivo slitterebbe di un intervallo intero a ogni
+        salvataggio della configurazione, anche quando non c'entra nulla.
+        """
+        current = self._schedule_signature()
+        if current == self._signature:
+            return False
+
+        with self._lock:
+            schedule.clear()
+            self.setup_jobs()
+        self.logger.info("Scheduled jobs rebuilt after a configuration change.")
+        return True
 
     def _setup_timelapse_job(self):
         """Schedules the weekly timelapse build plus the daily frame cleanup."""
@@ -69,7 +104,8 @@ class SchedulerManager:
         self.logger.info("Scheduler thread started.")
         while not self.shutdown_flag.is_set():
             self.capture_active_flag.wait() # Pauses here if capture is inactive
-            schedule.run_pending()
+            with self._lock:
+                schedule.run_pending()
             time.sleep(1)
         self.logger.info("Scheduler thread stopped.")
 

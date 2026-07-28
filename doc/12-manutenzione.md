@@ -57,7 +57,17 @@ Il pulsante **Riavvia** in Cam Control riavvia l'intero Raspberry Pi. Per riavvi
 sudo systemctl restart zerocam.service
 ```
 
-Serve dopo aver cambiato intervallo di scatto, pianificazione del timelapse, abilitazione di ONVIF o le variabili d'ambiente.
+Di norma **non serve**: salvando dalla pagina di configurazione le impostazioni vengono passate subito ai componenti già in funzione, e valgono dallo scatto successivo. Fanno eccezione poche cose, che si stabiliscono all'avvio del programma:
+
+| Impostazione | Perché serve il riavvio |
+|---|---|
+| `onvif.enabled` | Le rotte del servizio ONVIF vengono registrate sul server web all'avvio |
+| `settingsManager.port` | La porta viene aperta all'avvio |
+| `cameraParameters.type` | L'oggetto camera viene costruito una volta sola |
+| Variabili d'ambiente (`.env`) | Lette dal processo all'avvio |
+| Password dell'interfaccia | Si cambia dalla pagina System, che gestisce da sé la sessione |
+
+Tutto il resto — intervallo di scatto, pianificazione del timelapse, parametri di ripresa, ritaglio, annotazione, loghi, destinazioni FTP e HTTP, credenziali YouTube, audio — entra in vigore senza riavviare. Le impostazioni che riguardano il video in diretta (risoluzione, destinazioni, overlay, audio, larghezza ONVIF) hanno effetto **alla ripartenza dello streaming**, cioè dopo lo scatto successivo, perché il comando di ffmpeg si costruisce in quel momento.
 
 ## Aggiornamento
 

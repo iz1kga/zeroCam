@@ -37,11 +37,15 @@ Non tutte le impostazioni entrano in vigore nello stesso momento:
 | Impostazione | Quando ha effetto |
 |---|---|
 | Parametri della camera, ritaglio, annotazione, loghi | Allo scatto successivo |
+| Destinazioni FTP e HTTP, posizione e scarti delle fasi | Allo scatto successivo |
 | Maschere privacy sulla foto | Allo scatto successivo (rilette a ogni scatto) |
+| Intervallo di scatto, pianificazione del timelapse | Subito: la pianificazione viene ricostruita |
+| Credenziali YouTube, impostazioni della diretta e del timelapse | Subito |
 | Maschere privacy sullo streaming | Al riavvio dello streaming, cioè dopo lo scatto successivo |
-| Parametri dello streaming, overlay del video, destinazioni | Al riavvio dello streaming |
-| Intervallo di scatto, pianificazione del timelapse | Al riavvio dell'applicazione |
-| ONVIF abilitato o meno | Al riavvio dell'applicazione |
+| Parametri dello streaming, overlay del video, destinazioni, audio | Al riavvio dello streaming |
+| ONVIF abilitato o meno, porta del server web, tipo di camera | Al riavvio dell'applicazione |
+
+Il salvataggio passa la configurazione ai componenti già in funzione, quindi quasi tutto vale dallo scatto successivo senza riavviare. Cambiando l'intervallo di scatto la pianificazione riparte da quel momento: il primo scatto arriva dopo un intervallo intero.
 
 Il riavvio dell'applicazione si ottiene dal pulsante **Riavvia** in Cam Control (che riavvia l'intero Raspberry Pi) oppure, più rapidamente, da terminale con `sudo systemctl restart zerocam.service`.
 
