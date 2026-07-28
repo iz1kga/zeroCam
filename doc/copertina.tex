@@ -1,13 +1,18 @@
 % Sostituisce il frontespizio di pandoc con la copertina composta da
 % img/genera-copertina.py, stampata a pagina piena e senza margini.
+%
+% L'immagine si mette sullo sfondo della sola prima pagina invece di
+% cambiare la geometria del documento: newgeometry/restoregeometry
+% lasciavano il testo successivo composto su un'altezza diversa da quella
+% stampata, e all'indice sparivano le righe a ogni salto di pagina.
 \usepackage{graphicx}
+\usepackage{eso-pic}
 
 \renewcommand{\maketitle}{%
-  \begingroup
-  \newgeometry{margin=0pt}
-  \thispagestyle{empty}
-  \noindent\includegraphics[width=\paperwidth,height=\paperheight]{img/copertina.png}%
+  \thispagestyle{empty}%
+  \AddToShipoutPictureBG*{%
+    \put(0,0){\includegraphics[width=\paperwidth,height=\paperheight]{img/copertina.png}}%
+  }%
+  \null
   \clearpage
-  \restoregeometry
-  \endgroup
 }
