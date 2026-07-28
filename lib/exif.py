@@ -124,8 +124,11 @@ def build(metadata, when, description="", software="zeroCAM", manual_white_balan
             elif isinstance(value, (list, tuple)):
                 payload[key] = [v for v in value if isinstance(v, (int, float, str))]
         if payload and piexif_helper is not None:
+            # ASCII e non unicode: il JSON e' gia' privo di accenti, e la
+            # variante UCS-2 dell'EXIF parecchi visualizzatori la
+            # dichiarano non supportata invece di mostrarla.
             exif[piexif.ExifIFD.UserComment] = piexif_helper.UserComment.dump(
-                json.dumps(payload, sort_keys=True), encoding="unicode"
+                json.dumps(payload, sort_keys=True, ensure_ascii=True), encoding="ascii"
             )
 
         return piexif.dump({"0th": zeroth, "Exif": exif, "1st": {}, "thumbnail": None, "GPS": {}})
