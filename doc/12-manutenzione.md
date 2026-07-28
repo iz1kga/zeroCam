@@ -6,7 +6,7 @@ Dalla pagina **System** si scarica l'intera configurazione — privacy mask comp
 
 Sul dispositivo i segreti sono cifrati con `ZEROCAM_SECRET_KEY`, che vive nell'ambiente del servizio: copiare `.conf.json` così com'è darebbe un backup illeggibile su un'installazione nuova. Il backup viene quindi costruito dalla configurazione decifrata e richiuso subito con una **passphrase scelta al momento del download** (PBKDF2-SHA256 e Fernet, con sale casuale). Il file non contiene nulla in chiaro ed è ripristinabile su qualunque dispositivo, anche con una chiave segreta diversa.
 
-![La sezione di backup e ripristino nella pagina System.](img/ui-system-backup.png){ width=100% }
+![La pagina System: cambio password, porte e certificato dell'interfaccia, backup e ripristino.](img/ui-system-backup.png){ width=100% }
 
 > **La passphrase non è recuperabile.** Se si perde, il backup è inutilizzabile. Va conservata separatamente dal file.
 
