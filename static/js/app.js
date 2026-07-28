@@ -919,8 +919,23 @@ const startApp = async () => {
   });
   app.component('page-system', {
     template: systemTemplate,
-    props: ['passwords', 'isLoading', 'message', 'messageClass'],
-    emits: ['change-password'],
+    props: ['config', 'passwords', 'isLoading', 'message', 'messageClass'],
+    emits: ['change-password', 'save-config'],
+    computed: {
+      // I nomi del certificato sono una lista in configurazione e una riga
+      // per nome nel textarea, come le destinazioni dello streaming.
+      certificateNames: {
+        get() {
+          const names = this.config?.settingsManager?.https_hostnames;
+          return Array.isArray(names) ? names.join('\n') : (names || '');
+        },
+        set(value) {
+          if (!this.config?.settingsManager) return;
+          this.config.settingsManager.https_hostnames =
+            value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        }
+      }
+    },
     data() {
       return {
         backupPassphrase: '',

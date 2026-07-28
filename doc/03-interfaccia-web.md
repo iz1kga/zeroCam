@@ -10,7 +10,21 @@ http://<indirizzo-del-raspberry>:8080/
 
 Utente `admin`, password quella scelta durante l'installazione. La sessione resta aperta finché non si esce con **Logout** o non scade.
 
-Il servizio non usa HTTPS: se l'interfaccia deve essere raggiungibile da fuori casa, va messa dietro un reverse proxy con TLS o raggiunta via VPN (nell'installazione è presente `wireguard`). Esporre direttamente la porta 8080 su Internet è sconsigliato.
+### Connessione cifrata
+
+Di default l'interfaccia risponde **in chiaro**: chiunque sia in grado di osservare la rete fra il browser e la webcam legge la password e il contenuto della sessione. Su una rete domestica il rischio è modesto; esporre la porta su Internet così com'è significa consegnare le credenziali a chiunque stia in mezzo.
+
+In **System → Accesso all'interfaccia** si attiva l'HTTPS, che risponde su una porta separata (8443 di default):
+
+```
+https://<indirizzo-del-raspberry>:8443/
+```
+
+Il certificato se lo firma il dispositivo: nessuno lo attesta, quindi il browser mostra un avviso alla prima visita e va accettato una volta. Da lì in poi il traffico è cifrato — è la differenza fra *nessuno può leggere* e *chiunque può leggere*, non fra sicuro e insicuro. Il certificato viene creato al primo avvio con l'HTTPS attivo e copre `localhost`, il nome del dispositivo e i suoi indirizzi IP; se raggiungi la webcam con un altro nome, per esempio uno pubblico, va aggiunto nel campo apposito, altrimenti il browser segnalerà anche il nome sbagliato. All'avvio il log riporta l'impronta SHA-256, da confrontare con quella che mostra il browser per essere certi di parlare con il dispositivo giusto e non con qualcuno che si è messo in mezzo.
+
+Spegnendo l'HTTP resta solo l'HTTPS, ma **ONVIF smette di funzionare**: quel protocollo parla solo in chiaro.
+
+Resta vero che il modo più solido per raggiungere la webcam da fuori casa è una VPN — nell'installazione è presente `wireguard` — o un reverse proxy con un certificato riconosciuto. L'HTTPS autofirmato è il rimedio immediato, non quello definitivo.
 
 ## Le pagine
 

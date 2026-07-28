@@ -8,7 +8,7 @@
    version="1.1"
    id="svg653"
    inkscape:version="1.1.2 (0a00cf5339, 2022-02-04)"
-   sodipodi:docname="zc_logo_dark.svg"
+   sodipodi:docname="zc_logo_big.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -32,7 +32,7 @@
      inkscape:window-x="1920"
      inkscape:window-y="27"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="g1415" />
   <defs
      id="defs650">
     <clipPath
@@ -166,10 +166,10 @@
         </g>
       </g>
       <text
-         x="340"
-         y="168"
+         x="339.91736"
+         y="161.4711"
          text-anchor="middle"
-         style="color:#0b0b0b;font-weight:400;font-size:12px;font-family:'Anthropic Sans', '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;letter-spacing:4px;dominant-baseline:auto;text-anchor:middle;opacity:1;fill:#52514e;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter"
+         style="color:#0b0b0b;font-weight:400;font-size:19.9308px;font-family:'Anthropic Sans', '-apple-system', BlinkMacSystemFont, 'Segoe UI', sans-serif;letter-spacing:6.64359px;dominant-baseline:auto;text-anchor:middle;opacity:1;fill:#52514e;stroke:none;stroke-width:1.66089px;stroke-linecap:butt;stroke-linejoin:miter"
          fill="var(--text-secondary)"
          id="text39"
          inkscape:export-filename="/home/mgiolo/Personale/repos/zeroCam/brand/zc_logo_big.svg"

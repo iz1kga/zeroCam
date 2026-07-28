@@ -53,6 +53,12 @@ TIMELAPSE_OUTPUT_DIR = data_path("timelapse")
 # la sovraimpressione. Sta fra i dati perché un aggiornamento non deve
 # portarselo via.
 ASSETS_DIR = data_path("assets")
+# Certificato TLS autofirmato dell'interfaccia: sta fra i dati perché
+# rigenerarlo a ogni aggiornamento significherebbe far ricomparire
+# l'avviso del browser a chi l'ha già accettato una volta.
+CERT_DIR = data_path("certs")
+CERT_FILE = os.path.join(CERT_DIR, "zerocam.crt")
+KEY_FILE = os.path.join(CERT_DIR, "zerocam.key")
 # Copia di quanto l'applicazione porta con sé: viene versata negli assets
 # al primo avvio, così è disponibile senza che l'utente carichi nulla.
 BUNDLED_ASSETS_DIR = os.path.join(APP_DIR, "assets")

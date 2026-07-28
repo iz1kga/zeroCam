@@ -9,6 +9,13 @@ from lib.helpers import CryptoHelper
 # configurazione vengono inserite con questi valori, così le installazioni
 # esistenti continuano a partire e mostrano la pagina nell'interfaccia web.
 DEFAULT_SECTIONS = {
+    "settingsManager": {
+        "port": 8080,
+        "http_enabled": True,
+        "https_enabled": False,
+        "https_port": 8443,
+        "https_hostnames": [],
+    },
     "streamParameters": {
         "extra_destinations": [],
         "overlay": False,

@@ -178,4 +178,8 @@ Elenco di oggetti:
 
 | Chiave | Tipo | Significato |
 |---|---|---|
-| `port` | numero | Porta dell'interfaccia web (default 8080) |
+| `port` | numero | Porta dell'interfaccia web in HTTP (default 8080) |
+| `http_enabled` | sì/no | Ascolto in chiaro; spegnendolo ONVIF smette di funzionare |
+| `https_enabled` | sì/no | Ascolto cifrato con certificato autofirmato |
+| `https_port` | numero | Porta dell'interfaccia in HTTPS (default 8443) |
+| `https_hostnames` | elenco | Nomi aggiuntivi da inserire nel certificato |

@@ -62,7 +62,7 @@ Di norma **non serve**: salvando dalla pagina di configurazione le impostazioni 
 | Impostazione | Perché serve il riavvio |
 |---|---|
 | `onvif.enabled` | Le rotte del servizio ONVIF vengono registrate sul server web all'avvio |
-| `settingsManager.port` | La porta viene aperta all'avvio |
+| `settingsManager.port`, HTTP/HTTPS e certificato | Le porte vengono aperte all'avvio |
 | `cameraParameters.type` | L'oggetto camera viene costruito una volta sola |
 | Variabili d'ambiente (`.env`) | Lette dal processo all'avvio |
 | Password dell'interfaccia | Si cambia dalla pagina System, che gestisce da sé la sessione |
@@ -90,5 +90,7 @@ du -sh /usr/local/zerocam/data/*
 ```
 
 ## Salvataggio di un'installazione
+
+Il certificato TLS sta in `data/certs/` e non va incluso da nessuna parte: se manca viene rigenerato al primo avvio. Cambia l'impronta, quindi il browser chiederà di accettarlo di nuovo.
 
 Per replicare o recuperare una webcam servono quattro cose: il backup della configurazione dalla pagina System con la sua passphrase, il contenuto di `data/assets/` (loghi e audio, che il backup **non** include perché contiene solo impostazioni), l'eventuale archivio dei fotogrammi se si vuole conservare lo storico del timelapse, e le credenziali OAuth di YouTube (che comunque il backup contiene). Il resto lo rifà l'installer.

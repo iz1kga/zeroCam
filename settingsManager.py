@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
-from lib import assets, config_backup, paths
+from lib import assets, config_backup, paths, tls
 from lib.version import get_version
 from lib.youtube_auth import YouTubeDeviceFlow
 
@@ -49,6 +49,11 @@ class SettingsManager:
         # Il caricamento degli assets è l'unica richiesta con un corpo di
         # peso: il limite lo fa rifiutare a monte, senza scriverlo su disco.
         self.app.config['MAX_CONTENT_LENGTH'] = assets.MAX_SIZE
+        # Il cookie di sessione non deve essere leggibile da JavaScript né
+        # viaggiare verso altri siti. 'secure' si aggiunge solo quando
+        # l'HTTP è spento, altrimenti impedirebbe di autenticarsi su di esso.
+        self.app.config['SESSION_COOKIE_HTTPONLY'] = True
+        self.app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
         self.logger.info("Initializing SettingsManager...")
         self._setup_secret_key()
         self.logger.info("Flask secret key is set.")
@@ -600,9 +605,71 @@ class SettingsManager:
                 camera_component.camera.stop()
             self.logger.info("Focus aid stream generation stopped.")
 
+    def _start_https(self, port, hostnames):
+        """
+        Avvia l'ascolto TLS in un thread e ritorna True se ci è riuscito.
+
+        Waitress non parla TLS, quindi l'HTTPS lo serve cheroot, che lo fa
+        nativamente ed è altrettanto adatto alla produzione. Un fallimento
+        non è fatale: si resta sull'HTTP, meglio che nessuna interfaccia.
+        """
+        cert, key = tls.ensure_certificate(
+            paths.CERT_FILE, paths.KEY_FILE, hostnames, self.logger
+        )
+        if not cert:
+            return False
+
+        try:
+            from cheroot.wsgi import Server as CherootServer
+            from cheroot.ssl.builtin import BuiltinSSLAdapter
+        except ImportError:
+            self.logger.error(
+                "HTTPS requested but the 'cheroot' package is missing: staying on HTTP. "
+                "Install it with pip install -r requirements.txt."
+            )
+            return False
+
+        try:
+            server = CherootServer(('0.0.0.0', port), self.app, numthreads=4)
+            server.ssl_adapter = BuiltinSSLAdapter(cert, key)
+            thread = threading.Thread(target=server.safe_start, name="HttpsThread", daemon=True)
+            thread.start()
+            self.logger.info(f"Web UI reachable over HTTPS on port {port}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Could not start the HTTPS listener on port {port}: {e}", exc_info=True)
+            return False
+
     def run(self):
-        """Starts the Waitress server for the Flask application."""
-        port = self.zerocam.config_manager.get('settingsManager', {}).get('port', 8080)
+        """Starts the web server, over HTTP and optionally over HTTPS."""
+        cfg = self.zerocam.config_manager.get('settingsManager', {})
+        port = cfg.get('port', 8080)
+        https_port = cfg.get('https_port', 8443)
+        http_enabled = bool(cfg.get('http_enabled', True))
+
+        https_running = False
+        if cfg.get('https_enabled', False):
+            https_running = self._start_https(https_port, cfg.get('https_hostnames', []))
+
+        # ONVIF non parla TLS: spegnere l'HTTP lo mette fuori uso.
+        if not http_enabled and self.zerocam.config_manager.get('onvif', {}).get('enabled', False):
+            self.logger.warning(
+                "HTTP is disabled but ONVIF is enabled: ONVIF clients speak plain HTTP "
+                "and will not be able to reach the camera."
+            )
+
+        if not http_enabled and https_running:
+            self.logger.info("HTTP disabled: the interface answers over HTTPS only.")
+            # Il cookie di sessione può essere marcato come 'secure' solo
+            # adesso: con l'HTTP acceso impedirebbe di autenticarsi su di esso.
+            self.app.config['SESSION_COOKIE_SECURE'] = True
+            while not self.zerocam.shutdown_flag.is_set():
+                time.sleep(1)
+            return
+
+        if not http_enabled:
+            self.logger.error("HTTP is disabled but HTTPS is not running: falling back to HTTP.")
+
         self.logger.info(f"Starting web UI and services on port {port}")
         serve(self.app, host='0.0.0.0', port=port, threads=4)
 

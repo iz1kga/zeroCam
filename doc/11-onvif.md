@@ -12,12 +12,14 @@ Il servizio ONVIF fa vedere zeroCAM come una telecamera di rete a software di vi
 | ONVIF Snapshot Width (px) | Larghezza dell'istantanea; l'altezza segue il rapporto dello streaming |
 | Password | Password per l'accesso; l'utente è `onvif` |
 
-Il servizio si innesta sulla stessa porta dell'interfaccia web (8080) e risponde su:
+Il servizio si innesta sulla stessa porta HTTP dell'interfaccia web (8080) e risponde su:
 
 | Percorso | Uso |
 |---|---|
 | `/onvif/device_service` | Servizio dispositivo (capacità, informazioni, data e ora) |
 | `/onvif/media_service` | Servizio media (profili, URI dello stream, URI dell'istantanea) |
+
+ONVIF non parla TLS: se in **System** si spegne l'ascolto in chiaro per lasciare solo l'HTTPS, il servizio resta registrato ma nessun client riesce più a raggiungerlo.
 | `/snapshot.jpg` | Istantanea corrente in JPEG |
 
 L'istantanea è il fotogramma condiviso prodotto dallo streaming, aggiornato una volta al secondo, con le maschere privacy già applicate. **Ne consegue che le istantanee ONVIF sono disponibili solo mentre lo streaming è attivo**: a streaming fermo il servizio restituisce l'ultimo fotogramma disponibile.
