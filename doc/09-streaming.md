@@ -40,19 +40,73 @@ La sola chiave di streaming non manda in onda nulla: YouTube ha ritirato lo "Str
 
 ### Credenziali
 
-1. Sulla [Google Cloud Console](https://console.cloud.google.com/) creare un progetto e abilitare **YouTube Data API v3**.
-2. Configurare la schermata di consenso OAuth (utenti **Esterni**) e portarne lo stato di pubblicazione su **In produzione**. Lasciandola in *Testing* Google fa scadere i refresh token dopo sette giorni e la diretta smette di partire dopo una settimana. L'app non ha bisogno di essere verificata: l'avviso "app non verificata" compare solo durante l'autorizzazione.
-3. Creare credenziali OAuth di tipo **TV e dispositivi di immissione limitata** e annotare **Client ID** e **Client Secret**. Il tipo conta: il device flow usato dall'interfaccia rifiuta un client desktop.
-4. In **Configuration → Stream → Diretta automatica** incollare Client ID e Client Secret e premere **Autentica**. Compare un codice da inserire su [google.com/device](https://www.google.com/device), da qualsiasi dispositivo: telefono, tablet o PC. Autorizzando si sceglie anche il canale su cui pubblicare, che per un account Brand va selezionato proprio lì.
-5. Il **Refresh Token** viene compilato da solo appena l'autorizzazione è concessa, e l'interfaccia dichiara **su quale canale** ci si è autenticati: deve essere lo stesso da cui proviene la chiave di streaming, altrimenti il primo scatto fallisce con `The user is not enabled for live streaming`. Attivare *Auto broadcast* e salvare.
+Le credenziali si creano una volta sola, e servono sia alla diretta sia al caricamento del timelapse. La procedura si fa tutta dal browser di un PC o di un telefono: sul Raspberry non serve nulla.
 
-Il canale deve avere le dirette abilitate su [youtube.com/features](https://www.youtube.com/features): serve la verifica del numero di telefono e la prima attivazione può richiedere fino a 24 ore.
+Prima di cominciare, il canale YouTube deve avere le **dirette abilitate**. Si controlla su [youtube.com/features](https://www.youtube.com/features): richiede la verifica del numero di telefono e la prima attivazione può richiedere fino a 24 ore. Senza, tutto il resto funziona ma il primo tentativo di andare in onda fallisce.
 
-L'autenticazione dall'interfaccia funziona anche raggiungendo la webcam in http sulla LAN, senza HTTPS né redirect: è il metodo consigliato, perché il Pi non ha un browser e un client desktop lo pretenderebbe sulla stessa macchina. Da un PC con browser resta comunque disponibile `installation_tools/yt_oauth_setup.py`, che però richiede un client OAuth di tipo *Applicazione desktop*.
+#### 1. Creare il progetto
 
-Le stesse credenziali servono al caricamento del timelapse: il token ottenuto con *Autentica* copre già anche quello.
+Sulla [Google Cloud Console](https://console.cloud.google.com/), dal selettore in alto, **Nuovo progetto**. Il nome è solo per te: serve a tenere separata questa webcam dal resto delle cose che hai su Google.
 
-Cambiando progetto sulla Cloud Console il refresh token va rigenerato, perché è legato al client ID: la chiave di streaming invece non cambia, appartiene al canale YouTube e non al progetto.
+![Un progetto dedicato tiene separata la quota della webcam da qualsiasi altro uso delle API.](img/gcp-01-nuovo-progetto.png){ width=75% }
+
+#### 2. Abilitare l'API
+
+Con il nuovo progetto selezionato, andare in **API e servizi → Libreria**, cercare **YouTube Data API v3** e premere *Abilita*. È l'unica API che serve.
+
+#### 3. Configurare la schermata di consenso
+
+In **Google Auth Platform → Panoramica** parte una procedura in quattro passi. Il nome dell'applicazione comparirà nella schermata di autorizzazione: può essere qualsiasi cosa.
+
+![Il nome dell'app e l'email di assistenza sono quelli che vedrà chi autorizza.](img/gcp-03-consenso.png){ width=85% }
+
+Come tipo di utente scegliere **Esterno**. *Interno* è disponibile solo con un account Google Workspace e non serve qui.
+
+![Esterno è l'unica scelta possibile con un account Google normale.](img/gcp-03-consenso_01.png){ width=85% }
+
+Seguono l'indirizzo email per le comunicazioni di Google e l'accettazione delle condizioni.
+
+![I dati di contatto servono a Google per avvisare di modifiche al progetto.](img/gcp-03-consenso_02.png){ width=85% }
+
+![Ultimo passo: accettare le norme sui dati utente e premere Crea.](img/gcp-03-consenso_03.png){ width=85% }
+
+#### 4. Pubblicare l'app
+
+Finita la procedura, l'app resta in stato **Test**. Va portata in produzione: nella pagina **Pubblico**, premere *Pubblica app*.
+
+![In stato Test i refresh token vengono revocati dopo sette giorni.](img/gcp-04-produzione.png){ width=85% }
+
+![La conferma avvisa che l'app diventa disponibile a chiunque: per un uso personale è ininfluente, nessuno la conosce.](img/gcp-04-produzione_01.png){ width=90% }
+
+Questo passaggio è quello che si dimentica più spesso, e l'effetto arriva in ritardo: finché lo stato è *Test*, Google revoca i refresh token dopo **sette giorni**, e la diretta smette di ripartire una settimana dopo un'installazione che sembrava perfetta. L'app non ha bisogno di essere verificata da Google: la verifica serve a distribuirla ad altri, e la sua assenza si nota solo nell'avviso "app non verificata" durante l'autorizzazione, da superare con *Avanzate → Vai a...*.
+
+#### 5. Creare il client OAuth
+
+In **Client → Crea client**, come tipo di applicazione scegliere **TV e dispositivi di immissione limitata**.
+
+![Il tipo di applicazione è la scelta da non sbagliare.](img/gcp-05-tipo-client.png){ width=85% }
+
+Il tipo conta davvero: zeroCAM usa il *device flow*, quello dei televisori, ed è l'unico che funziona su un dispositivo senza browser raggiunto via LAN. Con un client di tipo *Applicazione desktop* o *Applicazione web* il pulsante *Autentica* risponde «Credenziali non valide o client OAuth del tipo sbagliato».
+
+Alla conferma compaiono **ID client** e **Client secret**. Vanno copiati subito: il secret non è più visualizzabile dopo aver chiuso la finestra, e in tal caso va creato un altro client.
+
+![ID client e Client secret: da copiare prima di chiudere.](img/gcp-06-credenziali.png){ width=65% }
+
+#### 6. Autenticare la webcam
+
+In **Configuration → Stream → Diretta automatica** incollare i due valori e premere **Autentica**.
+
+![Client ID e Client Secret incollati, pronti per l'autenticazione.](img/ui-yt-autentica.png){ width=100% }
+
+Compare un codice di otto caratteri e l'indirizzo [google.com/device](https://www.google.com/device), da aprire su qualsiasi dispositivo: il telefono va benissimo. Inserito il codice, Google chiede di accedere e di **scegliere il canale** su cui pubblicare — per un account Brand è qui, e solo qui, che si seleziona quello giusto.
+
+![Il codice resta valido mezz'ora; nel frattempo la webcam attende.](img/ui-yt-codice.png){ width=100% }
+
+Concessa l'autorizzazione, il **Refresh Token** viene compilato da solo e l'interfaccia dichiara su quale canale ci si è autenticati. Deve essere quello da cui proviene la chiave di streaming: se non lo è, il primo scatto fallisce con `The user is not enabled for live streaming`. A quel punto restano da attivare *Auto broadcast* e **salvare** la configurazione.
+
+Il pulsante funziona anche raggiungendo la webcam in http sulla LAN, senza HTTPS né redirect. Da un PC con browser resta comunque disponibile `installation_tools/yt_oauth_setup.py`, che però richiede un client OAuth di tipo *Applicazione desktop*.
+
+Cambiando progetto sulla Cloud Console il refresh token va rigenerato, perché è legato al client ID. La chiave di streaming invece non cambia: appartiene al canale YouTube, non al progetto.
 
 ### Impostazioni del broadcast
 
