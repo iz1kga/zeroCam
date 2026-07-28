@@ -54,6 +54,8 @@ Sulla [Google Cloud Console](https://console.cloud.google.com/), dal selettore i
 
 Con il nuovo progetto selezionato, andare in **API e servizi → Libreria**, cercare **YouTube Data API v3** e premere *Abilita*. È l'unica API che serve.
 
+![Attenzione a non confondersi con le altre API di YouTube in elenco: serve la Data API v3.](img/gcp-02-abilita-api.png){ width=80% }
+
 #### 3. Configurare la schermata di consenso
 
 In **Google Auth Platform → Panoramica** parte una procedura in quattro passi. Il nome dell'applicazione comparirà nella schermata di autorizzazione: può essere qualsiasi cosa.
@@ -101,6 +103,8 @@ In **Configuration → Stream → Diretta automatica** incollare i due valori e 
 Compare un codice di otto caratteri e l'indirizzo [google.com/device](https://www.google.com/device), da aprire su qualsiasi dispositivo: il telefono va benissimo. Inserito il codice, Google chiede di accedere e di **scegliere il canale** su cui pubblicare — per un account Brand è qui, e solo qui, che si seleziona quello giusto.
 
 ![Il codice resta valido mezz'ora; nel frattempo la webcam attende.](img/ui-yt-codice.png){ width=100% }
+
+![Il nome del canale è la conferma che conta: se non è quello della webcam, ripetere l'autenticazione.](img/ui-yt-canale.png){ width=100% }
 
 Concessa l'autorizzazione, il **Refresh Token** viene compilato da solo e l'interfaccia dichiara su quale canale ci si è autenticati. Deve essere quello da cui proviene la chiave di streaming: se non lo è, il primo scatto fallisce con `The user is not enabled for live streaming`. A quel punto restano da attivare *Auto broadcast* e **salvare** la configurazione.
 
