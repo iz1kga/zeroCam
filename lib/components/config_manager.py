@@ -12,6 +12,8 @@ DEFAULT_SECTIONS = {
     "streamParameters": {
         "extra_destinations": [],
         "overlay": False,
+        "audio_file": "",
+        "audio_volume": 100,
     },
     "youtubeLive": {
         "enabled": False,
@@ -42,6 +44,8 @@ DEFAULT_SECTIONS = {
         "nice": 19,
         "min_frames": 30,
         "retention_weeks": 4,
+        "audio_file": "",
+        "audio_volume": 100,
         "keep_local": True,
         "frames_dir": "./timelapse_frames",
         "output_dir": "./timelapse",

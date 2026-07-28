@@ -19,6 +19,8 @@ import urllib.request
 
 from PIL import Image
 
+from lib import assets
+
 FONT_PATH = os.path.abspath('static/css/fonts/Arial.ttf')
 
 # Nomi dei file di appoggio scritti nella cartella di lavoro: drawtext li
@@ -110,7 +112,9 @@ def _fetch_logo(url, work_dir, logger):
     path = os.path.join(work_dir, name)
 
     if not os.path.exists(path):
-        with urllib.request.urlopen(url, timeout=10) as fd:
+        # Un logo caricato fra gli assets è un file locale: urlopen lo legge
+        # con lo schema file://, così la strada resta una sola.
+        with urllib.request.urlopen(assets.resolve_url(url), timeout=10) as fd:
             image = Image.open(fd)
             image.load()
         # Il PNG RGBA è il formato che ffmpeg compone senza sorprese

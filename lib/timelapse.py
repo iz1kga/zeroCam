@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 import requests
 from PIL import Image
 
-from lib import paths
+from lib import assets, paths
 from lib.youtube_auth import UPLOAD_BASE
 
 FRAME_PATTERN = "%Y%m%d-%H%M%S"
@@ -187,6 +187,36 @@ class TimelapseManager:
 
     # --- Montaggio -------------------------------------------------------
 
+    def _audio_arguments(self):
+        """
+        Ingresso e codifica dell'audio di sottofondo, se configurato.
+
+        Il brano viene ripetuto per tutta la durata del video e tagliato
+        alla fine dei fotogrammi: '-shortest' guarda al flusso più corto,
+        che con il loop infinito è sempre il video.
+        """
+        source = self.cfg.get("audio_file", "") or ""
+        track = assets.path(source)
+        if not track:
+            if source:
+                self.logger.warning(
+                    f"Timelapse audio '{source}' not found among the assets: building it silent."
+                )
+            return []
+
+        try:
+            volume = max(0, min(100, int(self.cfg.get("audio_volume", 100))))
+        except (TypeError, ValueError):
+            volume = 100
+
+        self.logger.info(f"Timelapse audio: {os.path.basename(track)} at {volume}% volume.")
+        arguments = ["-stream_loop", "-1", "-i", track,
+                     "-map", "0:v", "-map", "1:a", "-shortest",
+                     "-c:a", "aac", "-b:a", "192k"]
+        if volume != 100:
+            arguments += ["-af", f"volume={volume / 100:.2f}"]
+        return arguments
+
     def build_video(self, frames):
         """
         Monta i fotogrammi in un mp4 e ritorna il percorso del file.
@@ -216,6 +246,7 @@ class TimelapseManager:
                 "ffmpeg", "-y",
                 "-framerate", str(self.cfg.get("fps", 25)),
                 "-i", os.path.join(staging, "f%06d.jpg"),
+            ] + self._audio_arguments() + [
                 "-c:v", "libx264",
                 "-preset", str(self.cfg.get("preset", "medium")),
                 "-crf", str(self.cfg.get("crf", 20)),

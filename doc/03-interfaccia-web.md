@@ -16,7 +16,7 @@ Il servizio non usa HTTPS: se l'interfaccia deve essere raggiungibile da fuori c
 
 ![La pagina Cam Control: menu a sinistra, ultima immagine con le maschere privacy disegnate sopra, elenco delle maschere a destra.](img/ui-cam-control.png){ width=100% }
 
-**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Host, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
+**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Host, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Assets. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
 
 **Cam Control** mostra l'ultima immagine scattata e permette di disegnarci sopra le maschere privacy. Da qui si scatta a comando (*Take Photo*), si avvia l'aiuto alla messa a fuoco (*Start Focus Aid*) e si riavvia il dispositivo (*Riavvia*). Quando lo streaming è in corso compare l'interruttore **Anteprima diretta**, che sostituisce l'ultimo scatto con un fotogramma al secondo preso dal video.
 
@@ -62,6 +62,8 @@ L'interfaccia è una pagina Vue che parla con alcune rotte HTTP; tutte richiedon
 | `/api/timelapse` | GET | Stato del timelapse |
 | `/api/timelapse/run` | POST | Montaggio immediato |
 | `/api/privacy_mask`, `/api/save_privacy_mask` | GET, POST | Maschere privacy |
+| `/api/assets` | GET, POST | Elenca e carica audio e loghi |
+| `/api/assets/<categoria>/<nome>` | DELETE | Elimina un asset |
 | `/latest.jpg`, `/stream_latest.jpg` | GET | Ultimo scatto, ultimo fotogramma della diretta |
 
 Sono utili per automazioni proprie, ma non costituiscono un'API pubblica stabile: possono cambiare fra le versioni.

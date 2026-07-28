@@ -2,7 +2,7 @@
 
 ## Come funziona
 
-Il Raspberry Pi produce fotogrammi grezzi che ffmpeg codifica in H.264 e spinge via RTMP verso YouTube — e, se richiesto, verso altre destinazioni. All'audio provvede una traccia silenziosa generata da ffmpeg, necessaria perché YouTube accetti il flusso.
+Il Raspberry Pi produce fotogrammi grezzi che ffmpeg codifica in H.264 e spinge via RTMP verso YouTube — e, se richiesto, verso altre destinazioni. All'audio provvede una traccia silenziosa generata da ffmpeg, necessaria perché YouTube accetti il flusso, oppure un brano scelto dall'utente.
 
 ![Percorso dei fotogrammi durante lo streaming: il flusso principale va a ffmpeg, quello ridotto alimenta ONVIF e l'anteprima.](img/pipeline-streaming.png){ width=100% }
 
@@ -19,6 +19,8 @@ Lo streaming si ferma a ogni scatto e riparte subito dopo: la camera non può se
 | Resolution | Larghezza e altezza del video, per esempio 2560×1440 |
 | Destinazioni aggiuntive | Altri URL RTMP verso cui ritrasmettere |
 | Annotazione e loghi nella diretta | Disegna barra, orologio e loghi sul video |
+| Audio di sottofondo | Brano ripetuto in loop al posto del silenzio |
+| Volume | Attenuazione del brano, in percentuale |
 
 ![La pagina Stream: chiave, risoluzione, destinazioni aggiuntive, overlay e le impostazioni della diretta automatica.](img/ui-config-stream.png){ width=100% }
 
@@ -27,6 +29,14 @@ Nelle schede per fase del giorno si impostano frequenza dei fotogrammi (`framera
 Il bilanciamento del bianco funziona come per lo scatto, modalità *Manuale* compresa: sotto le luci al sodio è il modo per evitare che la diretta viri all'arancione. Vedi il capitolo *La cattura delle immagini*.
 
 Bitrate e buffer (`bitrate`, `buffer`) governano la qualità: 4000–4500 kbit/s per il 1440p sono un punto di partenza sensato. La codifica usa il preset `veryfast` e un gruppo di immagini pari a due secondi, come richiesto dalle piattaforme di live.
+
+## L'audio della diretta
+
+Di suo lo streaming è muto: la traccia esiste solo perché senza audio il flusso viene rifiutato. Con *Audio di sottofondo* si sceglie invece un brano fra quelli caricati in **Configuration → Assets**, che viene ripetuto in loop per tutta la durata della diretta. Il *Volume* lo attenua: 20–30% è di norma sufficiente per una musica di sottofondo che non copra tutto.
+
+Il brano viene letto a velocità reale e ricodificato in AAC dallo stesso ffmpeg che sta già comprimendo il video: il costo aggiuntivo in CPU è irrilevante. Come per l'overlay, il comando si costruisce all'avvio dello streaming, quindi il cambio ha effetto **dopo lo scatto successivo**.
+
+Attenzione ai diritti: una diretta con musica protetta può essere rivendicata da Content ID, silenziata o bloccata in alcuni paesi, e su una webcam attiva ventiquattr'ore su ventiquattro la rivendicazione arriva prima o poi. Vanno usati brani propri o con licenza che ne consenta l'uso.
 
 ## Ritrasmissione su più destinazioni
 

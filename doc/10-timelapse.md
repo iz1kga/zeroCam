@@ -32,6 +32,12 @@ Nei testi si possono usare `{from}`, `{to}`, `{date}` e `{frames}`, sostituiti r
 
 Il montaggio gira con priorità bassa (`nice 19`) per non disturbare lo streaming: preset e numero di thread regolano quanto pesa sulla CPU. Su un Pi 5, `medium` con 2 thread è un buon compromesso.
 
+## Audio
+
+Il video è muto se non si sceglie un brano in *Audio → Brano di sottofondo*, fra quelli caricati in **Configuration → Assets**. Il brano viene ripetuto fino alla fine dei fotogrammi e tagliato lì, quindi non serve che duri quanto il video: un minuto di musica copre un timelapse di qualsiasi lunghezza. Il *Volume* lo attenua in percentuale.
+
+Vale l'avvertenza dei diritti già vista per la diretta, con un aggravante: un video caricato con musica protetta può essere rivendicato subito, e la rivendicazione resta attaccata al video pubblicato.
+
 ## Pianificazione
 
 Il montaggio parte nel giorno e all'ora impostati. Indipendentemente da esso, ogni giorno alle 04:30 gira una pulizia che elimina i fotogrammi più vecchi della finestra di conservazione: se il montaggio fallisce per settimane, i fotogrammi non si accumulano senza limite.

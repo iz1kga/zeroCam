@@ -21,6 +21,7 @@ import logging
 import cv2
 import numpy as np
 
+from lib import assets
 from lib.paths import LATEST_IMAGE, PRIVACY_MASK_FILE as PRIVACY_MASK_PATH
 
 
@@ -239,7 +240,9 @@ class ImageOverlay:
             if not OverlayImage["enabled"]:
                 continue
             try:
-                fd = urllib.request.urlopen(OverlayImage["url"])
+                # Un logo scelto fra gli assets è un file locale: resolve_url
+                # lo trasforma in un file://, gli URL http restano tali.
+                fd = urllib.request.urlopen(assets.resolve_url(OverlayImage["url"]))
                 OlImg = io.BytesIO(fd.read())
                 # RGBA anche per i formati senza trasparenza: serve un canale
                 # alfa su cui applicare l'opacità configurata.

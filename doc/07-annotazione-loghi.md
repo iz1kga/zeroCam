@@ -1,4 +1,4 @@
-# Annotazione e loghi
+# Annotazione, loghi e assets
 
 ## La barra di annotazione
 
@@ -42,7 +42,9 @@ Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
 | Scale | Percentuale di ridimensionamento |
 | Opacity | Opacità in percentuale |
 
-I loghi vengono scaricati all'avvio dell'applicazione e tenuti in memoria: se si cambia l'immagine all'origine mantenendo lo stesso indirizzo, il nuovo file viene preso al riavvio successivo.
+L'indirizzo può essere un URL http, come è sempre stato, oppure un file caricato in **Configuration → Assets**: in quel caso, invece di scriverlo a mano, si sceglie dal menu *...oppure un logo caricato*, che compila il campo URL con un riferimento del tipo `asset:logo/nome.png` e mostra l'anteprima. Un logo caricato è preferibile a uno remoto: non dipende da un sito che può cambiare o sparire, e funziona anche con la webcam senza accesso a internet in uscita.
+
+I loghi vengono scaricati all'avvio dell'applicazione e tenuti in memoria: se si cambia l'immagine all'origine mantenendo lo stesso indirizzo, il nuovo file viene preso al riavvio successivo. Vale anche per un logo sostituito fra gli assets con lo stesso nome.
 
 Due comportamenti da conoscere:
 
@@ -62,3 +64,24 @@ Poiché il comando di ffmpeg si costruisce all'avvio dello streaming, l'attivazi
 > **Requisito** — il filtro `drawtext` richiede un ffmpeg compilato con libfreetype. Sui pacchetti di Raspberry Pi OS c'è; per verificarlo: `ffmpeg -filters | grep drawtext`.
 
 Un'ultima differenza da tenere presente: se lo streaming inquadra una porzione di sensore diversa da quella della foto, la posizione dei loghi può risultare spostata di qualche pixel rispetto allo scatto. Le coordinate vengono riscalate, non riproiettate come accade invece per le maschere privacy.
+
+## Gli assets
+
+**Configuration → Assets** è il magazzino del materiale che l'utente carica: i **loghi** da sovrapporre e i **brani audio** per la diretta e per il timelapse. I file finiscono nella cartella dei dati, in `data/assets/<categoria>/`, quindi un aggiornamento del software non se li porta via.
+
+Il caricamento chiede la categoria e il file. Sono ammessi:
+
+| Categoria | Estensioni |
+|---|---|
+| Audio | `.mp3`, `.aac`, `.m4a`, `.ogg`, `.opus`, `.wav`, `.flac` |
+| Loghi | `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.bmp` |
+
+Il limite per file è di 32 MB. Il nome viene ripulito da accenti, spazi e caratteri speciali, perché finisce in una riga di comando di ffmpeg: *Brano Estivo (2026).mp3* diventa `Brano-Estivo-2026-.mp3`.
+
+L'elenco mostra dimensione e anteprima — un lettore per l'audio, la miniatura per le immagini — e permette di eliminare. Il filtro in alto restringe a una sola categoria.
+
+Nelle altre pagine gli assets non si scrivono a mano: compaiono nelle tendine *Audio di sottofondo* (Stream), *Brano di sottofondo* (Timelapse) e *...oppure un logo caricato* (Overlays). In configurazione vengono salvati come `asset:categoria/nome`, un riferimento indipendente dal percorso di installazione: un backup della configurazione ripristinato su un altro Raspberry continua a puntare al file giusto, **purché quel file sia stato ricaricato**. Il backup della configurazione contiene le impostazioni, non i file degli assets: quelli vanno copiati a parte, o ricaricati dall'interfaccia.
+
+Eliminando un asset ancora referenziato non succede nulla di drammatico: il riferimento resta in configurazione ma punta al vuoto, e chi lo usa lo segnala nel log e prosegue — la diretta va in onda muta, il timelapse viene montato senza audio, il logo viene saltato.
+
+zeroCAM porta con sé un brano di esempio, `default_stream_audio.mp3`, che viene installato fra gli assets al primo avvio. Se lo si cancella non torna: la copia avviene solo per i file mancanti che l'applicazione non ha ancora installato.

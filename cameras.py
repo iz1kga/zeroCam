@@ -17,7 +17,7 @@ from lib.helpers import (
     centered_view,
     FramePrivacyMasker,
 )
-from lib import paths, stream_overlay
+from lib import assets, paths, stream_overlay
 import random
 import threading
 import subprocess
@@ -448,6 +448,34 @@ class PiCameraDevice:
                     self.logger.info("--- Fine cattura, camera fermata. ---")
 
 
+    def _stream_audio_input(self):
+        """
+        Ingresso audio di ffmpeg: il brano configurato oppure il silenzio.
+
+        Resta sempre l'ingresso numero 1, perché è quello che le uscite
+        mappano con '-map 1:a' e i loghi contano a partire dal 2. Il brano
+        va in loop infinito e viene letto a velocità reale: senza '-re'
+        ffmpeg lo divorerebbe alla massima velocità, mandando l'audio
+        avanti al video di ore.
+        """
+        source = self.streamParams.get("audio_file", "") or ""
+        track = assets.path(source)
+        if source and not track:
+            self.logger.warning(
+                f"Audio dello streaming '{source}' non trovato fra gli assets: vado in silenzio."
+            )
+        if not track:
+            return ["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"], []
+
+        try:
+            volume = max(0, min(100, int(self.streamParams.get("audio_volume", 100))))
+        except (TypeError, ValueError):
+            volume = 100
+
+        self.logger.info(f"Audio dello streaming: {os.path.basename(track)} al {volume}% di volume.")
+        filters = [] if volume == 100 else ["-af", f"volume={volume / 100:.2f}"]
+        return ["-stream_loop", "-1", "-re", "-i", track], filters
+
     def _stream_outputs(self, primary_url, video_label="0:v"):
         """
         Argomenti di uscita per ffmpeg: una o più destinazioni RTMP.
@@ -636,14 +664,15 @@ class PiCameraDevice:
                     self.shmem_path, self.logger,
                 )
 
+            audio_input, audio_filters = self._stream_audio_input()
+
             ffmpeg_cmd = [
                 "ffmpeg", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", f"{w}x{h}", "-r", str(fr), "-i", "-",
-                "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
-            ] + overlay_inputs + (["-filter_complex", overlay_filter] if overlay_filter else []) + [
+            ] + audio_input + overlay_inputs + (["-filter_complex", overlay_filter] if overlay_filter else []) + [
                 "-c:v", "libx264", "-preset", "veryfast", "-b:v", bitrate, "-maxrate", bitrate, "-bufsize", bufsize,
                 "-g", str(int(fr * 2)),
                 "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
-            ] + self._stream_outputs(f"rtmp://a.rtmp.youtube.com/live2/{api_key}", video_label)
+            ] + audio_filters + self._stream_outputs(f"rtmp://a.rtmp.youtube.com/live2/{api_key}", video_label)
 
             self.logger.info("Starting ffmpeg process for YouTube stream...")
             self.ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)

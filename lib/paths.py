@@ -49,6 +49,13 @@ STATS_FILE = os.path.join(LOG_DIR, "stats.json")
 IMAGES_DIR = data_path("images")
 TIMELAPSE_FRAMES_DIR = data_path("timelapse_frames")
 TIMELAPSE_OUTPUT_DIR = data_path("timelapse")
+# Materiale caricato dall'utente: audio per diretta e timelapse, loghi per
+# la sovraimpressione. Sta fra i dati perché un aggiornamento non deve
+# portarselo via.
+ASSETS_DIR = data_path("assets")
+# Copia di quanto l'applicazione porta con sé: viene versata negli assets
+# al primo avvio, così è disponibile senza che l'utente carichi nulla.
+BUNDLED_ASSETS_DIR = os.path.join(APP_DIR, "assets")
 
 # La memoria condivisa resta dentro l'applicazione: è un tmpfs montato lì da
 # /etc/fstab e il suo contenuto è per definizione volatile.
@@ -67,6 +74,38 @@ LEGACY_ENTRIES = (
     "timelapse_frames",
     "timelapse",
 )
+
+
+def seed_bundled_assets():
+    """
+    Copia negli assets dell'utente quelli distribuiti con l'applicazione.
+
+    Solo i file mancanti: quello che l'utente ha cancellato resta
+    cancellato, e un file con lo stesso nome non viene sovrascritto a ogni
+    aggiornamento. Ritorna i messaggi da mandare a log.
+    """
+    messages = []
+    if not os.path.isdir(BUNDLED_ASSETS_DIR):
+        return messages
+
+    for category in sorted(os.listdir(BUNDLED_ASSETS_DIR)):
+        source_dir = os.path.join(BUNDLED_ASSETS_DIR, category)
+        if not os.path.isdir(source_dir):
+            continue
+        target_dir = os.path.join(ASSETS_DIR, category)
+        for name in sorted(os.listdir(source_dir)):
+            source = os.path.join(source_dir, name)
+            target = os.path.join(target_dir, name)
+            if not os.path.isfile(source) or os.path.exists(target):
+                continue
+            try:
+                os.makedirs(target_dir, exist_ok=True)
+                shutil.copy2(source, target)
+                messages.append(f"Installed the bundled asset {category}/{name}.")
+            except Exception as e:
+                messages.append(f"Could not install the bundled asset {category}/{name}: {e}")
+
+    return messages
 
 
 def resolve(value, default):

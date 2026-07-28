@@ -72,7 +72,8 @@ I consumatori di spazio, in ordine:
 1. `data/timelapse_frames/` — governato dalla finestra di conservazione;
 2. `data/images/` — l'archivio di diagnosi, di norma spento; se acceso cresce **senza pulizia automatica** e va svuotato a mano;
 3. `data/timelapse/` — i video montati, se si sceglie di conservarli;
-4. `data/logs/` — trascurabile, con rotazione a sette giorni.
+4. `data/assets/` — audio e loghi caricati; quanto pesa lo decide l'utente, un brano di qualche minuto è dell'ordine dei megabyte;
+5. `data/logs/` — trascurabile, con rotazione a sette giorni.
 
 ```bash
 du -sh /usr/local/zerocam/data/*
@@ -80,4 +81,4 @@ du -sh /usr/local/zerocam/data/*
 
 ## Salvataggio di un'installazione
 
-Per replicare o recuperare una webcam servono tre cose: il backup della configurazione dalla pagina System con la sua passphrase, l'eventuale archivio dei fotogrammi se si vuole conservare lo storico del timelapse, e le credenziali OAuth di YouTube (che comunque il backup contiene). Il resto lo rifà l'installer.
+Per replicare o recuperare una webcam servono quattro cose: il backup della configurazione dalla pagina System con la sua passphrase, il contenuto di `data/assets/` (loghi e audio, che il backup **non** include perché contiene solo impostazioni), l'eventuale archivio dei fotogrammi se si vuole conservare lo storico del timelapse, e le credenziali OAuth di YouTube (che comunque il backup contiene). Il resto lo rifà l'installer.
