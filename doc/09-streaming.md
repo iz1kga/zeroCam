@@ -40,17 +40,17 @@ La sola chiave di streaming non manda in onda nulla: YouTube ha ritirato lo "Str
 
 ### Credenziali
 
-1. Sulla [Google Cloud Console](https://console.cloud.google.com/) creare un progetto, abilitare **YouTube Data API v3**, configurare la schermata di consenso OAuth e creare credenziali OAuth di tipo **Applicazione desktop**.
-2. Su un PC con browser eseguire lo script incluso nell'applicazione:
+1. Sulla [Google Cloud Console](https://console.cloud.google.com/) creare un progetto e abilitare **YouTube Data API v3**.
+2. Configurare la schermata di consenso OAuth (utenti **Esterni**) e portarne lo stato di pubblicazione su **In produzione**. Lasciandola in *Testing* Google fa scadere i refresh token dopo sette giorni e la diretta smette di partire dopo una settimana. L'app non ha bisogno di essere verificata: l'avviso "app non verificata" compare solo durante l'autorizzazione.
+3. Creare credenziali OAuth di tipo **TV e dispositivi di immissione limitata** e annotare **Client ID** e **Client Secret**. Il tipo conta: il device flow usato dall'interfaccia rifiuta un client desktop.
+4. In **Configuration → Stream → Diretta automatica** incollare Client ID e Client Secret e premere **Autentica**. Compare un codice da inserire su [google.com/device](https://www.google.com/device), da qualsiasi dispositivo: telefono, tablet o PC. Autorizzando si sceglie anche il canale su cui pubblicare, che per un account Brand va selezionato proprio lì.
+5. Il **Refresh Token** viene compilato da solo appena l'autorizzazione è concessa. Attivare *Auto broadcast* e salvare.
 
-   ```bash
-   python3 installation_tools/yt_oauth_setup.py
-   ```
+L'autenticazione dall'interfaccia funziona anche raggiungendo la webcam in http sulla LAN, senza HTTPS né redirect: è il metodo consigliato, perché il Pi non ha un browser e un client desktop lo pretenderebbe sulla stessa macchina. Da un PC con browser resta comunque disponibile `installation_tools/yt_oauth_setup.py`, che però richiede un client OAuth di tipo *Applicazione desktop*.
 
-   Inserire Client ID e Client Secret, autorizzare l'accesso e annotare il **refresh token** stampato.
-3. In **Configuration → Stream → Diretta automatica** attivare *Auto broadcast* e incollare i tre valori.
+Le stesse credenziali servono al caricamento del timelapse: il token ottenuto con *Autentica* copre già anche quello.
 
-Le stesse credenziali servono anche al caricamento del timelapse, che richiede però anche l'ambito `youtube.upload`: se il refresh token è stato generato prima di quella funzione, va rigenerato.
+Cambiando progetto sulla Cloud Console il refresh token va rigenerato, perché è legato al client ID: la chiave di streaming invece non cambia, appartiene al canale YouTube e non al progetto.
 
 ### Impostazioni del broadcast
 

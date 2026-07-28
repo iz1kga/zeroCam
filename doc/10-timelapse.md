@@ -64,6 +64,6 @@ La riproduzione avanza solo quando l'immagine successiva è arrivata dal disposi
 
 ## Caricamento su YouTube
 
-Il video viene caricato con le stesse credenziali OAuth della diretta, in modalità *resumable* a blocchi da 8 MiB: un'interruzione di rete non costringe a ricominciare da capo. Serve l'ambito `youtube.upload`, che un refresh token generato prima dell'introduzione di questa funzione non ha: in tal caso va rigenerato con `yt_oauth_setup.py`.
+Il video viene caricato con le stesse credenziali OAuth della diretta, in modalità *resumable* a blocchi da 8 MiB: un'interruzione di rete non costringe a ricominciare da capo. Il token ottenuto con il pulsante *Autentica* copre già il caricamento; un refresh token generato con le prime versioni dello script di setup, prima che questa funzione esistesse, va rigenerato una volta.
 
 Se *Tieni il file sul Pi* è disattivo, il video viene rimosso dopo il caricamento riuscito.

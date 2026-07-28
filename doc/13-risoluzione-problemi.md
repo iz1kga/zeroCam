@@ -40,6 +40,9 @@ Se il problema si presenta solo nelle ore di passaggio, il colpevole sono di sol
 * **La diretta va in "testing"**: succede quando il monitor stream è attivo sul broadcast; quelli creati da zeroCAM lo disattivano, ma un broadcast creato a mano nella Live Control Room può averlo.
 * **Lo streaming si interrompe di continuo**: cercare `Broken pipe with ffmpeg`. Se compare a ogni ciclo, il comando di ffmpeg fallisce all'avvio — chiave errata, destinazione aggiuntiva malformata, o filtro mancante (vedi sotto).
 * **Frame skipped for YouTube (ffmpeg busy)**: la codifica non sta al passo. Ridurre risoluzione, framerate o bitrate.
+* **L'autenticazione non parte**: se premendo *Autentica* compare "Credenziali non valide o client OAuth del tipo sbagliato", il client creato sulla Cloud Console non è di tipo *TV e dispositivi di immissione limitata*. Il device flow non accetta client desktop o web.
+* **Il codice non viene mai accettato**: il codice scade dopo mezz'ora. Se nel log compare `YouTube device flow ended: expired_token` basta premere di nuovo *Autentica* e rifare l'inserimento. `access_denied` significa invece che l'autorizzazione è stata rifiutata, o concessa a un account che non amministra il canale.
+* **Tutto funziona per una settimana, poi la diretta non parte più**: la schermata di consenso OAuth è rimasta in stato *Testing*, dove Google revoca i refresh token dopo sette giorni. Portare l'app **In produzione** e rigenerare il token.
 * **La diretta ha ancora la data di ieri nel titolo**: il ricambio giornaliero è disattivato o l'orario non è valido. A ogni ripartenza il log lo dichiara: `Reusing YouTube broadcast <id> (daily reset not configured)` oppure `(daily reset '25:70' is not a valid HH:MM, rollover disabled)`. Con il campo compilato correttamente compare invece `(started after the daily reset of 27/07/2026 00:00)` finché la diretta è più recente dell'orario, e al primo scatto successivo `Broadcast <id> started at ..., before the daily reset of ...: creating a new one`.
 
 ## L'annotazione non compare sul video
@@ -68,7 +71,7 @@ Ricordare che sul video le maschere entrano in vigore al riavvio dello streaming
 
 * `Timelapse is disabled, no job scheduled` — la funzione è spenta.
 * Sotto la soglia *Minimo per montare* il montaggio non parte: succede la prima settimana, o dopo un periodo di fermo.
-* Il caricamento su YouTube richiede l'ambito `youtube.upload`: un refresh token generato prima di questa funzione va rigenerato con `yt_oauth_setup.py`.
+* Il caricamento su YouTube ha bisogno di un token con i permessi giusti: un refresh token generato prima che il timelapse esistesse va rifatto una volta con il pulsante *Autentica* in **Configuration → Stream**.
 * Giorno e ora del montaggio si applicano al riavvio dell'applicazione.
 
 ## Lo spazio su disco si riempie
