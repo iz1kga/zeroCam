@@ -10,6 +10,8 @@ http://<indirizzo-del-raspberry>:8080/
 
 Utente `admin`, password quella scelta durante l'installazione. La sessione resta aperta finché non si esce con **Logout** o non scade.
 
+L'interfaccia non carica nulla da Internet: Bootstrap, Vue, Chart.js e il resto sono distribuiti dentro l'applicazione. Se la connessione della webcam cade — che è poi il momento in cui la si vuole aprire — la console continua a funzionare per intero, grafici compresi.
+
 ### Connessione cifrata
 
 Di default l'interfaccia risponde **in chiaro**: chiunque sia in grado di osservare la rete fra il browser e la webcam legge la password e il contenuto della sessione. Su una rete domestica il rischio è modesto; esporre la porta su Internet così com'è significa consegnare le credenziali a chiunque stia in mezzo.

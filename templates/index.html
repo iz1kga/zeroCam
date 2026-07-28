@@ -10,11 +10,10 @@
   <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/vue.global.js') }}"></script>
   <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/cdn.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- L'adapter include date-fns: e' l'asse dei tempi dei grafici di Status -->
+  <script src="{{ url_for('static', filename='js/chartjs-adapter-date-fns.bundle.min.js') }}"></script>
 
 
-  
   <!-- File CSS Locale -->
   <link rel="icon" href="{{ url_for('static', filename='brand/zc_logo_primary.svg') }}" type="image/svg+xml">
   <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/zc_logo_primary.png') }}">
