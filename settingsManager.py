@@ -122,6 +122,11 @@ class SettingsManager:
         self.app.add_url_rule('/api/youtube/device/poll', 'youtube_device_poll', self.youtube_device_poll, methods=['POST'])
         self.app.add_url_rule('/api/timelapse/frames', 'timelapse_frames', self.timelapse_frames, methods=['GET'])
         self.app.add_url_rule('/timelapse/frame/<name>', 'timelapse_frame', self.timelapse_frame)
+        # Pagina pubblica: sono le uniche rotte senza autenticazione, e
+        # rispondono solo se l'utente le ha abilitate.
+        self.app.add_url_rule('/public', 'public_page', self.public_page, methods=['GET'])
+        self.app.add_url_rule('/public/latest.jpg', 'public_image', self.public_image, methods=['GET'])
+        self.app.add_url_rule('/public/info', 'public_info', self.public_info, methods=['GET'])
         self.app.add_url_rule('/api/assets', 'list_assets', self.list_assets, methods=['GET'])
         self.app.add_url_rule('/api/assets', 'upload_asset', self.upload_asset, methods=['POST'])
         self.app.add_url_rule('/api/assets/<category>/<name>', 'delete_asset', self.delete_asset, methods=['DELETE'])
@@ -491,6 +496,59 @@ class SettingsManager:
         # I fotogrammi non cambiano mai: lasciarli in cache al browser evita
         # di riscaricarli a ogni passaggio della galleria.
         return send_file(path, mimetype='image/jpeg', max_age=86400, conditional=True)
+
+    # --- Pagina pubblica ---
+
+    def _public_config(self):
+        return self.zerocam.config_manager.get('settingsManager', {})
+
+    def _public_enabled(self):
+        return bool(self._public_config().get('public_page', False))
+
+    def public_page(self):
+        """
+        Vetrina in sola lettura: ultimo scatto e nient'altro.
+
+        Esiste per non dover esporre la console, che è amministrazione, a
+        chi vuole soltanto guardare il panorama. Non legge la
+        configurazione, non mostra il log e non accetta comandi.
+        """
+        if not self._public_enabled():
+            return "Not found", 404
+
+        config = self._public_config()
+        device = self.zerocam.config_manager.get('deviceDetails', {})
+        interval = self.zerocam.config_manager.get('cameraParameters', {}).get('shotInterval', 600)
+        try:
+            refresh = max(30, int(interval) // 2)
+        except (TypeError, ValueError):
+            refresh = 60
+
+        return render_template(
+            'public.html',
+            title=config.get('public_title') or device.get('name') or 'zeroCAM',
+            live_url=config.get('public_live_url', ''),
+            refresh_seconds=refresh,
+        )
+
+    def public_image(self):
+        if not self._public_enabled():
+            return "Not found", 404
+        if not os.path.exists(paths.LATEST_IMAGE):
+            return "No image yet", 404
+        # L'immagine cambia a ogni scatto: la pagina la richiede con un
+        # parametro diverso, quindi qui non serve alcuna cache.
+        return send_file(paths.LATEST_IMAGE, mimetype='image/jpeg', max_age=0, conditional=False)
+
+    def public_info(self):
+        """Quando è stato preso l'ultimo scatto. Nient'altro esce da qui."""
+        if not self._public_enabled():
+            return jsonify(error="not found"), 404
+        try:
+            captured = int(os.path.getmtime(paths.LATEST_IMAGE))
+        except OSError:
+            captured = 0
+        return jsonify(captured_at=captured)
 
     # --- Assets ---
 

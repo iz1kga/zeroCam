@@ -12,6 +12,20 @@ Utente `admin`, password quella scelta durante l'installazione. La sessione rest
 
 L'interfaccia non carica nulla da Internet: Bootstrap, Vue, Chart.js e il resto sono distribuiti dentro l'applicazione. Se la connessione della webcam cade — che è poi il momento in cui la si vuole aprire — la console continua a funzionare per intero, grafici compresi.
 
+### La pagina pubblica
+
+La console è amministrazione: da lì si cambia la configurazione, si leggono i log e si riavvia il dispositivo. Per far vedere la webcam a qualcuno non serve tutto questo, e non conviene darne l'indirizzo.
+
+In **System → Pagina pubblica** si attiva una vetrina in sola lettura:
+
+```
+http://<indirizzo-del-raspberry>:8080/public
+```
+
+Mostra l'ultimo scatto, l'ora in cui è stato preso e, se lo si indica, un collegamento alla diretta. Si aggiorna da sola con una cadenza legata all'intervallo di scatto. Non chiede autenticazione — è il suo scopo — e per questo non espone nient'altro: non legge la configurazione, non mostra il log e non accetta comandi. Titolo e link si impostano nella stessa pagina; lasciando vuoto il titolo compare il nome del dispositivo.
+
+È l'indirizzo da esporre o da mandare in giro al posto della console. Finché è spenta, quelle rotte rispondono `404` come se non esistessero.
+
 ### Connessione cifrata
 
 Di default l'interfaccia risponde **in chiaro**: chiunque sia in grado di osservare la rete fra il browser e la webcam legge la password e il contenuto della sessione. Su una rete domestica il rischio è modesto; esporre la porta su Internet così com'è significa consegnare le credenziali a chiunque stia in mezzo.
@@ -36,7 +50,7 @@ In alto compaiono il marchio e la parola *Console*, con la versione in esecuzion
 
 ![La pagina Cam Control: menu a sinistra, ultima immagine con le maschere privacy disegnate sopra, elenco delle maschere a destra.](img/ui-cam-control.png){ width=100% }
 
-**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Host, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Assets. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
+**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Upload, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Assets. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
 
 **Cam Control** mostra l'ultima immagine scattata e permette di disegnarci sopra le maschere privacy. Da qui si scatta a comando (*Take Photo*), si avvia l'aiuto alla messa a fuoco (*Start Focus Aid*) e si riavvia il dispositivo (*Riavvia*). Quando lo streaming è in corso compare l'interruttore **Anteprima diretta**, che sostituisce l'ultimo scatto con un fotogramma al secondo preso dal video.
 
@@ -46,7 +60,7 @@ In alto compaiono il marchio e la parola *Console*, con la versione in esecuzion
 
 **Log** mostra il file di log dell'applicazione, aggiornato ogni due secondi.
 
-**System** contiene il cambio password e il backup/ripristino della configurazione.
+**System** contiene il cambio password, le porte e il certificato dell'interfaccia, l'interruttore della pagina pubblica e il backup/ripristino della configurazione.
 
 **License** riporta i termini di licenza.
 
@@ -71,7 +85,7 @@ Il riavvio dell'applicazione si ottiene dal pulsante **Riavvia** in Cam Control 
 
 ## Sotto l'interfaccia: le API
 
-L'interfaccia è una pagina Vue che parla con alcune rotte HTTP; tutte richiedono la sessione autenticata. Le principali:
+L'interfaccia è una pagina Vue che parla con alcune rotte HTTP. Tutte richiedono la sessione autenticata, tranne le tre della pagina pubblica. Le principali:
 
 | Rotta | Metodo | Uso |
 |---|---|---|
@@ -89,5 +103,6 @@ L'interfaccia è una pagina Vue che parla con alcune rotte HTTP; tutte richiedon
 | `/api/assets` | GET, POST | Elenca e carica audio e loghi |
 | `/api/assets/<categoria>/<nome>` | DELETE | Elimina un asset |
 | `/latest.jpg`, `/stream_latest.jpg` | GET | Ultimo scatto, ultimo fotogramma della diretta |
+| `/public`, `/public/latest.jpg`, `/public/info` | GET | Vetrina pubblica: **senza autenticazione**, e solo se abilitata |
 
 Sono utili per automazioni proprie, ma non costituiscono un'API pubblica stabile: possono cambiare fra le versioni.

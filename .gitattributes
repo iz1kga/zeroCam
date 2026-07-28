@@ -4,6 +4,9 @@ VERSION export-subst
 doc/ export-ignore
 .github/ export-ignore
 hardware/ export-ignore
+tests/ export-ignore
+pytest.ini export-ignore
+requirements-dev.txt export-ignore
 
 # Sorgenti CAD ed esportazioni STEP: binari pesanti, che senza Git LFS
 # resterebbero per intero nella storia a ogni revisione. Serve `git lfs install`.

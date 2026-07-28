@@ -149,6 +149,7 @@ Elenco di oggetti:
 
 | Chiave | Tipo | Significato |
 |---|---|---|
+| `enabled` | sì/no | Attiva il caricamento; assente equivale ad acceso |
 | `host`, `port` | testo, numero | Server FTP |
 | `username` | testo | Utente |
 | `password` | testo **cifrato** | Password |
@@ -183,3 +184,6 @@ Elenco di oggetti:
 | `https_enabled` | sì/no | Ascolto cifrato con certificato autofirmato |
 | `https_port` | numero | Porta dell'interfaccia in HTTPS (default 8443) |
 | `https_hostnames` | elenco | Nomi aggiuntivi da inserire nel certificato |
+| `public_page` | sì/no | Attiva la vetrina pubblica su `/public` |
+| `public_title` | testo | Titolo della vetrina; vuoto = nome del dispositivo |
+| `public_live_url` | testo | Collegamento alla diretta mostrato nella vetrina |

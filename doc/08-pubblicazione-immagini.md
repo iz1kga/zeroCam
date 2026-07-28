@@ -4,10 +4,11 @@ Ogni scatto, una volta elaborato, può prendere fino a tre strade: un server FTP
 
 ## Upload FTP
 
-**Configuration → FTP Host** è la via classica per alimentare un sito web.
+**Configuration → FTP Upload** è la via classica per alimentare un sito web.
 
 | Campo | Significato |
 |---|---|
+| Upload FTP attivo | Abilita il caricamento; spento, il resto della configurazione resta dov'è |
 | Host, Port | Server FTP e porta (di norma 21) |
 | Username, Password | Credenziali; la password è cifrata in configurazione |
 | Folder | Cartella remota in cui entrare prima del caricamento |
@@ -16,7 +17,7 @@ Ogni scatto, una volta elaborato, può prendere fino a tre strade: un server FTP
 
 Il trasferimento avviene in modalità passiva e sovrascrive ogni volta lo stesso file: il sito mostra così l'immagine più recente senza dover gestire uno storico. Un errore di rete viene registrato nel log e non interrompe il ciclo: lo scatto successivo riproverà.
 
-Non c'è un interruttore di abilitazione: l'upload viene tentato quando i campi sono compilati. Per disattivarlo si svuota il campo *Host*.
+L'interruttore in cima alla pagina lo spegne senza cancellare nulla: le installazioni che avevano l'FTP configurato prima che l'interruttore esistesse se lo trovano acceso, quindi il comportamento non cambia da solo con l'aggiornamento.
 
 ## Upload HTTP
 

@@ -158,6 +158,11 @@ class FTPUploader:
         self.ftp_host = ftp_host or {}
 
     def upload(self, image, metadata):
+        # Chi non pubblica via FTP non deve vedere un tentativo fallito a
+        # ogni scatto: la sezione si spegne come quella dell'upload HTTP.
+        if not self.ftp_host.get("enabled", True):
+            return
+
         try:
             self.logger.info(f"Uploading to {self.ftp_host['host']}")
             ftp = FTP()

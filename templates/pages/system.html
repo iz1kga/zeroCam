@@ -72,6 +72,38 @@
         </div>
     </div>
 
+    <h4 class="mt-4">Pagina pubblica</h4>
+    <div class="card" v-if="config && config.settingsManager">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-3 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="publicPage"
+                            v-model="config.settingsManager.public_page">
+                        <label class="form-check-label" for="publicPage">Pagina pubblica attiva</label>
+                    </div>
+                </div>
+                <div class="col-md-4"><label class="form-label">Titolo</label>
+                    <input type="text" class="form-control" v-model="config.settingsManager.public_title"
+                        :disabled="!config.settingsManager.public_page"
+                        placeholder="Nome del dispositivo">
+                </div>
+                <div class="col-md-5"><label class="form-label">Link alla diretta (facoltativo)</label>
+                    <input type="text" class="form-control" v-model="config.settingsManager.public_live_url"
+                        :disabled="!config.settingsManager.public_page"
+                        placeholder="https://youtube.com/...">
+                </div>
+            </div>
+            <div class="form-text mt-2">
+                Espone <code>/public</code> come vetrina in sola lettura: ultimo scatto, ora dello scatto e
+                il link alla diretta se lo indichi. Non richiede autenticazione e non mostra n&eacute;
+                configurazione n&eacute; log: &egrave; l'indirizzo da dare a chi vuole solo guardare, al posto
+                di questa console. L'aggiornamento ha effetto subito, senza riavviare.
+            </div>
+            <button class="btn btn-success mt-3" @click="$emit('save-config')">Salva</button>
+        </div>
+    </div>
+
     <h4 class="mt-4">Backup e ripristino configurazione</h4>
     <div class="card">
         <div class="card-body">
