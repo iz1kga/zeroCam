@@ -23,6 +23,7 @@ REPO = "/home/mgiolo/Personale/repos/zeroCam"
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shots")
 VERSION = sys.argv[1] if len(sys.argv) > 1 else "v1.1.4"
 PORT = 8931
+HEIGHT = 961
 
 sys.path.insert(0, REPO)
 from lib.components.config_manager import DEFAULT_SECTIONS  # noqa: E402
@@ -228,7 +229,7 @@ def capture():
     os.makedirs(OUT, exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        page = browser.new_page(viewport={"width": 1920, "height": 961})
+        page = browser.new_page(viewport={"width": 1920, "height": HEIGHT})
         for name, main, sub in PAGES:
             page.goto(f"http://127.0.0.1:{PORT}/", wait_until="load")
             page.wait_for_selector(".sidebar")
@@ -240,8 +241,24 @@ def capture():
                 }""", [main, sub])
             # Grafici e immagini hanno bisogno di un attimo per comparire
             page.wait_for_timeout(2500)
+
+            # La pagina non scorre: e' l'area centrale ad avere la sua
+            # barra. Una finestra alta 961 taglierebbe tutto cio' che sta
+            # sotto, quindi si misura l'eccedenza e si allarga la finestra
+            # fino a farci stare la pagina intera.
+            extra = page.evaluate("""() => {
+                const main = document.querySelector('.content-area');
+                if (!main) return 0;
+                return Math.max(0, main.scrollHeight - main.clientHeight);
+            }""")
+            if extra:
+                page.set_viewport_size({"width": 1920, "height": HEIGHT + int(extra) + 8})
+                page.wait_for_timeout(900)
+
             page.screenshot(path=os.path.join(OUT, name + ".png"))
-            print("scritto", name)
+            if extra:
+                page.set_viewport_size({"width": 1920, "height": HEIGHT})
+            print("scritto", name, f"(+{int(extra)}px)" if extra else "")
         browser.close()
 
 
