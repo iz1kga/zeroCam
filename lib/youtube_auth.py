@@ -185,12 +185,16 @@ class YouTubeDeviceFlow:
         )
 
         if r.status_code == 200:
-            refresh = r.json().get("refresh_token")
+            payload = r.json()
+            refresh = payload.get("refresh_token")
             self._clear()
             if not refresh:
                 return {"status": "failed", "error": "nessun refresh token restituito"}
-            self.logger.info("YouTube device flow authorized, refresh token obtained.")
-            return {"status": "authorized", "refresh_token": refresh}
+            channel = self._channel_title(payload.get("access_token"))
+            self.logger.info(
+                f"YouTube device flow authorized, refresh token obtained for channel '{channel or '?'}'."
+            )
+            return {"status": "authorized", "refresh_token": refresh, "channel": channel}
 
         error = ""
         try:
@@ -205,6 +209,30 @@ class YouTubeDeviceFlow:
         self._clear()
         self.logger.warning(f"YouTube device flow ended: {error}")
         return {"status": "failed", "error": error or "autorizzazione non riuscita"}
+
+    def _channel_title(self, access_token):
+        """
+        Nome del canale appena autorizzato, per mostrarlo a chi autentica.
+
+        Sbagliare account è l'errore piu' facile del device flow: la stream
+        key sta su un canale e il token su un altro, e ce ne si accorge solo
+        allo scatto successivo con un 403. Costa un'unita' di quota.
+        """
+        if not access_token:
+            return ""
+        try:
+            r = requests.get(
+                f"{API_BASE}/channels",
+                headers={"Authorization": f"Bearer {access_token}"},
+                params={"part": "snippet", "mine": "true"},
+                timeout=self.timeout,
+            )
+            if r.status_code != 200:
+                return ""
+            items = r.json().get("items", [])
+            return items[0].get("snippet", {}).get("title", "") if items else ""
+        except requests.exceptions.RequestException:
+            return ""
 
     def cancel(self):
         self._clear()

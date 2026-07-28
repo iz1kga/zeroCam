@@ -312,7 +312,17 @@ class YouTubeLiveManager:
             except requests.exceptions.RequestException as e:
                 self.logger.error(f"YouTube Live network error: {e}")
             except Exception as e:
-                self.logger.error(f"YouTube Live error: {e}", exc_info=True)
+                # Il canale autorizzato non è abilitato alle dirette: succede
+                # scegliendo l'account sbagliato durante l'autenticazione, e lo
+                # stack trace non aiuta a capirlo.
+                if "liveStreamingNotEnabled" in str(e):
+                    self.logger.error(
+                        "The authorized YouTube channel is not enabled for live streaming. "
+                        "Enable it on youtube.com/features (it can take 24 hours), or press "
+                        "Autentica again and pick the channel that owns the stream key."
+                    )
+                else:
+                    self.logger.error(f"YouTube Live error: {e}", exc_info=True)
             return False
 
     def end_broadcast(self):

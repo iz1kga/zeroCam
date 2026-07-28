@@ -595,7 +595,11 @@ const startApp = async () => {
           if (data.status === 'authorized') {
             this.config.youtubeLive.refresh_token = data.refresh_token;
             this.stopYoutubeAuth();
-            this.youtubeAuth.message = 'Autenticazione completata. Ricordati di salvare la configurazione.';
+            // Il canale autorizzato va mostrato: se non è quello della stream
+            // key la diretta fallisce con un 403 solo allo scatto successivo.
+            this.youtubeAuth.message = data.channel
+              ? 'Autenticato sul canale "' + data.channel + '". Verifica che sia quello della stream key, poi salva la configurazione.'
+              : 'Autenticazione completata. Ricordati di salvare la configurazione.';
             this.youtubeAuth.ok = true;
           } else if (data.status !== 'pending') {
             this.stopYoutubeAuth();

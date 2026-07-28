@@ -44,7 +44,9 @@ La sola chiave di streaming non manda in onda nulla: YouTube ha ritirato lo "Str
 2. Configurare la schermata di consenso OAuth (utenti **Esterni**) e portarne lo stato di pubblicazione su **In produzione**. Lasciandola in *Testing* Google fa scadere i refresh token dopo sette giorni e la diretta smette di partire dopo una settimana. L'app non ha bisogno di essere verificata: l'avviso "app non verificata" compare solo durante l'autorizzazione.
 3. Creare credenziali OAuth di tipo **TV e dispositivi di immissione limitata** e annotare **Client ID** e **Client Secret**. Il tipo conta: il device flow usato dall'interfaccia rifiuta un client desktop.
 4. In **Configuration → Stream → Diretta automatica** incollare Client ID e Client Secret e premere **Autentica**. Compare un codice da inserire su [google.com/device](https://www.google.com/device), da qualsiasi dispositivo: telefono, tablet o PC. Autorizzando si sceglie anche il canale su cui pubblicare, che per un account Brand va selezionato proprio lì.
-5. Il **Refresh Token** viene compilato da solo appena l'autorizzazione è concessa. Attivare *Auto broadcast* e salvare.
+5. Il **Refresh Token** viene compilato da solo appena l'autorizzazione è concessa, e l'interfaccia dichiara **su quale canale** ci si è autenticati: deve essere lo stesso da cui proviene la chiave di streaming, altrimenti il primo scatto fallisce con `The user is not enabled for live streaming`. Attivare *Auto broadcast* e salvare.
+
+Il canale deve avere le dirette abilitate su [youtube.com/features](https://www.youtube.com/features): serve la verifica del numero di telefono e la prima attivazione può richiedere fino a 24 ore.
 
 L'autenticazione dall'interfaccia funziona anche raggiungendo la webcam in http sulla LAN, senza HTTPS né redirect: è il metodo consigliato, perché il Pi non ha un browser e un client desktop lo pretenderebbe sulla stessa macchina. Da un PC con browser resta comunque disponibile `installation_tools/yt_oauth_setup.py`, che però richiede un client OAuth di tipo *Applicazione desktop*.
 
