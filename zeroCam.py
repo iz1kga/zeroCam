@@ -28,7 +28,7 @@ from lib.helpers import (
     saveImage
 )
 from cameras import AWB_MANUAL
-from lib import paths
+from lib import exif, paths
 from lib.version import get_version
 from settingsManager import run_settings_manager
 
@@ -176,6 +176,20 @@ class ZeroCamApp:
                 image_buffer = self.components.annotator.annotate(image_buffer)
                 image_buffer = self.components.overlay.add_overlays(image_buffer)
 
+                # I metadati si rimettono qui, una volta sola: da questo punto
+                # in avanti lo stesso buffer va all'FTP, all'upload HTTP,
+                # all'immagine locale e all'archivio.
+                description = (
+                    f"{self.config_manager.get('deviceDetails', {}).get('name', 'zeroCAM')}"
+                    f" - {day_period}"
+                )
+                manual_wb = self._manual_white_balance(day_period)
+                image_buffer = exif.attach(
+                    image_buffer, metadata, datetime.datetime.now(),
+                    description=description, software=f"zeroCAM {get_version()}",
+                    manual_white_balance=manual_wb,
+                )
+
                 self.publish_diagnostic("Uploading Image")
                 self.components.ftp_uploader.upload(image_buffer, metadata)
                 image_buffer.seek(0)
@@ -189,8 +203,8 @@ class ZeroCamApp:
                 self.components.timelapse.store_frame(
                     image_buffer,
                     metadata=metadata,
-                    description=f"{self.config_manager.get('deviceDetails', {}).get('name', 'zeroCAM')} - {day_period}",
-                    manual_white_balance=self._manual_white_balance(day_period),
+                    description=description,
+                    manual_white_balance=manual_wb,
                 )
 
                 self.publish_diagnostic("Capture Completed")

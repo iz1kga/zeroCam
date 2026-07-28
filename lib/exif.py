@@ -15,6 +15,7 @@ quei due numeri, quindi finiscono nel commento come JSON e, in forma
 leggibile, nella descrizione dell'immagine.
 """
 
+import io
 import json
 
 try:
@@ -59,6 +60,36 @@ def summary(metadata):
     if lux is not None:
         parts.append(f"{float(lux):.1f} lux")
     return ", ".join(parts)
+
+
+def attach(image_buffer, metadata, when, description="", software="zeroCAM",
+           manual_white_balance=False):
+    """
+    Rimette i metadati dentro il JPEG appena elaborato.
+
+    Conviene farlo una volta sola sul buffer: da li' in poi lo scatto
+    viaggia con i suoi dati verso l'FTP, l'upload HTTP, l'immagine locale
+    e l'archivio, senza doverli riscrivere per ogni destinazione.
+
+    Ritorna il buffer originale se qualcosa non va: un'immagine senza
+    metadati e' comunque meglio di uno scatto perso.
+    """
+    if piexif is None:
+        return image_buffer
+
+    try:
+        exif_bytes = build(metadata, when, description, software, manual_white_balance)
+        if not exif_bytes:
+            return image_buffer
+
+        image_buffer.seek(0)
+        updated = io.BytesIO()
+        piexif.insert(exif_bytes, image_buffer.read(), updated)
+        updated.seek(0)
+        return updated
+    except Exception:
+        image_buffer.seek(0)
+        return image_buffer
 
 
 def build(metadata, when, description="", software="zeroCAM", manual_white_balance=False):

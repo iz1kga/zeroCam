@@ -54,7 +54,11 @@ L'immagine caricata è quella definitiva, elaborata in questo ordine:
 
 ```
 scatto → maschera di contrasto → ritaglio → maschere privacy
-      → barra di annotazione → loghi → upload e salvataggi
+      → barra di annotazione → loghi → metadati → upload e salvataggi
 ```
 
 Lo stesso file alimenta anche il fotogramma del timelapse: ciò che si vede nel video settimanale è esattamente quanto è stato pubblicato.
+
+I metadati vengono reinseriti in fondo, subito prima delle destinazioni: l'elaborazione con PIL li perderebbe, e reinserirli una volta sola fa sì che l'immagine su FTP, quella caricata via HTTP, `latest.jpg`, l'archivio di diagnosi e il fotogramma del timelapse portino tutti gli stessi dati di scatto. Cosa contengono è descritto nel capitolo sul timelapse; il campo che serve più spesso è `ColourGains`, con i guadagni di bianco scelti dall'automatismo. Il peso aggiunto è di circa mezzo kilobyte per immagine.
+
+Vale la pena saperlo se le immagini finiscono su un sito pubblico: insieme allo scatto viaggiano esposizione, guadagni, temperatura del colore e temperatura del sensore. Non c'è alcun dato di posizione.
