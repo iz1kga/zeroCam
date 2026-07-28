@@ -207,6 +207,14 @@ def build_ssl_adapter(cert_path, key_path, logger=None):
             if len(parts) >= 2 and parts[1].startswith("/"):
                 path = parts[1]
 
+            # Con chi si sta parlando: e' l'unico modo per riconoscere il
+            # programma che continua a bussare sulla porta sbagliata.
+            agent = ""
+            for line in lines[1:]:
+                if line.lower().startswith("user-agent:"):
+                    agent = line.split(":", 1)[1].strip()[:120]
+                    break
+
             host = ""
             for line in lines[1:]:
                 if line.lower().startswith("host:"):
@@ -241,7 +249,11 @@ def build_ssl_adapter(cert_path, key_path, logger=None):
                 sock.close()
 
             if logger:
-                message = f"Plain HTTP request from {peer} on the TLS port, redirected to {target}"
+                method = parts[0] if parts else "?"
+                message = (
+                    f"Plain HTTP request from {peer} on the TLS port "
+                    f"({method} {path}, User-Agent: {agent or 'assente'}), redirected to {target}"
+                )
                 if _redirect_log.allow((peer, path)):
                     logger.info(message)
                 else:
