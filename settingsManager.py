@@ -99,7 +99,10 @@ class SettingsManager:
         # Aggiunge le route associandole ai metodi di questa classe
         self.app.add_url_rule('/login', 'login', self.login, methods=['GET', 'POST'])
         self.app.add_url_rule('/logout', 'logout', self.logout, methods=['POST'])
-        self.app.add_url_rule('/', 'index', self.index)
+        # Con la vetrina accesa l'indirizzo nudo mostra il panorama e la
+        # console si sposta su /zc-admin; spenta, la radice resta la console.
+        self.app.add_url_rule('/', 'root', self.root)
+        self.app.add_url_rule('/zc-admin', 'index', self.index)
         self.app.add_url_rule('/latest.jpg', 'latest_image', self.latest_image)
         self.app.add_url_rule('/stream_latest.jpg', 'stream_latest_image', self.stream_latest_image)
         self.app.add_url_rule('/view/pages/<page_name>', 'serve_page_template', self.serve_page_template)
@@ -148,6 +151,20 @@ class SettingsManager:
 
     # --- Route Implementations ---
 
+    @staticmethod
+    def _safe_next():
+        """
+        La pagina richiesta prima del login, se è una pagina nostra.
+
+        Il parametro arriva dalla query e finisce in un redirect: senza
+        questo filtro un collegamento costruito ad arte manderebbe chi si
+        autentica su un sito esterno, con l'aria di venire dalla webcam.
+        """
+        target = request.args.get('next', '')
+        if target.startswith('/') and not target.startswith('//'):
+            return target
+        return None
+
     def login(self):
         if request.method == 'POST':
             username = request.form['username']
@@ -166,7 +183,9 @@ class SettingsManager:
 
             if user and username == stored_username and check_password_hash(password_hash, password):
                 login_user(user)
-                return redirect(url_for('index'))
+                # Chi si autentica cerca la console, non la vetrina: la
+                # radice, con la pagina pubblica accesa, non è più lei.
+                return redirect(self._safe_next() or url_for('index'))
             
             flash('Invalid credentials.')
         
@@ -176,6 +195,19 @@ class SettingsManager:
     def logout(self):
         logout_user()
         return jsonify(success=True, message="Logout successful")
+
+    def root(self):
+        """
+        Chi arriva sull'indirizzo nudo.
+
+        Con la vetrina accesa vede quella, senza doversi autenticare; la
+        console resta su /zc-admin, raggiungibile dal lucchetto. Spenta la
+        vetrina, la radice si comporta come ha sempre fatto: è la console,
+        e chiede di accedere.
+        """
+        if self._public_enabled():
+            return self.public_page()
+        return self.index()
 
     @login_required
     def index(self):

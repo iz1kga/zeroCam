@@ -31,6 +31,14 @@
     <img src="{{ url_for('static', filename='brand/zc_logo_big.svg') }}" alt="zeroCAM"
          class="brand-logo bg-light rounded px-2 py-1">
     <span class="fs-5">{{ title }}</span>
+    <a class="ms-auto text-secondary text-decoration-none" href="{{ url_for('index') }}"
+       title="Console di amministrazione">
+      <!-- Un lucchetto e nient'altro: chi amministra sa cos'e', gli altri
+           trovano una porta chiusa invece di un invito -->
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 1a3 3 0 0 0-3 3v3H4.5A1.5 1.5 0 0 0 3 8.5v5A1.5 1.5 0 0 0 4.5 15h7a1.5 1.5 0 0 0 1.5-1.5v-5A1.5 1.5 0 0 0 11.5 7H11V4a3 3 0 0 0-3-3m2 6H6V4a2 2 0 1 1 4 0z"/>
+      </svg>
+    </a>
   </header>
 
   <main class="container flex-grow-1">

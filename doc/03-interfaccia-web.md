@@ -16,13 +16,17 @@ L'interfaccia non carica nulla da Internet: Bootstrap, Vue, Chart.js e il resto 
 
 La console è amministrazione: da lì si cambia la configurazione, si leggono i log e si riavvia il dispositivo. Per far vedere la webcam a qualcuno non serve tutto questo, e non conviene darne l'indirizzo.
 
-In **System → Pagina pubblica** si attiva una vetrina in sola lettura:
+In **System → Pagina pubblica** si attiva una vetrina in sola lettura. Attivandola i due indirizzi si scambiano di posto:
 
-```
-http://<indirizzo-del-raspberry>:8080/public
-```
+| Indirizzo | Con la vetrina accesa | Con la vetrina spenta |
+|---|---|---|
+| `/` | La vetrina, senza autenticazione | La console, che chiede di accedere |
+| `/zc-admin` | La console | La console |
+| `/public` | La vetrina | `404` |
 
-Mostra l'ultimo scatto, l'ora in cui è stato preso e, se lo si indica, un collegamento alla diretta. Si aggiorna da sola con una cadenza legata all'intervallo di scatto. Non chiede autenticazione — è il suo scopo — e per questo non espone nient'altro: non legge la configurazione, non mostra il log e non accetta comandi. Titolo e link si impostano nella stessa pagina; lasciando vuoto il titolo compare il nome del dispositivo.
+Chi arriva sull'indirizzo nudo vede quindi il panorama, non il pannello di amministrazione; alla console si arriva dal lucchetto in alto a destra nella vetrina, o direttamente da `/zc-admin`.
+
+La vetrina mostra l'ultimo scatto, l'ora in cui è stato preso e, se lo si indica, un collegamento alla diretta. Si aggiorna da sola con una cadenza legata all'intervallo di scatto. Non chiede autenticazione — è il suo scopo — e per questo non espone nient'altro: non legge la configurazione, non mostra il log e non accetta comandi. Titolo e link si impostano nella stessa pagina; lasciando vuoto il titolo compare il nome del dispositivo.
 
 È l'indirizzo da esporre o da mandare in giro al posto della console. Finché è spenta, quelle rotte rispondono `404` come se non esistessero.
 
@@ -103,6 +107,7 @@ L'interfaccia è una pagina Vue che parla con alcune rotte HTTP. Tutte richiedon
 | `/api/assets` | GET, POST | Elenca e carica audio e loghi |
 | `/api/assets/<categoria>/<nome>` | DELETE | Elimina un asset |
 | `/latest.jpg`, `/stream_latest.jpg` | GET | Ultimo scatto, ultimo fotogramma della diretta |
-| `/public`, `/public/latest.jpg`, `/public/info` | GET | Vetrina pubblica: **senza autenticazione**, e solo se abilitata |
+| `/`, `/public`, `/public/latest.jpg`, `/public/info` | GET | Vetrina pubblica: **senza autenticazione**, e solo se abilitata |
+| `/zc-admin` | GET | La console: sempre autenticata |
 
 Sono utili per automazioni proprie, ma non costituiscono un'API pubblica stabile: possono cambiare fra le versioni.

@@ -105,6 +105,8 @@ def vetrina(tmp_path):
                 static_folder="static")
     app.add_url_rule("/public/latest.jpg", "public_image", lambda: None)
     app.add_url_rule("/public/info", "public_info", lambda: None)
+    # La vetrina rimanda alla console col lucchetto: la rotta deve esistere
+    app.add_url_rule("/zc-admin", "index", lambda: None)
 
     os.makedirs(paths.DATA_DIR, exist_ok=True)
     with open(paths.LATEST_IMAGE, "wb") as f:
@@ -143,6 +145,41 @@ def test_la_vetrina_non_lascia_uscire_altro(vetrina):
     # e nemmeno un aggancio alla console
     assert "/api/config" not in html
     assert "Configuration" not in html
+
+
+def test_la_radice_mostra_la_vetrina_quando_e_accesa(vetrina, monkeypatch):
+    manager, app, conf = vetrina
+    chiamate = []
+    monkeypatch.setattr(sm.SettingsManager, "index",
+                        lambda self: chiamate.append("console") or "console")
+
+    with app.test_request_context("/"):
+        assert "Villar Focchiardo" in manager.root()
+    assert chiamate == [], "la vetrina non deve passare dalla console"
+
+
+def test_la_radice_resta_la_console_quando_e_spenta(vetrina, monkeypatch):
+    """Chi non usa la vetrina non deve accorgersi di nulla."""
+    manager, app, conf = vetrina
+    conf["settingsManager"]["public_page"] = False
+    monkeypatch.setattr(sm.SettingsManager, "index", lambda self: "console")
+
+    with app.test_request_context("/"):
+        assert manager.root() == "console"
+
+
+@pytest.mark.parametrize("richiesto,atteso", [
+    ("/zc-admin", "/zc-admin"),
+    ("/api/config", "/api/config"),
+    ("https://sito-cattivo.example/", None),   # un altro sito, no
+    ("//sito-cattivo.example/", None),         # nemmeno senza schema
+    ("", None),
+    ("zc-admin", None),                        # non e' un percorso assoluto
+])
+def test_dopo_il_login_si_torna_solo_su_pagine_nostre(vetrina, richiesto, atteso):
+    manager, app, _ = vetrina
+    with app.test_request_context("/login", query_string={"next": richiesto}):
+        assert manager._safe_next() == atteso
 
 
 def test_titolo_personalizzato(vetrina):
