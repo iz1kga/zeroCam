@@ -16,6 +16,8 @@ import datetime
 import ipaddress
 import os
 import socket
+import threading
+import time
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -31,6 +33,34 @@ RENEW_BEFORE_DAYS = 30
 # Marcatore per riconoscere - e non ripetere a log - l'interruzione voluta
 # della connessione di chi ha bussato in chiaro sulla porta cifrata.
 REDIRECT_MARK = "plain HTTP request redirected"
+# Un client che non segue i redirect - tipicamente il consumatore ONVIF
+# dell'istantanea - ripresenta la stessa richiesta ogni secondo per
+# sempre: la si annuncia una volta, poi si tace per un po'.
+REDIRECT_LOG_EVERY = 300
+
+
+class _Throttle:
+    """Lascia passare un messaggio per chiave ogni REDIRECT_LOG_EVERY secondi."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._seen = {}
+
+    def allow(self, key):
+        now = time.monotonic()
+        with self._lock:
+            last = self._seen.get(key, 0)
+            if now - last < REDIRECT_LOG_EVERY:
+                return False
+            # Il dizionario non deve crescere senza limite se qualcuno
+            # bussa da mille indirizzi diversi.
+            if len(self._seen) > 256:
+                self._seen.clear()
+            self._seen[key] = now
+            return True
+
+
+_redirect_log = _Throttle()
 
 
 def local_addresses():
@@ -164,6 +194,12 @@ def build_ssl_adapter(cert_path, key_path, logger=None):
             return data.decode("latin-1", "replace")
 
         def _redirect(self, sock):
+            # Chi ha bussato, letto finche' il socket e' ancora aperto
+            try:
+                peer = sock.getpeername()[0]
+            except OSError:
+                peer = "?"
+
             request = self._read_request(sock)
             lines = request.split("\r\n")
             path = "/"
@@ -205,7 +241,12 @@ def build_ssl_adapter(cert_path, key_path, logger=None):
                 sock.close()
 
             if logger:
-                logger.info(f"Plain HTTP request on the TLS port, redirected to {target}")
+                message = f"Plain HTTP request from {peer} on the TLS port, redirected to {target}"
+                if _redirect_log.allow((peer, path)):
+                    logger.info(message)
+                else:
+                    # Chi insiste finisce nel dettaglio, non nel log normale
+                    logger.debug(message)
             return target
 
     return HttpAwareSSLAdapter(cert_path, key_path)

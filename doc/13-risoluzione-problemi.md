@@ -50,6 +50,7 @@ Se il problema si presenta solo nelle ore di passaggio, il colpevole sono di sol
 
 * **`ERR_CONNECTION_RESET` o «connessione reimpostata»**: succedeva aprendo `http://` sulla porta dell'HTTPS. Ora quella richiesta riceve un redirect verso `https://`; se l'errore si ripresenta, la porta indicata non è quella dell'HTTPS o davanti c'è un firewall.
 * **«Il certificato non è attendibile»**: è previsto, il certificato è autofirmato. Va accettato una volta. Per accertarsi che sia davvero quello della webcam, confrontare l'impronta SHA-256 mostrata dal browser con quella scritta nel log all'avvio.
+* **Un programma che scaricava l'istantanea ha smesso**: il redirect risolve il caso del browser, non quello dei client che non lo seguono — i consumatori ONVIF e gli script che scaricano `/snapshot.jpg` di solito non lo fanno, e non accettano un certificato autofirmato. Il log li mostra come `Plain HTTP request from <indirizzo> ... redirected to ...` che si ripete. Vanno indirizzati alla porta HTTP, che per loro va lasciata aperta.
 * **«Il certificato non è valido per questo nome»**: si sta raggiungendo la webcam con un nome che il certificato non contiene. Va aggiunto in **System → Nomi da includere nel certificato**, poi riavviata l'applicazione: il certificato viene rigenerato.
 
 ## L'annotazione non compare sul video

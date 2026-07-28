@@ -637,6 +637,13 @@ class SettingsManager:
                 # gia' stato scritto a log dall'adattatore.
                 if tls.REDIRECT_MARK in msg:
                     return
+                # Un handshake che non arriva in fondo dipende dal client:
+                # il browser che rifiuta il certificato autofirmato, una
+                # scansione, una connessione caduta. Non e' un problema
+                # della webcam e non deve riempirle il log.
+                if 'during handshake' in msg:
+                    self.logger.debug(f"HTTPS: {msg}")
+                    return
                 self.logger.log(level, f"HTTPS: {msg}", exc_info=traceback)
 
         try:
