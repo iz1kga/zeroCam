@@ -24,6 +24,8 @@ https://<indirizzo-del-raspberry>:8443/
 
 Il certificato se lo firma il dispositivo: nessuno lo attesta, quindi il browser mostra un avviso alla prima visita e va accettato una volta. Da lì in poi il traffico è cifrato — è la differenza fra *nessuno può leggere* e *chiunque può leggere*, non fra sicuro e insicuro. Il certificato viene creato al primo avvio con l'HTTPS attivo e copre `localhost`, il nome del dispositivo e i suoi indirizzi IP; se raggiungi la webcam con un altro nome, per esempio uno pubblico, va aggiunto nel campo apposito, altrimenti il browser segnalerà anche il nome sbagliato. All'avvio il log riporta l'impronta SHA-256, da confrontare con quella che mostra il browser per essere certi di parlare con il dispositivo giusto e non con qualcuno che si è messo in mezzo.
 
+Sbagliare protocollo non costa nulla: aprendo `http://<indirizzo>:8443/` si viene rimandati allo stesso indirizzo in `https://`, invece di ricevere la connessione azzerata che darebbe un server TLS a cui si parla in chiaro.
+
 Spegnendo l'HTTP resta solo l'HTTPS, ma **ONVIF smette di funzionare**: quel protocollo parla solo in chiaro.
 
 Resta vero che il modo più solido per raggiungere la webcam da fuori casa è una VPN — nell'installazione è presente `wireguard` — o un reverse proxy con un certificato riconosciuto. L'HTTPS autofirmato è il rimedio immediato, non quello definitivo.

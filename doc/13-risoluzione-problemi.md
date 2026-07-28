@@ -46,6 +46,12 @@ Se il problema si presenta solo nelle ore di passaggio, il colpevole sono di sol
 * **Tutto funziona per una settimana, poi la diretta non parte più**: la schermata di consenso OAuth è rimasta in stato *Testing*, dove Google revoca i refresh token dopo sette giorni. Portare l'app **In produzione** e rigenerare il token.
 * **La diretta ha ancora la data di ieri nel titolo**: il ricambio giornaliero è disattivato o l'orario non è valido. A ogni ripartenza il log lo dichiara: `Reusing YouTube broadcast <id> (daily reset not configured)` oppure `(daily reset '25:70' is not a valid HH:MM, rollover disabled)`. Con il campo compilato correttamente compare invece `(started after the daily reset of 27/07/2026 00:00)` finché la diretta è più recente dell'orario, e al primo scatto successivo `Broadcast <id> started at ..., before the daily reset of ...: creating a new one`.
 
+## L'interfaccia in HTTPS
+
+* **`ERR_CONNECTION_RESET` o «connessione reimpostata»**: succedeva aprendo `http://` sulla porta dell'HTTPS. Ora quella richiesta riceve un redirect verso `https://`; se l'errore si ripresenta, la porta indicata non è quella dell'HTTPS o davanti c'è un firewall.
+* **«Il certificato non è attendibile»**: è previsto, il certificato è autofirmato. Va accettato una volta. Per accertarsi che sia davvero quello della webcam, confrontare l'impronta SHA-256 mostrata dal browser con quella scritta nel log all'avvio.
+* **«Il certificato non è valido per questo nome»**: si sta raggiungendo la webcam con un nome che il certificato non contiene. Va aggiunto in **System → Nomi da includere nel certificato**, poi riavviata l'applicazione: il certificato viene rigenerato.
+
 ## L'annotazione non compare sul video
 
 * Verificare che *Annotazione e loghi nella diretta* sia attiva e che sia passato uno scatto: il filtro si costruisce all'avvio dello streaming.

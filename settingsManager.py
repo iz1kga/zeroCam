@@ -621,7 +621,6 @@ class SettingsManager:
 
         try:
             from cheroot.wsgi import Server as CherootServer
-            from cheroot.ssl.builtin import BuiltinSSLAdapter
         except ImportError:
             self.logger.error(
                 "HTTPS requested but the 'cheroot' package is missing: staying on HTTP. "
@@ -629,9 +628,20 @@ class SettingsManager:
             )
             return False
 
+        class QuietServer(CherootServer):
+            """Zittisce il rumore che il redirect da HTTP a HTTPS produce."""
+
+            def error_log(inner, msg='', level=logging.INFO, traceback=False):
+                # cheroot annuncia la connessione interrotta come un
+                # handshake caduto: qui invece e' voluta, e il redirect e'
+                # gia' stato scritto a log dall'adattatore.
+                if tls.REDIRECT_MARK in msg:
+                    return
+                self.logger.log(level, f"HTTPS: {msg}", exc_info=traceback)
+
         try:
-            server = CherootServer(('0.0.0.0', port), self.app, numthreads=4)
-            server.ssl_adapter = BuiltinSSLAdapter(cert, key)
+            server = QuietServer(('0.0.0.0', port), self.app, numthreads=4)
+            server.ssl_adapter = tls.build_ssl_adapter(cert, key, self.logger)
             thread = threading.Thread(target=server.safe_start, name="HttpsThread", daemon=True)
             thread.start()
             self.logger.info(f"Web UI reachable over HTTPS on port {port}")

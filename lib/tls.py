@@ -28,6 +28,9 @@ from cryptography.x509.oid import NameOID
 VALIDITY_DAYS = 3650
 # Margine entro cui si rigenera invece di aspettare la scadenza vera.
 RENEW_BEFORE_DAYS = 30
+# Marcatore per riconoscere - e non ripetere a log - l'interruzione voluta
+# della connessione di chi ha bussato in chiaro sulla porta cifrata.
+REDIRECT_MARK = "plain HTTP request redirected"
 
 
 def local_addresses():
@@ -107,6 +110,105 @@ def fingerprint(cert_path):
         return ":".join(f"{b:02X}" for b in digest)
     except Exception:
         return "?"
+
+
+def build_ssl_adapter(cert_path, key_path, logger=None):
+    """
+    Adattatore TLS che rimanda al posto giusto chi bussa in chiaro.
+
+    Digitare http:// sulla porta dell'https e' l'errore piu' comune, e da
+    solo produce una connessione azzerata: il server vede una richiesta di
+    testo dove si aspetta un handshake. Qui il primo byte viene sbirciato
+    prima di iniziare l'handshake, e se non e' TLS si risponde con un
+    redirect allo stesso indirizzo in https.
+
+    Importa cheroot qui dentro: chi non usa l'HTTPS non deve averlo.
+    """
+    import socket as socket_module
+
+    from cheroot import errors
+    from cheroot.ssl.builtin import BuiltinSSLAdapter
+
+    # Primo byte di un record TLS di tipo handshake. Qualunque altra cosa e'
+    # testo in chiaro: 'GET ', 'POST', e simili.
+    TLS_HANDSHAKE = 0x16
+
+    class HttpAwareSSLAdapter(BuiltinSSLAdapter):
+        def wrap(self, sock):
+            try:
+                first = sock.recv(1, socket_module.MSG_PEEK)
+            except OSError:
+                first = b""
+
+            if first and first[0] != TLS_HANDSHAKE:
+                target = self._redirect(sock)
+                # La risposta e' gia' partita e il socket e' chiuso: si
+                # avvisa cheroot che questa connessione non prosegue.
+                raise errors.FatalSSLAlert(f"{REDIRECT_MARK} to {target}")
+
+            return super().wrap(sock)
+
+        @staticmethod
+        def _read_request(sock):
+            """Riga di richiesta e header, quel tanto che basta al redirect."""
+            sock.settimeout(2)
+            data = b""
+            while b"\r\n\r\n" not in data and len(data) < 8192:
+                try:
+                    chunk = sock.recv(1024)
+                except OSError:
+                    break
+                if not chunk:
+                    break
+                data += chunk
+            return data.decode("latin-1", "replace")
+
+        def _redirect(self, sock):
+            request = self._read_request(sock)
+            lines = request.split("\r\n")
+            path = "/"
+            parts = lines[0].split(" ") if lines else []
+            if len(parts) >= 2 and parts[1].startswith("/"):
+                path = parts[1]
+
+            host = ""
+            for line in lines[1:]:
+                if line.lower().startswith("host:"):
+                    host = line.split(":", 1)[1].strip()
+                    break
+            if not host:
+                # Senza header Host - HTTP/1.0 o un client scortese - si usa
+                # l'indirizzo su cui e' arrivata la connessione.
+                address = sock.getsockname()
+                host = f"{address[0]}:{address[1]}"
+
+            target = f"https://{host}{path}"
+            body = (
+                "<html><head><meta charset=\"utf-8\"><title>zeroCAM</title></head>"
+                f"<body><p>Questa porta parla solo HTTPS. "
+                f"<a href=\"{target}\">{target}</a></p></body></html>"
+            ).encode("utf-8")
+            response = (
+                "HTTP/1.1 301 Moved Permanently\r\n"
+                f"Location: {target}\r\n"
+                "Content-Type: text/html; charset=utf-8\r\n"
+                f"Content-Length: {len(body)}\r\n"
+                "Connection: close\r\n\r\n"
+            ).encode("latin-1") + body
+
+            try:
+                sock.sendall(response)
+                sock.shutdown(socket_module.SHUT_RDWR)
+            except OSError:
+                pass
+            finally:
+                sock.close()
+
+            if logger:
+                logger.info(f"Plain HTTP request on the TLS port, redirected to {target}")
+            return target
+
+    return HttpAwareSSLAdapter(cert_path, key_path)
 
 
 def ensure_certificate(cert_path, key_path, extra_names=None, logger=None):
