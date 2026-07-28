@@ -161,6 +161,16 @@ class YouTubeLiveManager:
             boundary -= timedelta(days=1)
         return boundary
 
+    def _rollover_note(self):
+        """Spiega nel log perché un broadcast viene riusato invece che ricreato."""
+        configured = str(self.cfg.get("daily_reset_time") or "").strip()
+        if _parse_hhmm(configured) is None:
+            if configured:
+                return f"daily reset '{configured}' is not a valid HH:MM, rollover disabled"
+            return "daily reset not configured"
+        boundary = self._rollover_boundary()
+        return f"started after the daily reset of {boundary.strftime('%d/%m/%Y %H:%M')}"
+
     def _is_stale(self, broadcast):
         """True se il broadcast è nato prima dell'ultima ora di reset."""
         boundary = self._rollover_boundary()
@@ -288,7 +298,9 @@ class YouTubeLiveManager:
 
                 if broadcast:
                     self._broadcast_id = broadcast["id"]
-                    self.logger.info(f"Reusing YouTube broadcast {self._broadcast_id}.")
+                    self.logger.info(
+                        f"Reusing YouTube broadcast {self._broadcast_id} ({self._rollover_note()})."
+                    )
                     return True
 
                 broadcast = self._create_broadcast()
@@ -300,7 +312,17 @@ class YouTubeLiveManager:
             except requests.exceptions.RequestException as e:
                 self.logger.error(f"YouTube Live network error: {e}")
             except Exception as e:
-                self.logger.error(f"YouTube Live error: {e}", exc_info=True)
+                # Il canale autorizzato non è abilitato alle dirette: succede
+                # scegliendo l'account sbagliato durante l'autenticazione, e lo
+                # stack trace non aiuta a capirlo.
+                if "liveStreamingNotEnabled" in str(e):
+                    self.logger.error(
+                        "The authorized YouTube channel is not enabled for live streaming. "
+                        "Enable it on youtube.com/features (it can take 24 hours), or press "
+                        "Autentica again and pick the channel that owns the stream key."
+                    )
+                else:
+                    self.logger.error(f"YouTube Live error: {e}", exc_info=True)
             return False
 
     def end_broadcast(self):

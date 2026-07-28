@@ -42,7 +42,7 @@
   "username": { "type": "text" },
   "AwbMode": {
     "type": "select",
-    "options": ["Auto", "Incandescent", "Tungsten", "Fluorescent", "Indoor", "Daylight", "Cloudy"]
+    "options": ["Auto", "Incandescent", "Tungsten", "Fluorescent", "Indoor", "Daylight", "Cloudy", "Manuale (guadagni R/B)"]
   },
   "ColourGainRed": { "type": "number" },
   "ColourGainBlue": { "type": "number" },
@@ -80,6 +80,7 @@
   "daily_reset_time": { "type": "text" },
   "extra_destinations": { "type": "textlist" },
   "overlay": { "type": "boolean" },
+  "audio_volume": { "type": "number" },
   "time": { "type": "text" },
   "frame_width": { "type": "number" },
   "frame_quality": { "type": "number" },

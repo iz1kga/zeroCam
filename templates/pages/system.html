@@ -23,6 +23,55 @@
         </div>
     </div>
 
+    <h4 class="mt-4">Accesso all'interfaccia</h4>
+    <div class="card" v-if="config && config.settingsManager">
+        <div class="card-body">
+            <div class="row align-items-end">
+                <div class="col-md-3"><label class="form-label">Porta HTTP</label>
+                    <input type="number" class="form-control" v-model.number="config.settingsManager.port">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="httpEnabled"
+                            v-model="config.settingsManager.http_enabled">
+                        <label class="form-check-label" for="httpEnabled">HTTP attivo</label>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="httpsEnabled"
+                            v-model="config.settingsManager.https_enabled">
+                        <label class="form-check-label" for="httpsEnabled">HTTPS attivo</label>
+                    </div>
+                </div>
+                <div class="col-md-3"><label class="form-label">Porta HTTPS</label>
+                    <input type="number" class="form-control" v-model.number="config.settingsManager.https_port"
+                        :disabled="!config.settingsManager.https_enabled">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <label class="form-label">Nomi da includere nel certificato (uno per riga)</label>
+                    <textarea class="form-control" rows="2" v-model="certificateNames"
+                        :disabled="!config.settingsManager.https_enabled"></textarea>
+                </div>
+            </div>
+            <div class="form-text mt-2">
+                L'HTTPS usa un certificato che il dispositivo si firma da s&eacute;: la connessione &egrave;
+                cifrata, ma il browser mostra un avviso la prima volta perch&eacute; nessuno attesta quel
+                certificato. Il certificato copre da s&eacute; <em>localhost</em>, il nome del dispositivo e i
+                suoi indirizzi IP; qui si aggiungono gli altri nomi con cui lo raggiungi, per esempio quello
+                pubblico. L'impronta SHA-256 con cui confrontarlo &egrave; scritta nel log all'avvio.
+            </div>
+            <div class="form-text">
+                Spegnendo l'HTTP resta solo l'HTTPS: <strong>ONVIF smette di funzionare</strong>, perch&eacute;
+                i client ONVIF parlano solo HTTP in chiaro. Le modifiche di questa sezione hanno effetto al
+                riavvio dell'applicazione.
+            </div>
+            <button class="btn btn-success mt-3" @click="$emit('save-config')">Salva e ricorda di riavviare</button>
+        </div>
+    </div>
+
     <h4 class="mt-4">Backup e ripristino configurazione</h4>
     <div class="card">
         <div class="card-body">

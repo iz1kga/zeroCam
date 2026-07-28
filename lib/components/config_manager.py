@@ -9,9 +9,18 @@ from lib.helpers import CryptoHelper
 # configurazione vengono inserite con questi valori, così le installazioni
 # esistenti continuano a partire e mostrano la pagina nell'interfaccia web.
 DEFAULT_SECTIONS = {
+    "settingsManager": {
+        "port": 8080,
+        "http_enabled": True,
+        "https_enabled": False,
+        "https_port": 8443,
+        "https_hostnames": [],
+    },
     "streamParameters": {
         "extra_destinations": [],
         "overlay": False,
+        "audio_file": "",
+        "audio_volume": 100,
     },
     "youtubeLive": {
         "enabled": False,
@@ -42,6 +51,8 @@ DEFAULT_SECTIONS = {
         "nice": 19,
         "min_frames": 30,
         "retention_weeks": 4,
+        "audio_file": "",
+        "audio_volume": 100,
         "keep_local": True,
         "frames_dir": "./timelapse_frames",
         "output_dir": "./timelapse",

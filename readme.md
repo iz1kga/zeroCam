@@ -57,13 +57,13 @@ Chi aggiorna da una versione precedente non deve fare nulla: l'installer sposta 
 
 Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi la sola chiave di streaming non fa andare in onda nulla finché non si apre la Live Control Room. zeroCAM può creare e collegare il broadcast da solo, con avvio automatico e senza interruzione automatica, così la diretta parte da sé e sopravvive alle pause di pochi secondi durante la cattura della foto.
 
-1.  Sulla [Google Cloud Console](https://console.cloud.google.com/): crea un progetto, abilita **YouTube Data API v3**, configura la schermata di consenso OAuth e crea credenziali OAuth di tipo **Applicazione desktop**.
-2.  Su un PC con browser esegui lo script di setup (serve solo Python e `requests`):
-    ```bash
-    python3 installation_tools/yt_oauth_setup.py
-    ```
-    Inserisci Client ID e Client Secret, autorizza l'accesso e annota il **refresh token** stampato.
-3.  Nell'interfaccia web, pagina **Config → YouTube Live**: attiva *Auto broadcast* e incolla Client ID, Client Secret e Refresh Token. La stream key resta quella di **Stream Parameters**.
+1.  Sulla [Google Cloud Console](https://console.cloud.google.com/): crea un progetto, abilita **YouTube Data API v3**, configura la schermata di consenso OAuth e crea credenziali OAuth di tipo **TV e dispositivi di immissione limitata**.
+2.  Nell'interfaccia web, pagina **Config → Stream**: incolla **Client ID** e **Client Secret** nella sezione *Diretta automatica* e premi **Autentica**. Compare un codice: aprilo su [google.com/device](https://www.google.com/device) da qualsiasi dispositivo, inseriscilo e scegli il canale su cui pubblicare. Il **Refresh Token** viene compilato da solo.
+3.  Attiva *Auto broadcast* e **salva**. La stream key resta quella indicata sopra nella stessa pagina.
+
+Il pulsante *Autentica* funziona anche accedendo alla webcam via LAN in http, senza HTTPS né configurazioni di rete: è il metodo consigliato. In alternativa, da un PC con browser, resta disponibile lo script `installation_tools/yt_oauth_setup.py`, che però richiede un client OAuth di tipo *Applicazione desktop*.
+
+Il canale su cui finiscono diretta e timelapse è quello scelto durante l'autenticazione: per usare un canale secondario, selezionalo in quel passaggio.
 
 Nel titolo della diretta puoi usare i segnaposto `{date}` e `{time}`. Il broadcast viene riusato finché resta valido e ricreato automaticamente quando YouTube lo chiude (limite di 12 ore).
 
@@ -91,7 +91,7 @@ Si configura in **Config → Timelapse**: giorno e ora del montaggio, fps, risol
 
 Due note pratiche:
 
-* Le credenziali sono le stesse della diretta, ma serve anche lo scope `youtube.upload`. Se il refresh token è stato generato prima di questa funzione, va rigenerato con `yt_oauth_setup.py`.
+* Le credenziali sono le stesse della diretta: il token ottenuto con il pulsante *Autentica* copre già anche l'upload dei video. Un refresh token generato con la vecchia versione dello script va rigenerato una volta.
 * I fotogrammi occupano spazio: con uno scatto ogni 10 minuti a 2560px si va sull'ordine del gigabyte al mese. Il parametro *Conserva i frame* cancella automaticamente quelli più vecchi, e la pagina Timelapse mostra sempre quanti sono e quanto occupano.
 
 Il pulsante *Genera e pubblica ora* monta subito il timelapse senza aspettare la scadenza settimanale, utile per provare la configurazione.
@@ -193,13 +193,13 @@ Upgrading from an earlier version needs no manual step: the installer moves what
 
 The RTMP push alone is no longer enough: YouTube retired "Stream now", so the stream key by itself never goes on air until someone opens the Live Control Room. zeroCAM can create and bind the broadcast on its own, with auto-start enabled and auto-stop disabled, so the stream goes live by itself and survives the few-second pauses taken to capture the still image.
 
-1.  On the [Google Cloud Console](https://console.cloud.google.com/): create a project, enable **YouTube Data API v3**, configure the OAuth consent screen and create **Desktop app** OAuth credentials.
-2.  On a machine with a browser, run the setup script (only Python and `requests` are needed):
-    ```bash
-    python3 installation_tools/yt_oauth_setup.py
-    ```
-    Enter Client ID and Client Secret, authorize access and note the printed **refresh token**.
-3.  In the web interface, page **Config → YouTube Live**: enable *Auto broadcast* and paste Client ID, Client Secret and Refresh Token. The stream key stays the one in **Stream Parameters**.
+1.  On the [Google Cloud Console](https://console.cloud.google.com/): create a project, enable **YouTube Data API v3**, configure the OAuth consent screen and create **TV and Limited Input devices** OAuth credentials.
+2.  In the web interface, page **Config → Stream**: paste **Client ID** and **Client Secret** in the *Diretta automatica* section and press **Autentica**. A code appears: open [google.com/device](https://www.google.com/device) on any device, enter it and pick the channel to publish to. The **Refresh Token** is filled in for you.
+3.  Enable *Auto broadcast* and **save**. The stream key stays the one shown above on the same page.
+
+The *Autentica* button works even when reaching the webcam over plain LAN http, with no HTTPS and no network setup: it is the recommended method. Alternatively, from a machine with a browser, the `installation_tools/yt_oauth_setup.py` script is still available, but it needs a *Desktop app* OAuth client.
+
+The channel that live broadcasts and timelapses go to is the one chosen during authentication: to use a secondary channel, select it at that step.
 
 The broadcast title supports the `{date}` and `{time}` placeholders. An existing broadcast is reused while valid and recreated automatically once YouTube closes it (12 hour limit).
 
@@ -227,7 +227,7 @@ Configure it under **Config → Timelapse**: build day and time, fps, frame reso
 
 Two practical notes:
 
-* Credentials are the same as the live broadcast, but the `youtube.upload` scope is also required. A refresh token generated before this feature must be regenerated with `yt_oauth_setup.py`.
+* Credentials are the same as the live broadcast: the token obtained with the *Autentica* button already covers video upload too. A refresh token generated with the old version of the script must be regenerated once.
 * Frames take space: one capture every 10 minutes at 2560px lands in the order of a gigabyte per month. The *retention* setting removes the oldest ones automatically, and the Timelapse page always shows how many frames there are and how much they take.
 
 The *Genera e pubblica ora* button builds the timelapse immediately instead of waiting for the weekly schedule, which is handy to check the configuration.

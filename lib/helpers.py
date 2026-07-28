@@ -21,6 +21,7 @@ import logging
 import cv2
 import numpy as np
 
+from lib import assets
 from lib.paths import LATEST_IMAGE, PRIVACY_MASK_FILE as PRIVACY_MASK_PATH
 
 
@@ -152,6 +153,10 @@ class FTPUploader:
         self.ftp_host = ftp_host
         self.logger.info("FTPUploader object created")
 
+    def update_config(self, ftp_host):
+        """Nuova destinazione FTP dallo scatto successivo."""
+        self.ftp_host = ftp_host or {}
+
     def upload(self, image, metadata):
         try:
             self.logger.info(f"Uploading to {self.ftp_host['host']}")
@@ -172,6 +177,10 @@ class HttpUploader:
         self.logger = logger
         self.cfg = http_config or {}
         self.logger.info("HttpUploader object created")
+
+    def update_config(self, http_config):
+        """Nuovo endpoint HTTP dallo scatto successivo."""
+        self.cfg = http_config or {}
 
     def upload(self, image, metadata):
         if not self.cfg.get("enabled"):
@@ -229,8 +238,19 @@ class HttpUploader:
 class ImageOverlay:
     def __init__(self, OverlayImages, logger):
         self.logger = logger
-        self.OverlayImages = OverlayImages
         self.logger.info("ImageOverlay object created")
+        self.update_config(OverlayImages)
+
+    def update_config(self, OverlayImages):
+        """
+        Nuovo elenco di loghi, riscaricati subito.
+
+        Le voci vengono copiate perché downloadImages ci infila dentro
+        l'immagine PIL: lavorando sui dizionari della configurazione, quella
+        finirebbe dentro la configurazione stessa, che poi non sarebbe più
+        serializzabile in JSON per l'interfaccia web.
+        """
+        self.OverlayImages = [dict(item) for item in OverlayImages or []]
         self.downloadImages()
 
     def downloadImages(self):
@@ -239,7 +259,9 @@ class ImageOverlay:
             if not OverlayImage["enabled"]:
                 continue
             try:
-                fd = urllib.request.urlopen(OverlayImage["url"])
+                # Un logo scelto fra gli assets è un file locale: resolve_url
+                # lo trasforma in un file://, gli URL http restano tali.
+                fd = urllib.request.urlopen(assets.resolve_url(OverlayImage["url"]))
                 OlImg = io.BytesIO(fd.read())
                 # RGBA anche per i formati senza trasparenza: serve un canale
                 # alfa su cui applicare l'opacità configurata.
@@ -350,9 +372,13 @@ class ImageCropper:
 class ImageAnnotator:
     def __init__(self, annotation, logger):
         self.logger = logger
-        self.annotation = annotation
-        self.content = self.annotation['Content']
-        self.container = self.annotation['Container']
+        self.update_config(annotation)
+
+    def update_config(self, annotation):
+        """Testo, colori e formato della data dallo scatto successivo."""
+        self.annotation = annotation or {}
+        self.content = self.annotation.get('Content', {})
+        self.container = self.annotation.get('Container', {})
 
     def annotate(self, image_buffer):
         try:
@@ -400,6 +426,14 @@ class ImageAnnotator:
     
 class DayPeriodCalculator:
     def __init__(self, latitude, longitude, elevation, sun_rise_offset, sun_set_offset, dusk_offset, dawn_offset, logger):
+        self.tz_info = tzlocal.get_localzone()
+        self.logger = logger
+        self.update_config(latitude, longitude, elevation,
+                           sun_rise_offset, sun_set_offset, dusk_offset, dawn_offset)
+
+    def update_config(self, latitude, longitude, elevation,
+                      sun_rise_offset, sun_set_offset, dusk_offset, dawn_offset):
+        """Posizione e scarti delle fasi, dal calcolo successivo."""
         self.latitude = latitude
         self.longitude = longitude
         self.elevation = elevation
@@ -407,8 +441,6 @@ class DayPeriodCalculator:
         self.sun_set_offset = sun_set_offset
         self.dusk_offset = dusk_offset
         self.dawn_offset = dawn_offset
-        self.tz_info = tzlocal.get_localzone()
-        self.logger = logger
 
     def get_day_period(self, ):
         try:

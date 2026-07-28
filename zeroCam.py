@@ -356,6 +356,10 @@ class ZeroCamApp:
         self.logger.info("Applying updated configuration to all components...")
         new_config = self.config_manager.decrypted_config
         self.components.update_camera_config(new_config)
+        # Intervallo di scatto e pianificazione del timelapse vivono nel
+        # pianificatore, non nei componenti: vanno ricostruiti a parte.
+        if self.scheduler_manager:
+            self.scheduler_manager.reload_jobs()
 
 # --- Main Execution ---
 def setup_logging(log_level_str):
@@ -417,11 +421,16 @@ if __name__ == "__main__":
     # quella dell'applicazione. Il logger non esiste ancora, perché il suo
     # file è fra le cose da spostare.
     migration_messages = paths.migrate_legacy_data()
+    # Gli assets distribuiti con l'applicazione vanno versati fra i dati:
+    # sono nuovi a ogni aggiornamento che ne aggiunge.
+    asset_messages = paths.seed_bundled_assets()
 
     log_level = os.getenv("LOG_LEVEL", "INFO")
     main_logger = setup_logging(log_level)
     for message in migration_messages:
         main_logger.warning(message)
+    for message in asset_messages:
+        main_logger.info(message)
 
     print_banner(main_logger)
     

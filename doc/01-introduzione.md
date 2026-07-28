@@ -49,7 +49,7 @@ L'applicazione è un unico processo Python (`zeroCam.py`) che avvia alcuni threa
 |---|---|
 | `SchedulerManager` | Pianifica scatti, diagnostica, raccolta statistiche, timelapse e pulizia |
 | `ComponentManager` | Costruisce e tiene insieme camera, uploader, annotatore, maschere, timelapse, YouTube |
-| `SettingsManager` | Interfaccia web e API REST (Flask servito da waitress) |
+| `SettingsManager` | Interfaccia web e API REST (Flask servito da waitress in HTTP, da cheroot in HTTPS) |
 | `StatsCollector` | Legge temperatura, CPU, memoria e disco e ne conserva lo storico |
 | `cameras.py` | Cattura, streaming e gestione del sensore tramite `picamera2` |
 

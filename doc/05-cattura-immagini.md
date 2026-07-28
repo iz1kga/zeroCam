@@ -24,7 +24,7 @@ Uno scatto può essere avviato a mano da **Cam Control → Take Photo**: il cicl
 
 **Configuration → Camera** ha una scheda per ciascuna fase del giorno, più le impostazioni generali e il ritaglio.
 
-![La pagina Camera: impostazioni generali, ritaglio e la scheda della fase notturna con le soglie di luminosità.](img/ui-config-camera.png){ width=100% }
+![La pagina Camera: impostazioni generali, ritaglio e la scheda di una fase, con le soglie di luminosità e il bilanciamento del bianco. I campi dei guadagni sono in grigio perché la modalità AWB non è *Manuale*.](img/ui-config-camera.png){ width=100% }
 
 | Impostazione in pagina | Significato |
 |---|---|
@@ -77,7 +77,7 @@ Ogni fase ha il proprio *AWB Mode*: automatico, incandescenza, tungsteno, fluore
 
 L'automatismo però ha bisogno di un riferimento neutro nell'inquadratura. Di notte quel riferimento non c'è, e le luci stradali al sodio — arancioni per natura — lo portano fuori strada: l'AWB tenta di correggere una dominante che non è un errore, e vira l'intera immagine.
 
-Per questo ogni fase ha anche **Guadagno rosso** e **Guadagno blu**: valorizzandoli entrambi l'automatismo viene spento e il bilanciamento resta fisso su quei valori. Con entrambi a zero vale la modalità AWB scelta.
+Per questo l'elenco delle modalità finisce con **Manuale (guadagni R/B)**: scegliendola l'automatismo viene spento e il bilanciamento resta fisso sui campi **Guadagno rosso** e **Guadagno blu**, che restano disabilitati con qualunque altra modalità. Se si sceglie Manuale senza indicare guadagni validi il software torna all'automatico e lo scrive nel log: meglio una foto automatica che una con i colori a caso.
 
 Come trovare i valori di partenza: si prende uno scatto venuto bene, si legge il campo `ColourGains` nei suoi metadati — l'archivio di diagnosi salva un `.json` accanto a ogni immagine — e si riportano i due numeri nei campi. Da lì si aggiusta: alzare il guadagno rosso scalda l'immagine, alzare il blu la raffredda. I valori tipici stanno fra 1 e 4.
 
@@ -87,6 +87,8 @@ Il log dice sempre quale via è in uso:
 Bilanciamento del bianco manuale: guadagni R=2.40, B=1.30
 Bilanciamento del bianco automatico, modalità 2
 ```
+
+Le stesse impostazioni esistono, per fase, anche in **Configuration → Stream**: la diretta inquadra le stesse luci e ha lo stesso problema.
 
 ## Ritaglio
 

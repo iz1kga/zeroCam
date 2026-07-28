@@ -26,17 +26,23 @@ I fotogrammi sono salvati già alla risoluzione finale del video: il montaggio �
 | Titolo, Descrizione | Testi del video, con segnaposto |
 | Privacy, Contenuto per bambini | Impostazioni di pubblicazione su YouTube |
 
-![La pagina Timelapse della configurazione: pianificazione, fotogrammi e parametri del video.](img/ui-config-timelapse.png){ width=100% }
+![La pagina Timelapse della configurazione: pianificazione, fotogrammi, parametri del video e brano di sottofondo.](img/ui-config-timelapse.png){ width=100% }
 
 Nei testi si possono usare `{from}`, `{to}`, `{date}` e `{frames}`, sostituiti rispettivamente con la data del primo e dell'ultimo fotogramma, la data del montaggio e il numero di fotogrammi.
 
 Il montaggio gira con priorità bassa (`nice 19`) per non disturbare lo streaming: preset e numero di thread regolano quanto pesa sulla CPU. Su un Pi 5, `medium` con 2 thread è un buon compromesso.
 
+## Audio
+
+Il video è muto se non si sceglie un brano in *Audio → Brano di sottofondo*, fra quelli caricati in **Configuration → Assets**. Il brano viene ripetuto fino alla fine dei fotogrammi e tagliato lì, quindi non serve che duri quanto il video: un minuto di musica copre un timelapse di qualsiasi lunghezza. Il *Volume* lo attenua in percentuale.
+
+Vale l'avvertenza dei diritti già vista per la diretta, con un aggravante: un video caricato con musica protetta può essere rivendicato subito, e la rivendicazione resta attaccata al video pubblicato.
+
 ## Pianificazione
 
 Il montaggio parte nel giorno e all'ora impostati. Indipendentemente da esso, ogni giorno alle 04:30 gira una pulizia che elimina i fotogrammi più vecchi della finestra di conservazione: se il montaggio fallisce per settimane, i fotogrammi non si accumulano senza limite.
 
-Cambiare giorno e ora richiede il riavvio dell'applicazione, perché la pianificazione viene costruita all'avvio.
+Cambiando giorno, ora o abilitazione, la pianificazione viene ricostruita al salvataggio: non serve riavviare. Insieme a essa riparte anche il conteggio dell'intervallo di scatto, quindi la foto successiva arriva dopo un intervallo intero.
 
 ## Spazio su disco
 
@@ -64,6 +70,6 @@ La riproduzione avanza solo quando l'immagine successiva è arrivata dal disposi
 
 ## Caricamento su YouTube
 
-Il video viene caricato con le stesse credenziali OAuth della diretta, in modalità *resumable* a blocchi da 8 MiB: un'interruzione di rete non costringe a ricominciare da capo. Serve l'ambito `youtube.upload`, che un refresh token generato prima dell'introduzione di questa funzione non ha: in tal caso va rigenerato con `yt_oauth_setup.py`.
+Il video viene caricato con le stesse credenziali OAuth della diretta, in modalità *resumable* a blocchi da 8 MiB: un'interruzione di rete non costringe a ricominciare da capo. Il token ottenuto con il pulsante *Autentica* copre già il caricamento; un refresh token generato con le prime versioni dello script di setup, prima che questa funzione esistesse, va rigenerato una volta.
 
 Se *Tieni il file sul Pi* è disattivo, il video viene rimosso dopo il caricamento riuscito.

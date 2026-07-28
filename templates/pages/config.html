@@ -209,18 +209,18 @@
                             <div class="col-md-3">
                                 <label class="form-label">Guadagno rosso</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainRed"
-                                    :schema="schema" />
+                                    :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Guadagno blu</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainBlue"
-                                    :schema="schema" />
+                                    :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                             <div class="col-md-6">
                                 <div class="form-text">
-                                    Con entrambi i guadagni a zero vale la modalit&agrave; AWB qui sopra. Valorizzandoli
-                                    l'automatismo viene spento e il bilanciamento resta fisso: &egrave; il rimedio alle
-                                    luci al sodio, che l'AWB insegue virando tutta l'immagine.
+                                    I guadagni valgono solo con AWB Mode su <em>Manuale</em>: l'automatismo viene spento
+                                    e il bilanciamento resta fisso. &Egrave; il rimedio alle luci al sodio, che l'AWB
+                                    insegue virando tutta l'immagine.
                                 </div>
                             </div>
                         </div>
@@ -260,18 +260,18 @@
                             <div class="col-md-3">
                                 <label class="form-label">Guadagno rosso</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainRed"
-                                    :schema="schema" />
+                                    :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Guadagno blu</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainBlue"
-                                    :schema="schema" />
+                                    :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                         </div>
                         <div class="form-text">
                             Di notte l'AWB automatico non ha un bianco su cui agganciarsi e le luci al sodio lo portano
-                            fuori strada: valorizzando i due guadagni (0 = automatico) il bilanciamento resta fisso.
-                            I valori di partenza si leggono nei metadati di uno scatto venuto bene, campo
+                            fuori strada: con AWB Mode su <em>Manuale</em> il bilanciamento resta fisso sui guadagni
+                            indicati. I valori di partenza si leggono nei metadati di uno scatto venuto bene, campo
                             <code>ColourGains</code>.
                         </div>
                     </div>
@@ -321,6 +321,31 @@
                 </div>
             </div>
 
+            <div class="row mb-3">
+                <div class="col-md-6"><label class="form-label">Audio di sottofondo</label>
+                    <select class="form-select" v-model="config.streamParameters.audio_file">
+                        <option value="">Nessuno (silenzio)</option>
+                        <option v-for="item in audioAssets" :key="item.reference" :value="item.reference">
+                            [[ item.name ]]
+                        </option>
+                        <option v-if="missingAsset(config.streamParameters.audio_file)"
+                            :value="config.streamParameters.audio_file">
+                            [[ config.streamParameters.audio_file ]] (file mancante)
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3"><label class="form-label">Volume (%)</label>
+                    <field-renderer :model="config.streamParameters" key-name="audio_volume" :schema="schema" />
+                </div>
+                <div class="col-md-12">
+                    <div class="form-text">
+                        Il brano viene ripetuto in loop per tutta la durata della diretta. I file si caricano
+                        nella pagina <em>Assets</em>. Senza selezione la diretta va in onda con una traccia
+                        muta, che YouTube richiede comunque.
+                    </div>
+                </div>
+            </div>
+
             <!-- Diretta automatica: gestione del broadcast via YouTube Data API -->
             <hr>
             <h5>Diretta automatica</h5>
@@ -336,8 +361,35 @@
                 <div class="row mb-3">
                     <div class="col-md-6"><label class="form-label">Client Secret</label><field-renderer
                             :model="config.youtubeLive" key-name="client_secret" :schema="schema" /></div>
-                    <div class="col-md-6"><label class="form-label">Refresh Token</label><field-renderer
-                            :model="config.youtubeLive" key-name="refresh_token" :schema="schema" /></div>
+                    <div class="col-md-6">
+                        <label class="form-label">Refresh Token</label>
+                        <div class="input-group">
+                            <field-renderer class="flex-grow-1" :model="config.youtubeLive" key-name="refresh_token"
+                                :schema="schema" />
+                            <button type="button" class="btn btn-outline-primary" @click="startYoutubeAuth"
+                                :disabled="youtubeAuth.active" title="Genera il token autorizzando su Google">
+                                <span v-if="youtubeAuth.active"
+                                    class="spinner-border spinner-border-sm" role="status"></span>
+                                <span v-else><i class="bi bi-google me-1"></i>Autentica</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="youtubeAuth.userCode" class="alert alert-info d-flex align-items-center gap-3 flex-wrap">
+                    <div>
+                        <div>1. Apri <a :href="youtubeAuth.verificationUrl" target="_blank"
+                                rel="noopener">[[ youtubeAuth.verificationUrl ]]</a> su questo o su un altro
+                            dispositivo (telefono, PC).</div>
+                        <div>2. Inserisci questo codice e autorizza l'accesso al canale desiderato.</div>
+                        <div class="small text-muted mt-1">In attesa dell'autorizzazione...</div>
+                    </div>
+                    <span class="badge bg-dark fs-4 user-select-all ms-auto">[[ youtubeAuth.userCode ]]</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                        @click="stopYoutubeAuth">Annulla</button>
+                </div>
+                <div v-if="youtubeAuth.message"
+                    :class="youtubeAuth.ok ? 'alert alert-success' : 'alert alert-danger'">
+                    [[ youtubeAuth.message ]]
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-6"><label class="form-label">Titolo diretta</label><field-renderer
@@ -378,8 +430,9 @@
                 <div class="form-text">
                     Crea e collega automaticamente il broadcast alla stream key qui sopra, con avvio automatico e
                     senza interruzione automatica: la diretta parte da sola e sopravvive alle pause per la cattura
-                    della foto, senza aprire il browser. Le credenziali si ottengono una volta sola con
-                    <code>installation_tools/yt_oauth_setup.py</code>.
+                    della foto, senza aprire il browser. Inserisci Client ID e Client Secret di un client OAuth di
+                    tipo &laquo;TV e dispositivi di immissione limitata&raquo; creato sulla Google Cloud Console,
+                    poi premi <strong>Autentica</strong> per ottenere il Refresh Token: non serve reinserirlo a mano.
                     Nel titolo puoi usare i segnaposto <code>{date}</code> e <code>{time}</code>.
                     Con &laquo;Nuova diretta alle&raquo; valorizzato (es. <code>00:00</code>) la diretta in corso
                     viene chiusa e ricreata al primo scatto successivo a quell'ora; lasciandolo vuoto la stessa
@@ -405,6 +458,12 @@
                                 :model="config.streamParameters[phase]" key-name="Sharpness" :schema="schema" /></div>
                         <div class="col-md-3"><label class="form-label">AWB Mode</label><field-renderer
                                 :model="config.streamParameters[phase]" key-name="AwbMode" :schema="schema" /></div>
+                        <div class="col-md-3"><label class="form-label">Guadagno rosso</label><field-renderer
+                                :model="config.streamParameters[phase]" key-name="ColourGainRed" :schema="schema"
+                                :disabled="config.streamParameters[phase].AwbMode !== 7" /></div>
+                        <div class="col-md-3"><label class="form-label">Guadagno blu</label><field-renderer
+                                :model="config.streamParameters[phase]" key-name="ColourGainBlue" :schema="schema"
+                                :disabled="config.streamParameters[phase].AwbMode !== 7" /></div>
                         <div class="col-md-3"><label class="form-label">Noise Reduction</label><field-renderer
                                 :model="config.streamParameters[phase]" key-name="NoiseReductionMode"
                                 :schema="schema" /></div>
@@ -431,6 +490,21 @@
                             key-name="name" :schema="schema" /></div>
                     <div class="col-md-6"><label class="form-label">URL</label><field-renderer :model="img"
                             key-name="url" :schema="schema" /></div>
+                </div>
+                <div class="row mb-3 align-items-end" v-if="logoAssets.length">
+                    <div class="col-md-6"><label class="form-label">...oppure un logo caricato</label>
+                        <select class="form-select" :value="assetReference(img.url)"
+                            @change="img.url = $event.target.value || img.url">
+                            <option value="">Scegli fra gli assets...</option>
+                            <option v-for="item in logoAssets" :key="item.reference" :value="item.reference">
+                                [[ item.name ]]
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-2" v-if="assetReference(img.url)">
+                        <img :src="assetUrl(img.url)" alt="" class="img-fluid border rounded bg-light p-1"
+                            style="max-height: 60px">
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col-md-3"><label class="form-label">X</label><field-renderer :model="img" key-name="X"
@@ -569,6 +643,107 @@
                 <code>{frames}</code>. Il montaggio gira con priorit&agrave; bassa per non disturbare lo streaming:
                 preset e thread regolano quanto pesa sulla CPU.
             </div>
+        </div>
+
+        <div class="card card-body mb-3">
+            <h5>Audio</h5>
+            <div class="row align-items-end">
+                <div class="col-md-6"><label class="form-label">Brano di sottofondo</label>
+                    <select class="form-select" v-model="config.timelapse.audio_file">
+                        <option value="">Nessuno (video muto)</option>
+                        <option v-for="item in audioAssets" :key="item.reference" :value="item.reference">
+                            [[ item.name ]]
+                        </option>
+                        <option v-if="missingAsset(config.timelapse.audio_file)"
+                            :value="config.timelapse.audio_file">
+                            [[ config.timelapse.audio_file ]] (file mancante)
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3"><label class="form-label">Volume (%)</label>
+                    <field-renderer :model="config.timelapse" key-name="audio_volume" :schema="schema" />
+                </div>
+            </div>
+            <div class="form-text mt-2">
+                Il brano viene ripetuto fino alla fine dei fotogrammi e tagliato l&igrave;. I file si caricano
+                nella pagina <em>Assets</em>. Attenzione ai diritti: un brano protetto pu&ograve; far rivendicare
+                o bloccare il video su YouTube.
+            </div>
+        </div>
+    </div>
+
+    <!-- Assets: audio e loghi caricati dall'utente -->
+    <div v-if="configPage === 'assets'">
+        <h4>Assets</h4>
+        <div class="card card-body mb-3">
+            <div class="row align-items-end">
+                <div class="col-md-3"><label class="form-label">Categoria</label>
+                    <select class="form-select" v-model="assetUpload.category">
+                        <option v-for="(label, key) in assetCategories" :key="key" :value="key">[[ label ]]</option>
+                    </select>
+                </div>
+                <div class="col-md-6"><label class="form-label">File</label>
+                    <input type="file" class="form-control" ref="assetFile" @change="assetUpload.message = ''">
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary w-100" @click="uploadAsset" :disabled="assetUpload.busy">
+                        <span v-if="assetUpload.busy" class="spinner-border spinner-border-sm me-1"></span>
+                        Carica
+                    </button>
+                </div>
+            </div>
+            <div v-if="assetUpload.message" class="mt-3 mb-0 alert"
+                :class="assetUpload.ok ? 'alert-success' : 'alert-danger'">
+                [[ assetUpload.message ]]
+            </div>
+            <div class="form-text mt-2">
+                Audio per la diretta e per il timelapse, immagini per i loghi in sovraimpressione. I file
+                restano nella cartella dei dati e sopravvivono agli aggiornamenti.
+            </div>
+        </div>
+
+        <div class="card card-body">
+            <div class="d-flex align-items-center mb-3">
+                <h5 class="mb-0 me-3">Materiale caricato</h5>
+                <select class="form-select w-auto" v-model="assetFilter">
+                    <option value="">Tutte le categorie</option>
+                    <option v-for="(label, key) in assetCategories" :key="key" :value="key">[[ label ]]</option>
+                </select>
+                <button class="btn btn-outline-secondary btn-sm ms-auto" @click="loadAssets">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div v-if="!filteredAssets.length" class="text-muted">Nessun file in questa categoria.</div>
+            <table v-else class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Categoria</th>
+                        <th class="text-end">Dimensione</th>
+                        <th>Anteprima</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="item in filteredAssets" :key="item.reference">
+                        <td>[[ item.name ]]</td>
+                        <td>[[ assetCategories[item.category] || item.category ]]</td>
+                        <td class="text-end">[[ formatSize(item.size) ]]</td>
+                        <td>
+                            <audio v-if="item.category === 'audio'" controls preload="none"
+                                :src="assetUrl(item.reference)" style="height: 32px"></audio>
+                            <img v-else :src="assetUrl(item.reference)" alt="" class="border rounded bg-light p-1"
+                                style="max-height: 40px">
+                        </td>
+                        <td class="text-end">
+                            <button class="btn btn-outline-danger btn-sm" @click="deleteAsset(item)"
+                                title="Elimina">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

@@ -164,8 +164,17 @@ const startApp = async () => {
     },
     methods: {
       async saveConfig() {
-        await secureFetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.config) });
-        alert('Configurazione salvata!');
+        try {
+          const res = await secureFetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.config) });
+          const data = await res.json();
+          // Il salvataggio può fallire in scrittura: dirlo, invece di
+          // annunciare un successo che non c'è stato.
+          alert(data.success
+            ? 'Configurazione salvata: le nuove impostazioni valgono dal prossimo scatto.'
+            : 'Salvataggio non riuscito. Controlla i log.');
+        } catch (error) {
+          if (error.message !== 'Session expired') alert('Salvataggio non riuscito. Controlla i log.');
+        }
       },
       async takePhoto() {
         try {
@@ -530,6 +539,198 @@ const startApp = async () => {
   // Registra i componenti delle pagine
   app.component('page-config', {
     props: ['config', 'schema', 'configPage', 'activeCameraTab', 'activeStreamTab'],
+    data() {
+      return {
+        youtubeAuth: { active: false, userCode: '', verificationUrl: '', message: '', ok: false },
+        assets: [],
+        assetCategories: {},
+        assetFilter: '',
+        assetUpload: { category: 'audio', busy: false, message: '', ok: false }
+      };
+    },
+    created() {
+      // Timer e stato di controllo non reattivi
+      this.youtubeAuthTimer = null;
+      this.youtubeAuthExpiry = 0;
+      this.youtubeAuthPolling = false;
+      // Servono anche fuori dalla pagina Assets: le tendine dell'audio e
+      // dei loghi si popolano da qui.
+      this.loadAssets();
+    },
+    computed: {
+      audioAssets() {
+        return this.assets.filter(item => item.category === 'audio');
+      },
+      logoAssets() {
+        return this.assets.filter(item => item.category === 'logo');
+      },
+      filteredAssets() {
+        if (!this.assetFilter) return this.assets;
+        return this.assets.filter(item => item.category === this.assetFilter);
+      }
+    },
+    beforeUnmount() {
+      this.stopYoutubeAuth();
+    },
+    methods: {
+      async loadAssets() {
+        try {
+          const res = await secureFetch('/api/assets');
+          const data = await res.json();
+          if (data.success) {
+            this.assets = data.assets || [];
+            this.assetCategories = data.categories || {};
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') this.assets = [];
+        }
+      },
+      async uploadAsset() {
+        const input = this.$refs.assetFile;
+        if (!input || !input.files || !input.files.length) {
+          this.assetUpload.message = 'Scegli prima un file.';
+          this.assetUpload.ok = false;
+          return;
+        }
+        const body = new FormData();
+        body.append('file', input.files[0]);
+        body.append('category', this.assetUpload.category);
+
+        this.assetUpload.busy = true;
+        try {
+          // Niente Content-Type: lo mette il browser, con il boundary
+          const res = await secureFetch('/api/assets', { method: 'POST', body });
+          const data = await res.json();
+          this.assetUpload.ok = !!data.success;
+          this.assetUpload.message = data.success
+            ? 'Caricato ' + data.asset.name + '.'
+            : (data.error || 'Caricamento non riuscito.');
+          if (data.success) {
+            input.value = '';
+            await this.loadAssets();
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.assetUpload.ok = false;
+            this.assetUpload.message = 'Errore di rete durante il caricamento.';
+          }
+        } finally {
+          this.assetUpload.busy = false;
+        }
+      },
+      async deleteAsset(item) {
+        if (!confirm('Eliminare ' + item.name + '?')) return;
+        try {
+          const res = await secureFetch('/api/assets/' + item.category + '/' + encodeURIComponent(item.name),
+            { method: 'DELETE' });
+          const data = await res.json();
+          this.assetUpload.ok = !!data.success;
+          this.assetUpload.message = data.success
+            ? 'Eliminato ' + item.name + '.'
+            : (data.error || 'Eliminazione non riuscita.');
+          if (data.success) await this.loadAssets();
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.assetUpload.ok = false;
+            this.assetUpload.message = 'Errore di rete durante l\'eliminazione.';
+          }
+        }
+      },
+      missingAsset(value) {
+        // Un asset cancellato lascia il riferimento in configurazione: senza
+        // questa voce la tendina sembrerebbe semplicemente vuota.
+        if (!value) return false;
+        return !this.assets.some(item => item.reference === value);
+      },
+      assetReference(value) {
+        // Vuoto per gli URL http: la tendina resta su "Scegli fra gli assets"
+        return (value || '').startsWith('asset:') ? value : '';
+      },
+      assetUrl(value) {
+        const reference = this.assetReference(value);
+        if (!reference) return '';
+        return '/assets/' + reference.slice('asset:'.length);
+      },
+      formatSize(bytes) {
+        if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
+        if (bytes >= 1024) return Math.round(bytes / 1024) + ' kB';
+        return bytes + ' B';
+      },
+      async startYoutubeAuth() {
+        const yl = this.config.youtubeLive || {};
+        if (!yl.client_id || !yl.client_secret) {
+          this.youtubeAuth.message = 'Inserisci prima Client ID e Client Secret.';
+          this.youtubeAuth.ok = false;
+          return;
+        }
+        this.stopYoutubeAuth();
+        this.youtubeAuth = { active: true, userCode: '', verificationUrl: '', message: '', ok: false };
+        try {
+          const res = await secureFetch('/api/youtube/device/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_id: yl.client_id, client_secret: yl.client_secret })
+          });
+          const data = await res.json();
+          if (!data.success) {
+            this.youtubeAuth.active = false;
+            this.youtubeAuth.message = data.error || 'Avvio autenticazione fallito.';
+            this.youtubeAuth.ok = false;
+            return;
+          }
+          this.youtubeAuth.userCode = data.user_code;
+          this.youtubeAuth.verificationUrl = data.verification_url;
+          this.youtubeAuthExpiry = Date.now() + (data.expires_in || 1800) * 1000;
+          const interval = Math.max(3, data.interval || 5);
+          this.youtubeAuthTimer = setInterval(this.pollYoutubeAuth, interval * 1000);
+        } catch (error) {
+          this.youtubeAuth.active = false;
+          if (error.message !== 'Session expired') {
+            this.youtubeAuth.message = 'Errore di rete durante l\'avvio.';
+            this.youtubeAuth.ok = false;
+          }
+        }
+      },
+      async pollYoutubeAuth() {
+        if (this.youtubeAuthPolling) return; // evita richieste sovrapposte
+        if (Date.now() > this.youtubeAuthExpiry) {
+          this.stopYoutubeAuth();
+          this.youtubeAuth.message = 'Codice scaduto, riprova.';
+          this.youtubeAuth.ok = false;
+          return;
+        }
+        this.youtubeAuthPolling = true;
+        try {
+          const res = await secureFetch('/api/youtube/device/poll', { method: 'POST' });
+          const data = await res.json();
+          if (data.status === 'authorized') {
+            this.config.youtubeLive.refresh_token = data.refresh_token;
+            this.stopYoutubeAuth();
+            // Il canale autorizzato va mostrato: se non è quello della stream
+            // key la diretta fallisce con un 403 solo allo scatto successivo.
+            this.youtubeAuth.message = data.channel
+              ? 'Autenticato sul canale "' + data.channel + '". Verifica che sia quello della stream key, poi salva la configurazione.'
+              : 'Autenticazione completata. Ricordati di salvare la configurazione.';
+            this.youtubeAuth.ok = true;
+          } else if (data.status !== 'pending') {
+            this.stopYoutubeAuth();
+            this.youtubeAuth.message = 'Autenticazione non riuscita: ' + (data.error || data.status);
+            this.youtubeAuth.ok = false;
+          }
+        } catch (error) {
+          if (error.message === 'Session expired') this.stopYoutubeAuth();
+          // un errore singolo di rete non interrompe l'attesa
+        } finally {
+          this.youtubeAuthPolling = false;
+        }
+      },
+      stopYoutubeAuth() {
+        clearInterval(this.youtubeAuthTimer);
+        this.youtubeAuthTimer = null;
+        this.youtubeAuth.active = false;
+        this.youtubeAuth.userCode = '';
+      }
+    },
     template: configTemplate,
     components: { FieldRenderer }
   });
@@ -718,8 +919,23 @@ const startApp = async () => {
   });
   app.component('page-system', {
     template: systemTemplate,
-    props: ['passwords', 'isLoading', 'message', 'messageClass'],
-    emits: ['change-password'],
+    props: ['config', 'passwords', 'isLoading', 'message', 'messageClass'],
+    emits: ['change-password', 'save-config'],
+    computed: {
+      // I nomi del certificato sono una lista in configurazione e una riga
+      // per nome nel textarea, come le destinazioni dello streaming.
+      certificateNames: {
+        get() {
+          const names = this.config?.settingsManager?.https_hostnames;
+          return Array.isArray(names) ? names.join('\n') : (names || '');
+        },
+        set(value) {
+          if (!this.config?.settingsManager) return;
+          this.config.settingsManager.https_hostnames =
+            value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        }
+      }
+    },
     data() {
       return {
         backupPassphrase: '',

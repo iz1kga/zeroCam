@@ -17,7 +17,7 @@ from lib.helpers import (
     centered_view,
     FramePrivacyMasker,
 )
-from lib import paths, stream_overlay
+from lib import assets, paths, stream_overlay
 import random
 import threading
 import subprocess
@@ -29,6 +29,11 @@ import importlib.metadata
 from libcamera import Transform
 import copy
 import json
+
+
+# Voce "Manuale" del menu AWB: non e' una modalita' di libcamera, e' il modo
+# di dire "spegni l'automatismo e usa i guadagni indicati".
+AWB_MANUAL = 7
 
 
 def cameraFactory(camera_type, *args, **kwargs):
@@ -51,13 +56,15 @@ class fakeCameraDevice:
         self.logger.info("Camera Object Created")
 
     def update_config(self, new_params, new_stream_params, new_device_params,
-                      new_annotation=None, new_overlay_images=None):
+                      new_annotation=None, new_overlay_images=None, new_onvif_params=None):
         self.logger.info("Updating camera configuration with new settings...")
         self.params = new_params
         self.streamParams = new_stream_params
         self.deviceParams = new_device_params
         self.annotation = new_annotation or {}
         self.overlayImages = new_overlay_images or []
+        if new_onvif_params is not None:
+            self.onvifParams = new_onvif_params
 
     def fakeImage(self):
         width = 4000
@@ -159,7 +166,7 @@ class PiCameraDevice:
 
 
     def update_config(self, new_params, new_stream_params, new_device_params,
-                      new_annotation=None, new_overlay_images=None):
+                      new_annotation=None, new_overlay_images=None, new_onvif_params=None):
         with self.camera_lock:
             self.logger.info("Updating camera configuration with new settings...")
             self.params = new_params
@@ -167,6 +174,10 @@ class PiCameraDevice:
             self.deviceParams = new_device_params
             self.annotation = new_annotation or {}
             self.overlayImages = new_overlay_images or []
+            # Larghezza del flusso lores e abilitazione: le legge streamNow,
+            # quindi il cambio entra in vigore al riavvio dello streaming.
+            if new_onvif_params is not None:
+                self.onvifParams = new_onvif_params
 
     def get_image(self ):
         with self.camera_lock:
@@ -181,26 +192,41 @@ class PiCameraDevice:
         """
         Bilanciamento del bianco per lo scatto: automatico o a guadagni fissi.
 
-        Sotto le luci al sodio l'automatismo insegue una dominante che non
-        sparisce mai e vira l'intera immagine: con i guadagni impostati a mano
-        l'AWB viene spento e il colore resta quello scelto. Guadagni a zero
-        significano automatico, con la modalità AwbMode configurata.
+        Con la modalità "Manuale" l'automatismo viene spento e restano i
+        guadagni di rosso e blu indicati: è il rimedio alle luci al sodio, che
+        l'AWB insegue virando l'intera immagine. Con qualunque altra modalità
+        i guadagni sono ignorati.
         """
         try:
-            red = float(params.get("ColourGainRed", 0) or 0)
-            blue = float(params.get("ColourGainBlue", 0) or 0)
+            mode = int(params.get("AwbMode", 0))
         except (TypeError, ValueError):
-            red = blue = 0.0
+            mode = 0
 
-        if red > 0 and blue > 0:
-            controls["AwbEnable"] = False
-            controls["ColourGains"] = (red, blue)
-            controls.pop("AwbMode", None)
-            self.logger.info(f"Bilanciamento del bianco manuale: guadagni R={red:.2f}, B={blue:.2f}")
-        else:
-            controls["AwbEnable"] = True
-            controls["AwbMode"] = int(params.get("AwbMode", 0))
-            self.logger.info(f"Bilanciamento del bianco automatico, modalità {controls['AwbMode']}")
+        if mode == AWB_MANUAL:
+            try:
+                red = float(params.get("ColourGainRed", 0) or 0)
+                blue = float(params.get("ColourGainBlue", 0) or 0)
+            except (TypeError, ValueError):
+                red = blue = 0.0
+
+            if red > 0 and blue > 0:
+                controls["AwbEnable"] = False
+                controls["ColourGains"] = (red, blue)
+                controls.pop("AwbMode", None)
+                self.logger.info(f"Bilanciamento del bianco manuale: guadagni R={red:.2f}, B={blue:.2f}")
+                return controls
+
+            # Manuale senza guadagni validi non e' una richiesta eseguibile:
+            # meglio l'automatico che una foto con i colori a caso.
+            self.logger.warning(
+                "Bilanciamento manuale richiesto ma i guadagni non sono validi: torno all'automatico."
+            )
+            mode = 0
+
+        controls["AwbEnable"] = True
+        controls["AwbMode"] = mode
+        controls.pop("ColourGains", None)
+        self.logger.info(f"Bilanciamento del bianco automatico, modalità {mode}")
         return controls
 
     def takePicture(self, dayperiod):
@@ -428,6 +454,34 @@ class PiCameraDevice:
                     self.logger.info("--- Fine cattura, camera fermata. ---")
 
 
+    def _stream_audio_input(self):
+        """
+        Ingresso audio di ffmpeg: il brano configurato oppure il silenzio.
+
+        Resta sempre l'ingresso numero 1, perché è quello che le uscite
+        mappano con '-map 1:a' e i loghi contano a partire dal 2. Il brano
+        va in loop infinito e viene letto a velocità reale: senza '-re'
+        ffmpeg lo divorerebbe alla massima velocità, mandando l'audio
+        avanti al video di ore.
+        """
+        source = self.streamParams.get("audio_file", "") or ""
+        track = assets.path(source)
+        if source and not track:
+            self.logger.warning(
+                f"Audio dello streaming '{source}' non trovato fra gli assets: vado in silenzio."
+            )
+        if not track:
+            return ["-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100"], []
+
+        try:
+            volume = max(0, min(100, int(self.streamParams.get("audio_volume", 100))))
+        except (TypeError, ValueError):
+            volume = 100
+
+        self.logger.info(f"Audio dello streaming: {os.path.basename(track)} al {volume}% di volume.")
+        filters = [] if volume == 100 else ["-af", f"volume={volume / 100:.2f}"]
+        return ["-stream_loop", "-1", "-re", "-i", track], filters
+
     def _stream_outputs(self, primary_url, video_label="0:v"):
         """
         Argomenti di uscita per ffmpeg: una o più destinazioni RTMP.
@@ -568,8 +622,15 @@ class PiCameraDevice:
                 buffer_count=6
             )
             self.camera.configure(video_config)
+            # AwbMode e guadagni non vanno passati grezzi: la voce "Manuale"
+            # non esiste per libcamera e i guadagni sono chiavi nostre.
+            awb_params = {
+                key: dayperiod_params.pop(key)
+                for key in ("AwbMode", "ColourGainRed", "ColourGainBlue")
+                if key in dayperiod_params
+            }
             dayperiod_params["AeEnable"] = True
-            dayperiod_params["AwbEnable"] = True
+            self._apply_white_balance(dayperiod_params, awb_params)
             self.logger.info(f"dayperiod_params: {dayperiod_params}")
             self.camera.set_controls(dayperiod_params)
             self.camera.start()
@@ -609,14 +670,15 @@ class PiCameraDevice:
                     self.shmem_path, self.logger,
                 )
 
+            audio_input, audio_filters = self._stream_audio_input()
+
             ffmpeg_cmd = [
                 "ffmpeg", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-s", f"{w}x{h}", "-r", str(fr), "-i", "-",
-                "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
-            ] + overlay_inputs + (["-filter_complex", overlay_filter] if overlay_filter else []) + [
+            ] + audio_input + overlay_inputs + (["-filter_complex", overlay_filter] if overlay_filter else []) + [
                 "-c:v", "libx264", "-preset", "veryfast", "-b:v", bitrate, "-maxrate", bitrate, "-bufsize", bufsize,
                 "-g", str(int(fr * 2)),
                 "-c:a", "aac", "-ar", "44100", "-b:a", "128k",
-            ] + self._stream_outputs(f"rtmp://a.rtmp.youtube.com/live2/{api_key}", video_label)
+            ] + audio_filters + self._stream_outputs(f"rtmp://a.rtmp.youtube.com/live2/{api_key}", video_label)
 
             self.logger.info("Starting ffmpeg process for YouTube stream...")
             self.ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, stdin=subprocess.PIPE)

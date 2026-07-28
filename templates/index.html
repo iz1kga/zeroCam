@@ -3,27 +3,30 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>zeroCAM - Console</title>
+  <title>zeroCAM - Live Landscape Cam</title>
   <!-- Librerie Esterne -->
   <script src="{{ url_for('static', filename='js/gauge.js') }}"></script>
   <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/bootstrap-icons.css') }}" rel="stylesheet">
   <script src="{{ url_for('static', filename='js/vue.global.js') }}"></script>
   <script src="{{ url_for('static', filename='js/chart.js') }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/cdn.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- L'adapter include date-fns: e' l'asse dei tempi dei grafici di Status -->
+  <script src="{{ url_for('static', filename='js/chartjs-adapter-date-fns.bundle.min.js') }}"></script>
 
 
-  
   <!-- File CSS Locale -->
-  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <link rel="icon" href="{{ url_for('static', filename='brand/zc_logo_primary.svg') }}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='brand/zc_logo_primary.png') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
 <body>
   <div id="app" class="d-flex flex-column h-100">
     <header class="navbar navbar-light bg-light px-3 border-bottom">
-      <span class="navbar-brand mb-0 h1">zeroCAM - Console</span>
+      <span class="navbar-brand mb-0 d-flex align-items-center gap-2">
+        <img src="{{ url_for('static', filename='brand/zc_logo_big.svg') }}" alt="zeroCAM" class="brand-logo">
+        <span class="text-muted"></span>
+      </span>
       <span class="text-muted small">{{ version }}</span>
     </header>
     <div class="d-flex flex-grow-1">
@@ -45,6 +48,7 @@
             <a href="#" class="nav-link" :class="{ active: configPage === 'overlayImages' }" @click.prevent="configPage = 'overlayImages'">Overlays</a>
             <a href="#" class="nav-link" :class="{ active: configPage === 'annotation' }" @click.prevent="configPage = 'annotation'">Annotation</a>
             <a href="#" class="nav-link" :class="{ active: configPage === 'timelapse' }" @click.prevent="configPage = 'timelapse'">Timelapse</a>
+            <a href="#" class="nav-link" :class="{ active: configPage === 'assets' }" @click.prevent="configPage = 'assets'">Assets</a>
           </div>
 
           <a href="#" class="nav-link" :class="{ active: page === 'control' }" @click.prevent="page = 'control'">

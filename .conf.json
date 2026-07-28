@@ -147,21 +147,27 @@
       "AwbMode": 4,
       "NoiseReductionMode": 2,
       "Sharpness": 4,
-      "framerate": 10
+      "framerate": 10,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "day": {
       "AnalogueGain": 1,
       "AwbMode": 4,
       "NoiseReductionMode": 2,
       "Sharpness": 4,
-      "framerate": 15
+      "framerate": 15,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "dusk": {
       "AnalogueGain": 32,
       "AwbMode": 4,
       "NoiseReductionMode": 2,
       "Sharpness": 4,
-      "framerate": 10
+      "framerate": 10,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "enabled": false,
     "height": 1440,
@@ -170,7 +176,9 @@
       "AwbMode": 4,
       "NoiseReductionMode": 2,
       "Sharpness": 4,
-      "framerate": 5
+      "framerate": 5,
+      "ColourGainRed": 0,
+      "ColourGainBlue": 0
     },
     "width": 2560,
     "yt_api_key": ""

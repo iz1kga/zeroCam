@@ -12,8 +12,9 @@ from PIL import Image, ImageDraw
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
-from lib import config_backup, paths
+from lib import assets, config_backup, paths, tls
 from lib.version import get_version
+from lib.youtube_auth import YouTubeDeviceFlow
 
 PRIVACY_MASK_PATH = paths.PRIVACY_MASK_FILE
 
@@ -42,8 +43,17 @@ class SettingsManager:
         self.zerocam = zerocam_instance
         self.logger = self.zerocam.logger
         self.focus_aid_running = False
+        self.youtube_device_flow = YouTubeDeviceFlow(self.logger)
         
         self.app = Flask(__name__, template_folder='templates', static_folder='static')
+        # Il caricamento degli assets è l'unica richiesta con un corpo di
+        # peso: il limite lo fa rifiutare a monte, senza scriverlo su disco.
+        self.app.config['MAX_CONTENT_LENGTH'] = assets.MAX_SIZE
+        # Il cookie di sessione non deve essere leggibile da JavaScript né
+        # viaggiare verso altri siti. 'secure' si aggiunge solo quando
+        # l'HTTP è spento, altrimenti impedirebbe di autenticarsi su di esso.
+        self.app.config['SESSION_COOKIE_HTTPONLY'] = True
+        self.app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
         self.logger.info("Initializing SettingsManager...")
         self._setup_secret_key()
         self.logger.info("Flask secret key is set.")
@@ -108,8 +118,14 @@ class SettingsManager:
         self.app.add_url_rule('/api/take_photo', 'take_photo', self.take_photo, methods=['POST'])
         self.app.add_url_rule('/api/timelapse', 'get_timelapse', self.get_timelapse, methods=['GET'])
         self.app.add_url_rule('/api/timelapse/run', 'run_timelapse', self.run_timelapse, methods=['POST'])
+        self.app.add_url_rule('/api/youtube/device/start', 'youtube_device_start', self.youtube_device_start, methods=['POST'])
+        self.app.add_url_rule('/api/youtube/device/poll', 'youtube_device_poll', self.youtube_device_poll, methods=['POST'])
         self.app.add_url_rule('/api/timelapse/frames', 'timelapse_frames', self.timelapse_frames, methods=['GET'])
         self.app.add_url_rule('/timelapse/frame/<name>', 'timelapse_frame', self.timelapse_frame)
+        self.app.add_url_rule('/api/assets', 'list_assets', self.list_assets, methods=['GET'])
+        self.app.add_url_rule('/api/assets', 'upload_asset', self.upload_asset, methods=['POST'])
+        self.app.add_url_rule('/api/assets/<category>/<name>', 'delete_asset', self.delete_asset, methods=['DELETE'])
+        self.app.add_url_rule('/assets/<category>/<name>', 'serve_asset', self.serve_asset, methods=['GET'])
         self.app.add_url_rule('/api/privacy_mask', 'get_privacy_mask', self.get_privacy_mask, methods=['GET'])
         self.app.add_url_rule('/api/save_privacy_mask', 'save_privacy_mask', self.save_privacy_mask, methods=['POST'])
 
@@ -257,7 +273,9 @@ class SettingsManager:
             success = self.zerocam.config_manager.save_config(request.json)
             if success:
                 self.zerocam.apply_updated_config()
-            return jsonify(success=True)
+            # Dire "salvato" anche quando la scrittura è fallita lascia
+            # l'utente convinto di avere una configurazione che non ha.
+            return jsonify(success=success)
         else:
             # Restituisce la configurazione decifrata dal config_manager
             return jsonify(self.zerocam.config_manager.decrypted_config)
@@ -399,6 +417,35 @@ class SettingsManager:
         threading.Thread(target=self.zerocam.capture_job).start()
         return jsonify(success=True)
         
+    # --- YouTube device flow ---
+
+    @login_required
+    def youtube_device_start(self):
+        """
+        Starts the OAuth device flow with the credentials from the form.
+
+        The credentials come straight from the request so the user can
+        authenticate before saving the configuration.
+        """
+        data = request.json or {}
+        try:
+            info = self.youtube_device_flow.start(data.get('client_id'), data.get('client_secret'))
+            return jsonify(success=True, **info)
+        except ValueError as e:
+            return jsonify(success=False, error=str(e)), 400
+        except Exception as e:
+            self.logger.error(f"YouTube device flow start failed: {e}")
+            return jsonify(success=False, error=str(e)), 400
+
+    @login_required
+    def youtube_device_poll(self):
+        """Checks whether the user has completed the authorization yet."""
+        try:
+            return jsonify(self.youtube_device_flow.poll())
+        except Exception as e:
+            self.logger.error(f"YouTube device flow poll failed: {e}")
+            return jsonify(status='failed', error=str(e))
+
     # --- Timelapse ---
 
     @login_required
@@ -444,6 +491,60 @@ class SettingsManager:
         # I fotogrammi non cambiano mai: lasciarli in cache al browser evita
         # di riscaricarli a ogni passaggio della galleria.
         return send_file(path, mimetype='image/jpeg', max_age=86400, conditional=True)
+
+    # --- Assets ---
+
+    @login_required
+    def list_assets(self):
+        """Elenco del materiale caricato, con le categorie disponibili."""
+        category = request.args.get('category') or None
+        try:
+            return jsonify(
+                success=True,
+                assets=assets.listing(category),
+                categories={key: value["label"] for key, value in assets.CATEGORIES.items()},
+            )
+        except assets.AssetError as e:
+            return jsonify(success=False, error=str(e)), 400
+
+    @login_required
+    def upload_asset(self):
+        """Riceve un file dal browser e lo mette fra gli assets."""
+        uploaded = request.files.get('file')
+        category = request.form.get('category', '')
+        if not uploaded or not uploaded.filename:
+            return jsonify(success=False, error="Nessun file ricevuto."), 400
+
+        try:
+            item = assets.save(category, uploaded.filename, uploaded)
+        except assets.AssetError as e:
+            return jsonify(success=False, error=str(e)), 400
+        except Exception as e:
+            self.logger.error(f"Asset upload failed: {e}", exc_info=True)
+            return jsonify(success=False, error="Salvataggio non riuscito."), 500
+
+        self.logger.info(f"Asset uploaded: {item['reference']} ({item['size']} bytes)")
+        return jsonify(success=True, asset=item)
+
+    @login_required
+    def delete_asset(self, category, name):
+        try:
+            removed = assets.delete(category, name)
+        except assets.AssetError as e:
+            return jsonify(success=False, error=str(e)), 400
+
+        if not removed:
+            return jsonify(success=False, error="File non trovato."), 404
+        self.logger.info(f"Asset deleted: {category}/{name}")
+        return jsonify(success=True)
+
+    @login_required
+    def serve_asset(self, category, name):
+        """Serve un asset all'interfaccia: anteprima audio e miniature."""
+        path = assets.path(assets.reference(category, os.path.basename(name)))
+        if not path:
+            return "Asset not found", 404
+        return send_file(path, conditional=True, max_age=3600)
 
     # --- Focus Aid ---
     
@@ -504,9 +605,88 @@ class SettingsManager:
                 camera_component.camera.stop()
             self.logger.info("Focus aid stream generation stopped.")
 
+    def _start_https(self, port, hostnames):
+        """
+        Avvia l'ascolto TLS in un thread e ritorna True se ci è riuscito.
+
+        Waitress non parla TLS, quindi l'HTTPS lo serve cheroot, che lo fa
+        nativamente ed è altrettanto adatto alla produzione. Un fallimento
+        non è fatale: si resta sull'HTTP, meglio che nessuna interfaccia.
+        """
+        cert, key = tls.ensure_certificate(
+            paths.CERT_FILE, paths.KEY_FILE, hostnames, self.logger
+        )
+        if not cert:
+            return False
+
+        try:
+            from cheroot.wsgi import Server as CherootServer
+        except ImportError:
+            self.logger.error(
+                "HTTPS requested but the 'cheroot' package is missing: staying on HTTP. "
+                "Install it with pip install -r requirements.txt."
+            )
+            return False
+
+        class QuietServer(CherootServer):
+            """Zittisce il rumore che il redirect da HTTP a HTTPS produce."""
+
+            def error_log(inner, msg='', level=logging.INFO, traceback=False):
+                # cheroot annuncia la connessione interrotta come un
+                # handshake caduto: qui invece e' voluta, e il redirect e'
+                # gia' stato scritto a log dall'adattatore.
+                if tls.REDIRECT_MARK in msg:
+                    return
+                # Un handshake che non arriva in fondo dipende dal client:
+                # il browser che rifiuta il certificato autofirmato, una
+                # scansione, una connessione caduta. Non e' un problema
+                # della webcam e non deve riempirle il log.
+                if 'during handshake' in msg:
+                    self.logger.debug(f"HTTPS: {msg}")
+                    return
+                self.logger.log(level, f"HTTPS: {msg}", exc_info=traceback)
+
+        try:
+            server = QuietServer(('0.0.0.0', port), self.app, numthreads=4)
+            server.ssl_adapter = tls.build_ssl_adapter(cert, key, self.logger)
+            thread = threading.Thread(target=server.safe_start, name="HttpsThread", daemon=True)
+            thread.start()
+            self.logger.info(f"Web UI reachable over HTTPS on port {port}")
+            return True
+        except Exception as e:
+            self.logger.error(f"Could not start the HTTPS listener on port {port}: {e}", exc_info=True)
+            return False
+
     def run(self):
-        """Starts the Waitress server for the Flask application."""
-        port = self.zerocam.config_manager.get('settingsManager', {}).get('port', 8080)
+        """Starts the web server, over HTTP and optionally over HTTPS."""
+        cfg = self.zerocam.config_manager.get('settingsManager', {})
+        port = cfg.get('port', 8080)
+        https_port = cfg.get('https_port', 8443)
+        http_enabled = bool(cfg.get('http_enabled', True))
+
+        https_running = False
+        if cfg.get('https_enabled', False):
+            https_running = self._start_https(https_port, cfg.get('https_hostnames', []))
+
+        # ONVIF non parla TLS: spegnere l'HTTP lo mette fuori uso.
+        if not http_enabled and self.zerocam.config_manager.get('onvif', {}).get('enabled', False):
+            self.logger.warning(
+                "HTTP is disabled but ONVIF is enabled: ONVIF clients speak plain HTTP "
+                "and will not be able to reach the camera."
+            )
+
+        if not http_enabled and https_running:
+            self.logger.info("HTTP disabled: the interface answers over HTTPS only.")
+            # Il cookie di sessione può essere marcato come 'secure' solo
+            # adesso: con l'HTTP acceso impedirebbe di autenticarsi su di esso.
+            self.app.config['SESSION_COOKIE_SECURE'] = True
+            while not self.zerocam.shutdown_flag.is_set():
+                time.sleep(1)
+            return
+
+        if not http_enabled:
+            self.logger.error("HTTP is disabled but HTTPS is not running: falling back to HTTP.")
+
         self.logger.info(f"Starting web UI and services on port {port}")
         serve(self.app, host='0.0.0.0', port=port, threads=4)
 

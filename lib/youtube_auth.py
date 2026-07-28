@@ -13,6 +13,8 @@ from datetime import datetime, timedelta, timezone
 import requests
 
 TOKEN_URL = "https://oauth2.googleapis.com/token"
+DEVICE_CODE_URL = "https://oauth2.googleapis.com/device/code"
+DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
 API_BASE = "https://www.googleapis.com/youtube/v3"
 UPLOAD_BASE = "https://www.googleapis.com/upload/youtube/v3"
 
@@ -21,6 +23,12 @@ SCOPES = (
     "https://www.googleapis.com/auth/youtube "
     "https://www.googleapis.com/auth/youtube.upload"
 )
+
+# Il device flow ammette solo un sottoinsieme di scope: youtube.upload non è
+# tra questi. Ma videos.insert accetta anche lo scope 'youtube', che il device
+# flow concede, quindi con il solo 'youtube' si coprono sia le dirette sia
+# l'upload dei timelapse.
+DEVICE_SCOPE = "https://www.googleapis.com/auth/youtube"
 
 REQUIRED_KEYS = ("client_id", "client_secret", "refresh_token")
 
@@ -96,3 +104,150 @@ class YouTubeAuth:
         if r.status_code >= 400:
             raise RuntimeError(f"YouTube API {method} {path} failed ({r.status_code}): {r.text}")
         return r.json() if r.content else {}
+
+
+class YouTubeDeviceFlow:
+    """
+    OAuth "device flow" per ottenere il refresh token dall'interfaccia web.
+
+    Pensato per un dispositivo headless raggiunto via LAN: non serve un
+    redirect, né HTTPS, né un browser sul Pi. L'utente inserisce le
+    credenziali del proprio client OAuth, preme un pulsante e autorizza da
+    un altro dispositivo digitando un codice breve. Il Pi attende e riceve
+    il refresh token.
+
+    Richiede un client OAuth di tipo "TV e dispositivi di immissione
+    limitata": lo stesso motivo per cui basta lo scope 'youtube'.
+    """
+
+    def __init__(self, logger):
+        self.logger = logger
+        self.timeout = 15
+        self._lock = threading.Lock()
+        self._pending = None  # device_code, client_id, client_secret, interval
+
+    def start(self, client_id, client_secret):
+        """
+        Avvia il flusso e ritorna il codice da mostrare all'utente.
+
+        Solleva ValueError se mancano le credenziali, RuntimeError se Google
+        rifiuta la richiesta (tipicamente client del tipo sbagliato).
+        """
+        if not client_id or not client_secret:
+            raise ValueError("Client ID e Client Secret sono obbligatori.")
+
+        r = requests.post(
+            DEVICE_CODE_URL,
+            data={"client_id": client_id, "scope": DEVICE_SCOPE},
+            timeout=self.timeout,
+        )
+        if r.status_code != 200:
+            raise RuntimeError(self._explain(r))
+
+        data = r.json()
+        with self._lock:
+            self._pending = {
+                "device_code": data["device_code"],
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "interval": int(data.get("interval", 5)),
+            }
+        self.logger.info("YouTube device flow started, waiting for user authorization.")
+        return {
+            "user_code": data["user_code"],
+            # Google usa 'verification_url'; lo standard 'verification_uri'
+            "verification_url": data.get("verification_url") or data.get("verification_uri"),
+            "expires_in": int(data.get("expires_in", 1800)),
+            "interval": int(data.get("interval", 5)),
+        }
+
+    def poll(self):
+        """
+        Interroga Google una volta. Ritorna lo stato del flusso.
+
+        status: 'idle' (nessun flusso), 'pending' (in attesa),
+        'authorized' (con refresh_token), 'failed' (con error).
+        """
+        with self._lock:
+            pending = dict(self._pending) if self._pending else None
+        if not pending:
+            return {"status": "idle"}
+
+        r = requests.post(
+            TOKEN_URL,
+            data={
+                "client_id": pending["client_id"],
+                "client_secret": pending["client_secret"],
+                "device_code": pending["device_code"],
+                "grant_type": DEVICE_GRANT_TYPE,
+            },
+            timeout=self.timeout,
+        )
+
+        if r.status_code == 200:
+            payload = r.json()
+            refresh = payload.get("refresh_token")
+            self._clear()
+            if not refresh:
+                return {"status": "failed", "error": "nessun refresh token restituito"}
+            channel = self._channel_title(payload.get("access_token"))
+            self.logger.info(
+                f"YouTube device flow authorized, refresh token obtained for channel '{channel or '?'}'."
+            )
+            return {"status": "authorized", "refresh_token": refresh, "channel": channel}
+
+        error = ""
+        try:
+            error = r.json().get("error", "")
+        except ValueError:
+            error = r.text
+
+        # In attesa che l'utente completi: non è un errore.
+        if error in ("authorization_pending", "slow_down"):
+            return {"status": "pending"}
+
+        self._clear()
+        self.logger.warning(f"YouTube device flow ended: {error}")
+        return {"status": "failed", "error": error or "autorizzazione non riuscita"}
+
+    def _channel_title(self, access_token):
+        """
+        Nome del canale appena autorizzato, per mostrarlo a chi autentica.
+
+        Sbagliare account è l'errore piu' facile del device flow: la stream
+        key sta su un canale e il token su un altro, e ce ne si accorge solo
+        allo scatto successivo con un 403. Costa un'unita' di quota.
+        """
+        if not access_token:
+            return ""
+        try:
+            r = requests.get(
+                f"{API_BASE}/channels",
+                headers={"Authorization": f"Bearer {access_token}"},
+                params={"part": "snippet", "mine": "true"},
+                timeout=self.timeout,
+            )
+            if r.status_code != 200:
+                return ""
+            items = r.json().get("items", [])
+            return items[0].get("snippet", {}).get("title", "") if items else ""
+        except requests.exceptions.RequestException:
+            return ""
+
+    def cancel(self):
+        self._clear()
+
+    def _clear(self):
+        with self._lock:
+            self._pending = None
+
+    @staticmethod
+    def _explain(response):
+        try:
+            error = response.json().get("error", "")
+        except ValueError:
+            error = response.text
+        if error in ("invalid_client", "unauthorized_client"):
+            return ("Credenziali non valide o client OAuth del tipo sbagliato. "
+                    "Serve un client di tipo 'TV e dispositivi di immissione limitata'.")
+        return f"Avvio del flusso non riuscito ({response.status_code}): {error or response.text}"

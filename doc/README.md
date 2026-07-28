@@ -12,7 +12,7 @@ Il manuale è scritto in Markdown, un file per capitolo, e viene unito in un uni
 | [04-configurazione-base.md](04-configurazione-base.md) | Device Details, fasi del giorno, sicurezza |
 | [05-cattura-immagini.md](05-cattura-immagini.md) | Ciclo di scatto, esposizione, ritaglio, focus aid |
 | [06-privacy-mask.md](06-privacy-mask.md) | Maschere privacy su foto e video |
-| [07-annotazione-loghi.md](07-annotazione-loghi.md) | Barra di annotazione e loghi |
+| [07-annotazione-loghi.md](07-annotazione-loghi.md) | Barra di annotazione, loghi e assets |
 | [08-pubblicazione-immagini.md](08-pubblicazione-immagini.md) | Upload FTP e HTTP |
 | [09-streaming.md](09-streaming.md) | Diretta YouTube, ritrasmissione, anteprima |
 | [10-timelapse.md](10-timelapse.md) | Raccolta, montaggio, pubblicazione, galleria |

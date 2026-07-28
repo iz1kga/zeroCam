@@ -47,7 +47,7 @@ Parametri per fase, fase `day`:
 | `AeEnable` | Esposizione automatica |
 | `AeMeteringMode` | Misurazione: centrata, spot, matrix |
 | `AwbMode` | Modalità di bilanciamento del bianco (vedi sotto) |
-| `ColourGainRed`, `ColourGainBlue` | Guadagni fissi di rosso e blu; con entrambi > 0 l'AWB viene spento |
+| `ColourGainRed`, `ColourGainBlue` | Guadagni fissi di rosso e blu, usati solo con `AwbMode` a 7 |
 | `HdrMode` | HDR: off, singola esposizione, multipla |
 | `AnalogueGain`, `ExposureTime`, `ExposureValue` | Valori di partenza |
 | `NoiseReductionMode`, `Sharpness` | Riduzione rumore e nitidezza |
@@ -71,6 +71,7 @@ I valori di `AwbMode` sono quelli di libcamera:
 | 4 | Indoor |
 | 5 | Daylight |
 | 6 | Cloudy |
+| 7 | Manuale: AWB spento, valgono `ColourGainRed` e `ColourGainBlue` |
 
 ## streamParameters
 
@@ -82,7 +83,9 @@ I valori di `AwbMode` sono quelli di libcamera:
 | `bitrate`, `buffer` | testo | Per esempio `4000k` e `8000k` |
 | `extra_destinations` | elenco | Altri URL RTMP |
 | `overlay` | sì/no | Annotazione e loghi sul video |
-| `dawn`, `day`, `dusk`, `night` | oggetto | `framerate`, `AnalogueGain`, `AwbMode`, `NoiseReductionMode`, `Sharpness` |
+| `audio_file` | testo | Riferimento `asset:audio/nome`; vuoto = traccia muta |
+| `audio_volume` | numero | Volume del brano in percentuale (0–100) |
+| `dawn`, `day`, `dusk`, `night` | oggetto | `framerate`, `AnalogueGain`, `AwbMode`, `ColourGainRed`, `ColourGainBlue`, `NoiseReductionMode`, `Sharpness` |
 
 ## youtubeLive
 
@@ -112,6 +115,8 @@ I valori di `AwbMode` sono quelli di libcamera:
 | `min_frames` | numero | Soglia sotto la quale non si monta |
 | `retention_weeks` | numero | Settimane di conservazione dei fotogrammi |
 | `keep_local` | sì/no | Conserva il video sul dispositivo |
+| `audio_file` | testo | Riferimento `asset:audio/nome`; vuoto = video muto |
+| `audio_volume` | numero | Volume del brano in percentuale (0–100) |
 | `frames_dir`, `output_dir` | testo | Percorsi; se relativi sono risolti dentro la cartella dei dati |
 | `title`, `description` | testo | Testi del video; `{from}`, `{to}`, `{date}`, `{frames}` |
 | `privacy`, `made_for_kids` | vari | Impostazioni di pubblicazione |
@@ -173,4 +178,8 @@ Elenco di oggetti:
 
 | Chiave | Tipo | Significato |
 |---|---|---|
-| `port` | numero | Porta dell'interfaccia web (default 8080) |
+| `port` | numero | Porta dell'interfaccia web in HTTP (default 8080) |
+| `http_enabled` | sì/no | Ascolto in chiaro; spegnendolo ONVIF smette di funzionare |
+| `https_enabled` | sì/no | Ascolto cifrato con certificato autofirmato |
+| `https_port` | numero | Porta dell'interfaccia in HTTPS (default 8443) |
+| `https_hostnames` | elenco | Nomi aggiuntivi da inserire nel certificato |
