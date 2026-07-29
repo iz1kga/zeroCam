@@ -69,10 +69,20 @@
         </div>
     </div> -->
 
-    <!-- FTP Host -->
+    <!-- FTP Upload -->
     <div v-if="configPage === 'ftpHost' && config.FtpHost">
-        <h4>FTP Host</h4>
+        <h4>FTP Upload</h4>
         <div class="card card-body">
+            <div class="row mb-3">
+                <div class="col-md-4"><field-renderer :model="config.FtpHost" key-name="enabled" :schema="schema"
+                        label="Upload FTP attivo" /></div>
+                <div class="col-md-8">
+                    <div class="form-text">
+                        Carica l'immagine appena elaborata su un server FTP a ogni scatto, sovrascrivendo
+                        sempre lo stesso file. Spegnendolo il resto della configurazione resta dov'&egrave;.
+                    </div>
+                </div>
+            </div>
             <div class="row mb-3">
                 <div class="col-md-4"><label class="form-label">Host</label><field-renderer :model="config.FtpHost"
                         key-name="host" :schema="schema" /></div>

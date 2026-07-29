@@ -28,6 +28,15 @@ La rotazione è giornaliera e conserva sette giorni. Il livello di dettaglio si 
 journalctl -u zerocam.service -f
 ```
 
+Ogni riga del file riporta data, thread, livello e — fra parentesi quadre — l'indirizzo del client che ha originato la richiesta:
+
+```
+2026-07-29 10:50:24,227 - waitress-0 - INFO - [192.168.1.40] - ONVIF Media Service: Received action '...'
+2026-07-29 10:51:02,004 - MainThread - INFO - [-] - Capture job finished in 71.2s.
+```
+
+L'indirizzo vale per l'interfaccia web, per `/snapshot.jpg` e per le chiamate ONVIF, così si vede subito quale consumatore sta interrogando la webcam. Le righe prodotte fuori da una richiesta HTTP — scatti, streaming, timelapse, pianificazione — mostrano `-`. Se la webcam sta dietro un reverse proxy l'indirizzo registrato è quello del proxy, non quello del client finale.
+
 Righe da conoscere:
 
 | Messaggio | Significato |

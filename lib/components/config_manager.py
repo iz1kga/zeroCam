@@ -15,6 +15,14 @@ DEFAULT_SECTIONS = {
         "https_enabled": False,
         "https_port": 8443,
         "https_hostnames": [],
+        "public_page": False,
+        "public_title": "",
+        "public_live_url": "",
+    },
+    # L'upload FTP esisteva prima di avere un interruttore: chi ce l'ha
+    # configurato lo vuole acceso, quindi il default lo lascia com'era.
+    "FtpHost": {
+        "enabled": True,
     },
     "streamParameters": {
         "extra_destinations": [],

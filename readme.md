@@ -114,6 +114,22 @@ Il ripristino chiede file e passphrase, riscrive la configurazione ricifrando i 
 
 ---
 
+## 🧪 Test
+
+I test girano ovunque, non serve il Raspberry: `picamera2` e `libcamera` vengono sostituiti da segnaposto e la cartella dei dati è temporanea, quindi non toccano nulla di reale.
+
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+pytest
+```
+
+Coprono le parti che si possono verificare senza sensore: riferimenti e limiti degli assets, bilanciamento del bianco della cattura, ricambio giornaliero della diretta, metadati EXIF, certificato TLS, valori di default della configurazione, ricostruzione della pianificazione, upload FTP e pagina pubblica. Girano in meno di un secondo e sono eseguiti dalla GitHub Action a ogni push.
+
+Quello che resta fuori — la camera, ffmpeg, le destinazioni di rete — va provato sul dispositivo.
+
+---
+
 ## 📜 Licenza
 
 zeroCAM è rilasciato sotto un modello a doppia licenza.
