@@ -11,6 +11,7 @@ import traceback
 import datetime
 
 import schedule
+from flask import has_request_context, request
 
 # Importa i componenti modularizzati
 from lib.components.config_manager import ConfigManager
@@ -391,13 +392,27 @@ class ZeroCamApp:
             self.scheduler_manager.reload_jobs()
 
 # --- Main Execution ---
+class ClientIPFilter(logging.Filter):
+    """Aggiunge a ogni record l'IP del client, se siamo dentro una richiesta Flask.
+
+    Va agganciato agli handler e non al logger: i filtri di un logger non
+    vedono i record che arrivano per propagazione dai logger figli.
+    """
+
+    def filter(self, record):
+        try:
+            record.client_ip = request.remote_addr if has_request_context() else "-"
+        except Exception:
+            record.client_ip = "-"
+        return True
+
 def setup_logging(log_level_str):
     """Configures the global logger for the application."""
     logger = logging.getLogger("zeroCam")
     log_level = getattr(logging, log_level_str.upper(), logging.INFO)
     logger.setLevel(log_level)
-    formatter = logging.Formatter("%(asctime)s - %(threadName)s - %(levelname)s - %(message)s")
-    
+    formatter = logging.Formatter("%(asctime)s - %(threadName)s - %(levelname)s - [%(client_ip)s] - %(message)s")
+
     if not logger.handlers:
         # Console Handler
         console_handler = logging.StreamHandler()
@@ -407,6 +422,7 @@ def setup_logging(log_level_str):
         log_file_path = paths.LOG_FILE
         os.makedirs(paths.LOG_DIR, exist_ok=True)
         file_handler = logging.handlers.TimedRotatingFileHandler(log_file_path, when="D", interval=1, backupCount=7)
+        file_handler.addFilter(ClientIPFilter())
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
     return logger
