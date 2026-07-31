@@ -415,6 +415,12 @@ if [ -z "$HOTSPOT_PASSWORD" ]; then
     echo_success "Hotspot configurato come $HOTSPOT_SSID."
 else
     HOTSPOT_SSID=$(jq -r '.network.hotspot_ssid // ""' "$DATA_DIR/.conf.json")
+    # Dopo un salvataggio dall'interfaccia la password è cifrata con
+    # ZEROCAM_SECRET_KEY: stamparla così com'è metterebbe 'enc:gAAAA...'
+    # sull'etichetta. Si legge dall'interfaccia, che la decifra.
+    case "$HOTSPOT_PASSWORD" in
+        enc:*) HOTSPOT_PASSWORD="(invariata: leggila in Configuration -> Network)" ;;
+    esac
     echo_info "Hotspot già configurato: lascio nome e password com'erano."
 fi
 
