@@ -12,7 +12,43 @@ Per verificare cosa sta girando:
 nmcli general status
 ```
 
-Se il comando non esiste, il sistema è troppo vecchio.
+Se il comando non esiste, il sistema è troppo vecchio. L'installatore fa lo stesso controllo e si ferma prima di installare qualsiasi cosa.
+
+### I permessi
+
+Il servizio gira come utente normale, non come root, e senza un'autorizzazione esplicita ogni comando di scrittura verrebbe rifiutato: la pagina *Network* mostrerebbe lo stato ma non potrebbe cambiare nulla. L'installazione crea per questo una regola polkit in `/etc/polkit-1/rules.d/50-zerocam-network.rules`, che concede a quell'utente — e solo a lui — le azioni di NetworkManager.
+
+Su un'installazione aggiornata da una versione precedente la regola viene creata al primo aggiornamento. Se la pagina legge ma ogni modifica fallisce, è il primo posto da guardare.
+
+### Il paese del wifi
+
+La radio resta bloccata finché non è dichiarato il paese: `rfkill list` mostra `Soft blocked: yes` e nessun hotspot può partire. L'installazione lo chiede, proponendo `IT`. Si cambia in seguito con:
+
+```bash
+sudo raspi-config nonint do_wifi_country IT
+```
+
+## Il nome del dispositivo
+
+L'installazione dà alla webcam un hostname unico, `zerocam-XXXX`, dove le quattro cifre finali vengono dal seriale del Raspberry. Grazie ad Avahi, che Raspberry Pi OS installa di suo, il dispositivo risponde a quel nome sulla rete locale:
+
+```
+http://zerocam-a1b2.local:8080/
+```
+
+Non serve conoscerne l'indirizzo IP, che con il DHCP può cambiare.
+
+Il suffisso dal seriale non è un vezzo. Due webcam con lo stesso nome creano un conflitto che Avahi risolve da sé rinominando la seconda in `zerocam-2.local`, ma quale sia la seconda dipende dall'ordine di accensione e può cambiare a ogni riavvio: un'etichetta stampata non varrebbe più nulla. Con il suffisso il conflitto non si presenta.
+
+Lo stesso suffisso compone il nome dell'hotspot di appoggio, `zeroCAM-XXXX`, così l'etichetta, la rete a cui collegarsi e l'indirizzo da digitare dicono tutti la stessa cosa.
+
+Se al momento dell'installazione l'hostname era già stato cambiato a mano, viene lasciato com'è: è una scelta di chi ha preparato il dispositivo.
+
+### Il nome leggibile
+
+Accanto all'hostname, la webcam annuncia il proprio servizio web con il nome di **Configuration → Device Details**. È quello che compare nei browser Bonjour e nella sezione *Rete* dei gestori di file: si legge "Villar Focchiardo" invece di `zerocam-a1b2`, che come nome è corretto ma non dice niente.
+
+L'annuncio è un file in `/etc/avahi/services/`, riscritto dall'applicazione quando il nome cambia; Avahi lo rilegge da sé. Spegnendo l'HTTP l'annuncio sparisce, perché prometterebbe una porta che non risponde.
 
 ## La pagina Network
 

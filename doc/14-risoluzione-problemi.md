@@ -30,6 +30,22 @@ Il sistema è più vecchio di Bookworm, e configura la rete con `dhcpcd` e `wpa_
 * La radio può essere bloccata quando il paese non è impostato: `rfkill list` mostra `Soft blocked: yes`. Si rimedia con `sudo raspi-config nonint do_wifi_country IT`.
 * Una rete che non compare nella scansione può essere nascosta, e allora va scritta a mano, oppure a 5 GHz su un canale che il paese impostato non consente.
 
+## La pagina Network legge ma non salva
+
+Manca il permesso: il servizio gira come utente normale, e senza la regola polkit NetworkManager rifiuta ogni modifica. Il log riporta il rifiuto di `nmcli`, tipicamente `Not authorized to control networking`.
+
+```bash
+ls -l /etc/polkit-1/rules.d/50-zerocam-network.rules
+```
+
+Se non c'è, la crea un aggiornamento; in alternativa si rilancia l'installatore, che è idempotente.
+
+## `zerocam-XXXX.local` non risponde
+
+* Avahi può non essere attivo: `systemctl status avahi-daemon`.
+* Il client deve saper risolvere gli indirizzi `.local`: Windows lo fa dalla 10 in poi, Android solo da alcune versioni. Da un telefono che non ce la fa, resta l'indirizzo IP, che la pagina *Network* mostra.
+* Due dispositivi con lo stesso nome fanno rinominare il secondo in `zerocam-2.local`. Non dovrebbe succedere, perché il nome porta il suffisso del seriale, ma succede se l'hostname è stato imposto a mano uguale su entrambi.
+
 ## L'hotspot non compare
 
 * Senza password configurata l'hotspot non parte: aperto darebbe a chiunque passi l'accesso alla console. Il log lo dice una volta sola, `No hotspot password configured`. Si imposta in **Configuration → Network**.

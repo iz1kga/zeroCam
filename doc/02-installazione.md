@@ -23,7 +23,31 @@ Lo script chiede il tag della versione da installare (per esempio `v1.4.0`) e, a
 8. **Chiavi** — creazione di `.env` con `DEVICE_ID` (UUID) e `ZEROCAM_SECRET_KEY` (32 byte casuali), se non esistono già.
 9. **Password** dell'interfaccia web, salvata come hash nella configurazione.
 10. **sudoers** — regola che consente il riavvio del sistema dal pulsante dell'interfaccia.
-11. **Servizio systemd** `zerocam.service`, abilitato all'avvio e fatto partire.
+11. **Identità sulla rete** — hostname `zerocam-XXXX` ricavato dal seriale del Raspberry, Avahi attivo e annuncio del servizio web.
+12. **Permessi di rete** — regola polkit che consente all'utente del servizio di configurare NetworkManager, e paese del wifi, senza il quale la radio resta bloccata.
+13. **Hotspot di appoggio** — nome e password generati e scritti in configurazione, poi mostrati a fine installazione per l'etichetta.
+14. **Servizio systemd** `zerocam.service`, abilitato all'avvio e fatto partire.
+
+Prima di ogni altra cosa lo script verifica che il sistema sia Bookworm o successivo: senza `nmcli` si ferma senza installare nulla. Il capitolo *La rete* spiega perché.
+
+## Preparare una webcam da consegnare
+
+Chi costruisce la webcam la installa sul proprio banco, con una rete a disposizione, e poi la spedisce a chi la userà: quello la accende in un posto dove non conosce nessuna rete. Perché sia configurabile senza terminale e senza schermo, quello che serve è tutto nel riquadro stampato a fine installazione:
+
+```
+  Da riportare sull'etichetta del dispositivo
+  ------------------------------------------
+  Indirizzo:            http://zerocam-a1b2.local:8080/
+  Rete di appoggio:     zeroCAM-a1b2
+  Password della rete:  hw3xpukcty
+  Indirizzo da hotspot: http://10.42.0.1:8080/
+```
+
+La password dell'hotspot viene mostrata solo lì: dopo si legge dall'interfaccia, in **Configuration → Network**. Va riportata sull'etichetta prima che il dispositivo parta, perché è l'unico modo che l'utente avrà di entrare.
+
+All'accensione, non trovando nessuna rete conosciuta, la webcam accende la propria dopo un paio di minuti. L'utente vi si collega, apre `http://10.42.0.1:8080/`, entra con le credenziali dell'interfaccia e indica il proprio wifi dalla pagina *Network*. Da quel momento la webcam è sulla rete di casa e risponde al primo dei due indirizzi.
+
+Conviene provare la sequenza una volta sul banco, staccando il cavo e verificando che l'hotspot compaia: è l'unica prova che dice se il paese del wifi è stato impostato davvero.
 
 ## Dove stanno i file
 

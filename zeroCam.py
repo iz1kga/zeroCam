@@ -20,6 +20,7 @@ from lib.components.stats_collector import StatsCollector
 from lib.components.component_manager import ComponentManager
 from lib.components.scheduler_manager import SchedulerManager
 from lib.netwatch import NetworkWatchdog
+from lib import mdns
 
 # Importa le funzioni di supporto ancora necessarie
 from lib.helpers import (
@@ -96,6 +97,10 @@ class ZeroCamApp:
         # Start the scheduler
         scheduler_thread = self.scheduler_manager.start()
         self.threads.append(scheduler_thread)
+
+        # Il nome con cui la webcam compare sulla rete: dipende dalla
+        # configurazione, quindi va riscritto qui e a ogni salvataggio.
+        mdns.publish(self.config_manager.decrypted_config, self.logger)
 
         # Sorveglianza della rete: accende l'hotspot quando non ce n'è una.
         # Parte con tutto il resto e non dipende da nulla, perché il caso in
@@ -399,6 +404,7 @@ class ZeroCamApp:
         if self.scheduler_manager:
             self.scheduler_manager.reload_jobs()
         self.netwatch.update_config(new_config.get("network", {}))
+        mdns.publish(new_config, self.logger)
 
 # --- Main Execution ---
 class ClientIPFilter(logging.Filter):

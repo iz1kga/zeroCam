@@ -40,6 +40,12 @@ Una volta completata l'installazione, puoi accedere all'interfaccia web del disp
 
 Ora puoi configurare la tua telecamera e iniziare a usarla!
 
+### Preparare una webcam da consegnare
+
+L'installazione assegna al dispositivo un hostname unico ricavato dal seriale del Raspberry, `zerocam-XXXX`, e lo rende raggiungibile come `zerocam-XXXX.local` senza doverne conoscere l'IP. Lo stesso suffisso compone il nome dell'hotspot di appoggio, `zeroCAM-XXXX`, la cui password viene generata e mostrata a fine installazione.
+
+Quei quattro valori — indirizzo, nome della rete di appoggio, sua password, indirizzo da hotspot — vanno riportati sull'etichetta prima di spedire la webcam: sono l'unico modo che avrà l'utente di entrarci. All'accensione, non trovando reti conosciute, la webcam accende la propria; l'utente vi si collega, apre `http://10.42.0.1:8080/` e indica il proprio wifi. Nessun terminale, nessuno schermo.
+
 ### Configurazione di rete
 
 La pagina **Network** elenca le interfacce con i loro indirizzi e permette di configurarle senza toccare il terminale: passaggio fra DHCP e indirizzo fisso — per la cablata come per il wifi — scansione delle reti wifi, connessione, reti nascoste ed elenco di quelle memorizzate. Il wifi si può collegare anche con il cavo attaccato: le due interfacce restano attive insieme e NetworkManager preferisce la cablata finché c'è.
@@ -205,6 +211,12 @@ Once the installation is complete, you can access the device's web interface:
 * **Password:** The one you provided during installation.
 
 Now you can configure your camera and start using it!
+
+### Preparing a camera for delivery
+
+The installer gives the device a unique hostname derived from the Raspberry's serial, `zerocam-XXXX`, reachable as `zerocam-XXXX.local` without having to know its IP. The same suffix names the fallback hotspot, `zeroCAM-XXXX`, whose password is generated and shown at the end of the installation.
+
+Those four values — address, fallback network name, its password, address while on the hotspot — belong on the device label before the camera ships: they are the only way in that its user will have. On power-up, finding no known network, the camera raises its own; the user joins it, opens `http://10.42.0.1:8080/` and points the camera at their wifi. No terminal, no screen.
 
 ### Network configuration
 

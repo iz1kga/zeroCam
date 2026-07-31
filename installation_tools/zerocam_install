@@ -46,6 +46,21 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# Il sistema deve essere Bookworm o successivo, dove la rete la gestisce
+# NetworkManager. Sulle versioni precedenti (dhcpcd e wpa_supplicant) la
+# pagina Network non ha nessuno con cui parlare e l'hotspot di appoggio non
+# può esistere: meglio fermarsi adesso che consegnare una webcam che non si
+# riesce a configurare.
+if ! command -v nmcli >/dev/null; then
+    echo "NetworkManager non è presente su questo sistema."
+    echo "zeroCAM richiede Raspberry Pi OS a 64 bit basato su Debian Bookworm o successivo."
+    if [ -r /etc/os-release ]; then
+        . /etc/os-release
+        echo "Trovato invece: ${PRETTY_NAME:-sconosciuto}"
+    fi
+    exit 1
+fi
+
 # Chiede la versione da installare
 echo_step "Benvenuto nell'installatore di zeroCAM"
 read -p "Inserisci il tag della versione da installare (es. v0.0.1): " RELEASE_TAG
@@ -66,7 +81,8 @@ apt-get install -y \
     gstreamer1.0-plugins-bad gstreamer1.0-libcamera gstreamer1.0-rtsp \
     gstreamer1.0-plugins-good gstreamer1.0-plugins-base python3-gi \
     python3-gst-1.0 gstreamer1.0-plugins-ugly gstreamer1.0-libav wireguard \
-    ffmpeg libcamera-tools wget unzip jq openssl uuid-runtime
+    ffmpeg libcamera-tools wget unzip jq openssl uuid-runtime \
+    avahi-daemon rfkill
 echo_success "Dipendenze di sistema installate."
 
 # Passo 2: Arresto del servizio esistente (se presente)
@@ -263,14 +279,157 @@ else
     echo_info "Regola sudoers per il riavvio già presente."
 fi
 
-# Passo 12: Creazione e avvio del servizio systemd
+# Passo 12: Identità sulla rete
 # ==============================================================================
-echo_step "Passo 12: Creazione e avvio del servizio systemd..."
+echo_step "Passo 12: Identità sulla rete..."
+
+# Il suffisso viene dal seriale del Raspberry: è stabile, si può stampare
+# sull'etichetta prima ancora di accendere la webcam, e rende impossibile
+# che due dispositivi accesi vicini si contendano lo stesso nome. Senza,
+# Avahi risolverebbe il conflitto da sé rinominando il secondo in
+# 'zerocam-2', ma quale sia il secondo dipende dall'ordine di accensione.
+SERIAL=$(awk '/^Serial/ {print $3}' /proc/cpuinfo 2>/dev/null | tail -1)
+if [ -n "$SERIAL" ]; then
+    SUFFIX="${SERIAL: -4}"
+else
+    MAC=$(cat /sys/class/net/eth0/address 2>/dev/null || true)
+    MAC="${MAC//:/}"
+    SUFFIX="${MAC: -4}"
+fi
+SUFFIX=$(echo "$SUFFIX" | tr 'A-Z' 'a-z')
+if [ -z "$SUFFIX" ]; then
+    SUFFIX=$(openssl rand -hex 2)
+    echo_warning "Seriale non leggibile: il suffisso è stato estratto a caso."
+fi
+DEVICE_NAME="zerocam-$SUFFIX"
+
+# Un hostname già cambiato a mano non si tocca: è una scelta di chi ha
+# preparato il dispositivo, e sovrascriverla romperebbe il nome che
+# qualcuno potrebbe già aver scritto sull'etichetta.
+CURRENT_HOSTNAME=$(hostname)
+if [ "$CURRENT_HOSTNAME" = "raspberrypi" ] || [ -z "$CURRENT_HOSTNAME" ]; then
+    if command -v raspi-config >/dev/null; then
+        # raspi-config sistema anche la riga 127.0.1.1 di /etc/hosts, che
+        # hostnamectl da solo lascia indietro: senza, ogni sudo si porta
+        # dietro 'unable to resolve host'.
+        raspi-config nonint do_hostname "$DEVICE_NAME"
+    else
+        hostnamectl set-hostname "$DEVICE_NAME"
+        sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$DEVICE_NAME/" /etc/hosts
+    fi
+    echo_success "Hostname impostato a $DEVICE_NAME (raggiungibile come $DEVICE_NAME.local)."
+else
+    DEVICE_NAME="$CURRENT_HOSTNAME"
+    echo_info "Hostname già impostato a $DEVICE_NAME: lo lascio com'è."
+fi
+
+systemctl enable --now avahi-daemon >/dev/null 2>&1 || true
+echo_success "Avahi attivo: il dispositivo risponde a $DEVICE_NAME.local."
+
+# L'annuncio del servizio web porta il nome leggibile della webcam, quello
+# di Device Details. Lo riscrive l'applicazione quando cambia, quindi il
+# file deve appartenere all'utente del servizio: la cartella resta di root.
+mkdir -p /etc/avahi/services
+AVAHI_SERVICE="/etc/avahi/services/zerocam.service"
+if [ ! -f "$AVAHI_SERVICE" ]; then
+    cat > "$AVAHI_SERVICE" <<EOL
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<!-- Scritto da zeroCAM: le modifiche a mano vengono sovrascritte. -->
+<service-group>
+  <name>zeroCAM $SUFFIX</name>
+  <service>
+    <type>_http._tcp</type>
+    <port>8080</port>
+    <txt-record>path=/</txt-record>
+  </service>
+</service-group>
+EOL
+fi
+chown "$SUDO_USER:$SUDO_USER" "$AVAHI_SERVICE"
+echo_success "Annuncio del servizio web creato."
+
+# Passo 13: Permessi per configurare la rete
+# ==============================================================================
+echo_step "Passo 13: Permessi per configurare la rete..."
+
+# Il servizio gira come utente normale: senza questa regola ogni comando
+# nmcli che scrive verrebbe rifiutato, e la pagina Network potrebbe solo
+# leggere. polkit vuole una regola in JavaScript, perché da bookworm i
+# vecchi file .pkla non sono più supportati.
+POLKIT_RULE="/etc/polkit-1/rules.d/50-zerocam-network.rules"
+mkdir -p /etc/polkit-1/rules.d
+cat > "$POLKIT_RULE" <<EOL
+// zeroCAM configura la rete dalla sua interfaccia web: il servizio gira
+// come $SUDO_USER e senza questa regola polkit gli rifiuterebbe ogni
+// modifica. L'autorizzazione vale solo per quell'utente e solo per
+// NetworkManager.
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") == 0 &&
+        subject.user == "$SUDO_USER") {
+        return polkit.Result.YES;
+    }
+});
+EOL
+chmod 644 "$POLKIT_RULE"
+# Il gruppo netdev è quello che NetworkManager riconosce di suo: non basta
+# da solo per un servizio senza sessione, ma non guasta.
+usermod -aG netdev "$SUDO_USER" 2>/dev/null || true
+echo_success "Regola polkit creata per $SUDO_USER."
+
+# Senza il paese la radio resta bloccata da rfkill e l'hotspot non parte
+# mai. Va impostato qui, perché nessuno lo farà da riga di comando dopo.
+CURRENT_COUNTRY=$(raspi-config nonint get_wifi_country 2>/dev/null || true)
+if [ -z "$CURRENT_COUNTRY" ] || [ "$CURRENT_COUNTRY" = "0" ]; then
+    read -p "Codice del paese per il wifi (due lettere) [IT]: " WIFI_COUNTRY
+    WIFI_COUNTRY=$(echo "${WIFI_COUNTRY:-IT}" | tr 'a-z' 'A-Z')
+    raspi-config nonint do_wifi_country "$WIFI_COUNTRY" || \
+        echo_warning "Impostazione del paese non riuscita: l'hotspot potrebbe non partire."
+    echo_success "Paese del wifi impostato a $WIFI_COUNTRY."
+else
+    echo_info "Paese del wifi già impostato a $CURRENT_COUNTRY."
+fi
+rfkill unblock wifi 2>/dev/null || true
+
+# Passo 14: Hotspot di appoggio
+# ==============================================================================
+echo_step "Passo 14: Hotspot di appoggio..."
+
+# Il nome e la password vanno stampati sull'etichetta prima di spedire la
+# webcam, quindi si decidono qui e non alla prima accensione: quando il
+# dispositivo arriva a destinazione l'etichetta esiste già.
+HOTSPOT_SSID="zeroCAM-$SUFFIX"
+HOTSPOT_PASSWORD=$(jq -r '.network.hotspot_password // ""' "$DATA_DIR/.conf.json" 2>/dev/null || echo "")
+
+if [ -z "$HOTSPOT_PASSWORD" ]; then
+    # Niente i, l, o, 0 e 1: su un'etichetta stampata si confondono, e
+    # chi la digita sul telefono sbaglia.
+    HOTSPOT_PASSWORD=$(tr -dc 'a-hj-km-np-z2-9' </dev/urandom | head -c 10)
+    TEMP_CONF=$(mktemp)
+    jq --arg ssid "$HOTSPOT_SSID" --arg pw "$HOTSPOT_PASSWORD" \
+       '.network = (.network // {}) | .network.hotspot_enabled = true |
+        .network.hotspot_ssid = $ssid | .network.hotspot_password = $pw |
+        .network.hotspot_delay = (.network.hotspot_delay // 120)' \
+       "$DATA_DIR/.conf.json" > "$TEMP_CONF" && mv "$TEMP_CONF" "$DATA_DIR/.conf.json"
+    chown "$SUDO_USER:$SUDO_USER" "$DATA_DIR/.conf.json"
+    echo_success "Hotspot configurato come $HOTSPOT_SSID."
+else
+    HOTSPOT_SSID=$(jq -r '.network.hotspot_ssid // ""' "$DATA_DIR/.conf.json")
+    echo_info "Hotspot già configurato: lascio nome e password com'erano."
+fi
+
+# Passo 15: Creazione e avvio del servizio systemd
+# ==============================================================================
+echo_step "Passo 15: Creazione e avvio del servizio systemd..."
 SERVICE_FILE="/etc/systemd/system/zerocam.service"
 cat > "$SERVICE_FILE" <<EOL
 [Unit]
 Description=zeroCAM Service
-After=network.target
+# NetworkManager deve essere in piedi prima: la sorveglianza della rete lo
+# interroga appena parte, e senza troverebbe un sistema che non risponde
+# proprio nel momento in cui deve decidere se accendere l'hotspot.
+After=network.target NetworkManager.service
+Wants=NetworkManager.service
 
 [Service]
 User=$SUDO_USER
@@ -292,4 +451,23 @@ systemctl start zerocam.service
 
 echo_success "Servizio zeroCAM creato, abilitato e avviato."
 echo_step "Installazione completata!"
+
+# Chi prepara la webcam la spedisce a qualcun altro, che l'accenderà dove
+# non c'è nessuna rete conosciuta: questi quattro valori sono tutto ciò che
+# gli serve, e vanno sull'etichetta prima che il dispositivo parta.
+echo " "
+echo "  Da riportare sull'etichetta del dispositivo"
+echo "  ------------------------------------------"
+echo "  Indirizzo:          http://$DEVICE_NAME.local:8080/"
+echo "  Rete di appoggio:   $HOTSPOT_SSID"
+echo "  Password della rete: $HOTSPOT_PASSWORD"
+echo "  Indirizzo da hotspot: http://10.42.0.1:8080/"
+echo " "
+echo "  L'utente si collega alla rete di appoggio, apre il secondo indirizzo"
+echo "  e indica da lì il proprio wifi. La rete di appoggio compare da sola"
+echo "  quando la webcam non trova nessuna rete conosciuta."
+echo " "
+echo "  La password dell'hotspot non viene più mostrata: è in Configuration"
+echo "  -> Network nell'interfaccia web."
+echo " "
 
