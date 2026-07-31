@@ -49,8 +49,11 @@ class _Throttle:
     def allow(self, key):
         now = time.monotonic()
         with self._lock:
-            last = self._seen.get(key, 0)
-            if now - last < REDIRECT_LOG_EVERY:
+            # Serve un sentinella e non uno zero: time.monotonic() parte
+            # dall'uptime, quindi subito dopo il boot uno zero verrebbe letto
+            # come "visto un attimo fa" e la prima riga andrebbe persa.
+            last = self._seen.get(key)
+            if last is not None and now - last < REDIRECT_LOG_EVERY:
                 return False
             # Il dizionario non deve crescere senza limite se qualcuno
             # bussa da mille indirizzi diversi.
