@@ -25,7 +25,7 @@ Lo script chiede il tag della versione da installare (per esempio `v1.4.0`) e, a
 10. **sudoers** — regola che consente il riavvio del sistema dal pulsante dell'interfaccia.
 11. **Identità sulla rete** — hostname `zerocam-XXXX` ricavato dal seriale del Raspberry, Avahi attivo e annuncio del servizio web.
 12. **Permessi di rete** — regola polkit che consente all'utente del servizio di configurare NetworkManager, e paese del wifi, senza il quale la radio resta bloccata.
-13. **Hotspot di appoggio** — nome e password generati e scritti in configurazione, poi mostrati a fine installazione per l'etichetta.
+13. **Hotspot di appoggio** — nome e password generati e scritti in configurazione, poi mostrati a fine installazione insieme all'etichetta da stampare.
 14. **Servizio systemd** `zerocam.service`, abilitato all'avvio e fatto partire.
 
 Prima di ogni altra cosa lo script verifica che il sistema sia Bookworm o successivo: senza `nmcli` si ferma senza installare nulla. Il capitolo *La rete* spiega perché.
@@ -43,7 +43,20 @@ Chi costruisce la webcam la installa sul proprio banco, con una rete a disposizi
   Indirizzo da hotspot: http://10.42.0.1:8080/
 ```
 
-La password dell'hotspot viene mostrata solo lì: dopo si legge dall'interfaccia, in **Configuration → Network**. Va riportata sull'etichetta prima che il dispositivo parta, perché è l'unico modo che l'utente avrà di entrare.
+Insieme al riquadro viene salvata l'etichetta già pronta da stampare, in `data/etichetta-<hostname>.png`: formato 60×100 mm, con due codici QR. Il primo porta le credenziali della rete di appoggio nel formato che le fotocamere di Android e iOS riconoscono, quindi il collegamento è un tocco; il secondo è l'indirizzo dell'interfaccia una volta collegati. Un codice solo non può fare entrambe le cose.
+
+Resta uno spazio da riempire a mano: la **password dell'interfaccia**, che la sceglie chi installa e non è recuperabile dopo. Senza quella l'utente si collega all'hotspot e poi non entra.
+
+Se l'etichetta va persa si rigenera senza reinstallare nulla, leggendo la password da **Configuration → Network**:
+
+```bash
+/usr/local/zerocam/venv/bin/python \
+    /usr/local/zerocam/app/installation_tools/genera_etichetta.py \
+    --hostname zerocam-a1b2 --ssid zeroCAM-a1b2 --password hw3xpukcty \
+    --output /tmp/etichetta.png
+```
+
+La password dell'hotspot compare in chiaro nel riquadro solo alla prima installazione: dal secondo giro è cifrata in configurazione e si legge dall'interfaccia.
 
 All'accensione, non trovando nessuna rete conosciuta, la webcam accende la propria dopo un paio di minuti. L'utente vi si collega, apre `http://10.42.0.1:8080/`, entra con le credenziali dell'interfaccia e indica il proprio wifi dalla pagina *Network*. Da quel momento la webcam è sulla rete di casa e risponde al primo dei due indirizzi.
 

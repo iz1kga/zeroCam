@@ -406,7 +406,14 @@ echo_step "Passo 14: Hotspot di appoggio..."
 # Il nome e la password vanno stampati sull'etichetta prima di spedire la
 # webcam, quindi si decidono qui e non alla prima accensione: quando il
 # dispositivo arriva a destinazione l'etichetta esiste già.
-HOTSPOT_SSID="zeroCAM-$SUFFIX"
+# Il nome della rete si ricava dall'hostname vero e non dal seriale: su un
+# dispositivo ribattezzato a mano i due non coincidono, e l'etichetta
+# finirebbe per dire 'zerocam-lago.local' accanto a 'zeroCAM-a1b2'. È la
+# stessa regola che l'applicazione applica quando il nome non è imposto.
+case "$DEVICE_NAME" in
+    zerocam*) HOTSPOT_SSID="zeroCAM${DEVICE_NAME#zerocam}" ;;
+    *)        HOTSPOT_SSID="zeroCAM-$DEVICE_NAME" ;;
+esac
 HOTSPOT_PASSWORD=$(jq -r '.network.hotspot_password // ""' "$DATA_DIR/.conf.json" 2>/dev/null || echo "")
 
 if [ -z "$HOTSPOT_PASSWORD" ]; then
@@ -483,5 +490,29 @@ echo "  quando la webcam non trova nessuna rete conosciuta."
 echo " "
 echo "  La password dell'hotspot non viene più mostrata: è in Configuration"
 echo "  -> Network nell'interfaccia web."
+echo " "
+
+# L'etichetta vera e propria, con i due QR: uno porta le credenziali della
+# rete di appoggio, l'altro l'indirizzo dell'interfaccia. Un QR solo non
+# può fare entrambe le cose. Se qualcosa va storto l'installazione è già
+# finita e i valori sono qui sopra: non c'è motivo di fallire adesso.
+LABEL_SCRIPT="$APP_DIR/installation_tools/genera_etichetta.py"
+LABEL_FILE="$DATA_DIR/etichetta-$DEVICE_NAME.png"
+case "$HOTSPOT_PASSWORD" in
+    "("*)
+        echo_info "Password non in chiaro: l'etichetta si rigenera con"
+        echo_info "  $VENV_DIR/bin/python $LABEL_SCRIPT --help"
+        ;;
+    *)
+        if [ -f "$LABEL_SCRIPT" ] && "$VENV_DIR/bin/python" "$LABEL_SCRIPT" \
+            --hostname "$DEVICE_NAME" --ssid "$HOTSPOT_SSID" \
+            --password "$HOTSPOT_PASSWORD" --output "$LABEL_FILE" 2>/dev/null; then
+            chown "$SUDO_USER:$SUDO_USER" "$LABEL_FILE"
+            echo_success "Etichetta da stampare salvata in $LABEL_FILE"
+        else
+            echo_warning "Etichetta non generata: i valori restano quelli qui sopra."
+        fi
+        ;;
+esac
 echo " "
 

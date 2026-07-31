@@ -25,6 +25,8 @@ Il manuale è scritto in Markdown, un file per capitolo, e viene unito in un uni
 
 L'ordine dei capitoli nel PDF è quello alfabetico dei nomi dei file: per inserirne uno nuovo basta numerarlo di conseguenza.
 
+[collaudo-rete.md](collaudo-rete.md) non è un capitolo e non entra nel manuale: è il promemoria delle prove da fare su un Raspberry vero, perché la gestione della rete nei test gira con `nmcli` sostituito da una finta.
+
 In [bozze/](bozze/) stanno i capitoli non ancora pronti: `build.sh` non li raccoglie, perché nel manuale entra solo ciò che è completo e funzionante. Un capitolo esce dalla bozza spostandolo in questa cartella con il suo numero.
 
 ## Immagini

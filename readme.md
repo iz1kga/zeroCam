@@ -44,7 +44,7 @@ Ora puoi configurare la tua telecamera e iniziare a usarla!
 
 L'installazione assegna al dispositivo un hostname unico ricavato dal seriale del Raspberry, `zerocam-XXXX`, e lo rende raggiungibile come `zerocam-XXXX.local` senza doverne conoscere l'IP. Lo stesso suffisso compone il nome dell'hotspot di appoggio, `zeroCAM-XXXX`, la cui password viene generata e mostrata a fine installazione.
 
-Quei quattro valori — indirizzo, nome della rete di appoggio, sua password, indirizzo da hotspot — vanno riportati sull'etichetta prima di spedire la webcam: sono l'unico modo che avrà l'utente di entrarci. All'accensione, non trovando reti conosciute, la webcam accende la propria; l'utente vi si collega, apre `http://10.42.0.1:8080/` e indica il proprio wifi. Nessun terminale, nessuno schermo.
+L'installazione salva anche l'etichetta già pronta da stampare in `data/etichetta-<hostname>.png`, formato 60×100 mm, con due codici QR: il primo collega alla rete di appoggio con un tocco, il secondo apre l'interfaccia. Resta da scrivere a mano la password dell'interfaccia, che la sceglie chi installa e non è recuperabile dopo. All'accensione, non trovando reti conosciute, la webcam accende la propria; l'utente vi si collega, apre `http://10.42.0.1:8080/` e indica il proprio wifi. Nessun terminale, nessuno schermo.
 
 ### Configurazione di rete
 
@@ -216,7 +216,7 @@ Now you can configure your camera and start using it!
 
 The installer gives the device a unique hostname derived from the Raspberry's serial, `zerocam-XXXX`, reachable as `zerocam-XXXX.local` without having to know its IP. The same suffix names the fallback hotspot, `zeroCAM-XXXX`, whose password is generated and shown at the end of the installation.
 
-Those four values — address, fallback network name, its password, address while on the hotspot — belong on the device label before the camera ships: they are the only way in that its user will have. On power-up, finding no known network, the camera raises its own; the user joins it, opens `http://10.42.0.1:8080/` and points the camera at their wifi. No terminal, no screen.
+The installation also writes a label ready to print in `data/etichetta-<hostname>.png`, 60×100 mm, carrying two QR codes: the first joins the fallback network in one tap, the second opens the interface. What is left to write by hand is the interface password, chosen by whoever installs and not recoverable afterwards. On power-up, finding no known network, the camera raises its own; the user joins it, opens `http://10.42.0.1:8080/` and points the camera at their wifi. No terminal, no screen.
 
 ### Network configuration
 
