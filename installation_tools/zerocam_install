@@ -46,6 +46,18 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# Serve sapere per quale utente si sta installando: il servizio gira come
+# lui, ed è il suo nome che finisce nella regola sudoers, in quella polkit e
+# nella proprietà dei file. Da una shell di root SUDO_USER è vuoto, e il
+# risultato sarebbero regole che non autorizzano nessuno - senza che nulla
+# lo segnali, finché la pagina di rete non riesce a salvare.
+if [ -z "$SUDO_USER" ] || [ "$SUDO_USER" = "root" ]; then
+    echo "Questo script va lanciato con 'sudo' da un utente normale, non da una"
+    echo "shell di root: il servizio deve girare come quell'utente."
+    echo "  sudo bash zeroCamInstall"
+    exit 1
+fi
+
 # Il sistema deve essere Bookworm o successivo, dove la rete la gestisce
 # NetworkManager. Sulle versioni precedenti (dhcpcd e wpa_supplicant) la
 # pagina Network non ha nessuno con cui parlare e l'hotspot di appoggio non
@@ -104,12 +116,8 @@ fi
 # ==============================================================================
 echo_step "Passo 3: Creazione della directory di installazione..."
 mkdir -p "$INSTALL_DIR"
-if [ -n "$SUDO_USER" ]; then
-    chown -R "$SUDO_USER:$SUDO_USER" "$INSTALL_DIR"
-    echo_success "Proprietario di $INSTALL_DIR impostato a $SUDO_USER."
-else
-    echo_warning "Impossibile determinare l'utente. I permessi potrebbero richiedere aggiustamenti manuali."
-fi
+chown -R "$SUDO_USER:$SUDO_USER" "$INSTALL_DIR"
+echo_success "Proprietario di $INSTALL_DIR impostato a $SUDO_USER."
 
 # Passo 4: Creazione dell'ambiente virtuale Python
 # ==============================================================================
