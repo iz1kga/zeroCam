@@ -187,3 +187,14 @@ Elenco di oggetti:
 | `public_page` | sì/no | Attiva la vetrina pubblica su `/public` |
 | `public_title` | testo | Titolo della vetrina; vuoto = nome del dispositivo |
 | `public_live_url` | testo | Collegamento alla diretta mostrato nella vetrina |
+
+## network
+
+Riguarda il solo hotspot di appoggio. Le reti wifi e i loro indirizzi stanno in NetworkManager e non qui: si configurano dalla pagina *Network* e non seguono il backup.
+
+| Chiave | Tipo | Significato |
+|---|---|---|
+| `hotspot_enabled` | sì/no | Consente l'accensione automatica dell'access point |
+| `hotspot_ssid` | testo | Nome della rete; vuoto = ricavato dall'hostname |
+| `hotspot_password` | testo **cifrato** | Password WPA, da 8 a 63 caratteri; vuota = hotspot spento |
+| `hotspot_delay` | numero | Secondi senza connettività prima dell'accensione (default 120) |

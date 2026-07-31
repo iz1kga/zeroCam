@@ -16,7 +16,7 @@ import pytest
 from flask import Flask
 
 import settingsManager as sm
-from lib import paths
+from lib import netwatch, paths
 
 
 @pytest.fixture
@@ -48,7 +48,12 @@ def app(tmp_path):
     with open(paths.LATEST_IMAGE, "wb") as f:
         f.write(b"\xff\xd8jpeg-finto")
 
-    return manager.app.test_client(), conf
+    client = manager.app.test_client()
+    # I test della rete devono poter sostituire pezzi dell'applicazione
+    # finta: il client e' l'unica cosa che ricevono.
+    client.zerocam = manager.zerocam
+    client.logger = manager.logger
+    return client, conf
 
 
 def test_con_la_vetrina_accesa_la_radice_e_la_vetrina(app):
@@ -113,6 +118,8 @@ class FakeNetwork:
     def __init__(self):
         self.calls = []
         self.fail = None
+        self.hotspot = False
+        self.saved = [{"name": "CasaMia", "type": "802-11-wireless", "device": "wlan0"}]
 
     def _record(self, name, **kwargs):
         self.calls.append((name, kwargs))
@@ -126,7 +133,7 @@ class FakeNetwork:
 
     def saved_wifi(self):
         self._record("saved_wifi")
-        return [{"name": "CasaMia", "type": "802-11-wireless", "device": "wlan0"}]
+        return list(self.saved)
 
     def wifi_device(self):
         self._record("wifi_device")
@@ -154,6 +161,27 @@ class FakeNetwork:
         self._record("set_dhcp", connection=connection)
         return True
 
+    def hotspot_active(self):
+        return self.hotspot
+
+    def hotspot_start(self, ssid, password, ifname="wlan0"):
+        self._record("hotspot_start", ssid=ssid, password=password, ifname=ifname)
+        self.hotspot = True
+        return True
+
+    def available(self):
+        return True
+
+    def connectivity(self):
+        # Un hotspot acceso non porta da nessuna parte: e' la situazione in
+        # cui il watchdog decide se valga la pena liberare la radio.
+        return "none" if self.hotspot else "full"
+
+    def hotspot_stop(self):
+        self._record("hotspot_stop")
+        self.hotspot = False
+        return True
+
     def command(self, name):
         for called, kwargs in self.calls:
             if called == name:
@@ -170,6 +198,7 @@ def rete(app, monkeypatch):
     protette: la sessione non e' quello che questi test verificano, e ci
     pensa gia' test_le_rotte_pubbliche_non_espongono_altro.
     """
+    from lib import netwatch
     from lib import network as vero
 
     client, _ = app
@@ -178,6 +207,12 @@ def rete(app, monkeypatch):
     finta = FakeNetwork()
     finta.NetworkError = vero.NetworkError
     monkeypatch.setattr(sm, "network", finta)
+    # Il watchdog e' quello vero, ma guarda la stessa finta: le rotte lo
+    # interrogano per lo stato dell'hotspot e per riaccenderlo.
+    monkeypatch.setattr(netwatch, "network", finta)
+    client.zerocam.netwatch = netwatch.NetworkWatchdog(
+        {"hotspot_enabled": True, "hotspot_ssid": "zeroCAM-a1b2",
+         "hotspot_password": "unapassword"}, client.logger)
     return client, finta
 
 
@@ -255,6 +290,61 @@ def test_un_rifiuto_di_nmcli_diventa_un_400_col_suo_motivo(rete):
     assert risposta.status_code == 400
     # Il motivo vero e' l'unica cosa che aiuta chi sta sbagliando password.
     assert "nmcli ha detto di no" in risposta.get_json()["message"]
+
+
+def test_una_password_sbagliata_non_lascia_la_webcam_muta(rete):
+    client, finta = rete
+    # Chi configura e' collegato all'hotspot: connettersi a una rete lo
+    # spegne, e se il tentativo fallisce resterebbe senza niente.
+    finta.hotspot = True
+    finta.fail = "wifi_connect"
+
+    client.post("/api/network/wifi", json={"ssid": "CasaMia", "password": "sbagliata1"})
+
+    riacceso = finta.command("hotspot_start")
+    assert riacceso is not None, "senza questo il dispositivo resta irraggiungibile"
+    assert riacceso["ssid"] == "zeroCAM-a1b2"
+
+
+def test_senza_hotspot_un_fallimento_non_ne_accende_uno(rete):
+    client, finta = rete
+    finta.hotspot = False
+    finta.fail = "wifi_connect"
+
+    client.post("/api/network/wifi", json={"ssid": "CasaMia", "password": "sbagliata1"})
+
+    # Chi sta configurando dal cavo non ha chiesto nessun access point.
+    assert finta.command("hotspot_start") is None
+
+
+def test_lo_stato_dellhotspot_arriva_alla_pagina(rete):
+    client, finta = rete
+    finta.hotspot = True
+
+    dati = client.get("/api/network").get_json()
+
+    assert dati["hotspotConfig"]["active"] is True
+    assert dati["hotspotConfig"]["ssid"] == "zeroCAM-a1b2"
+    # La password si stampa sull'etichetta, quindi va mostrata a chi ha
+    # gia' l'accesso alla console.
+    assert dati["hotspotConfig"]["password"] == "unapassword"
+
+
+def test_usare_la_pagina_tiene_fermo_il_watchdog(rete):
+    client, finta = rete
+    guardia = client.zerocam.netwatch
+    finta.hotspot = True
+    finta.saved = [{"name": "CasaMia"}]
+
+    client.get("/api/network")
+
+    # Il watchdog stacca l'hotspot per ritentare le reti note: mentre
+    # qualcuno e' sulla pagina non deve farlo, o lo butta fuori a meta'
+    # configurazione.
+    guardia._last_retry = guardia._clock() - netwatch.RETRY_EVERY - 1
+    guardia.tick()
+
+    assert finta.hotspot is True
 
 
 def test_dimenticare_una_rete_senza_nome_non_passa(rete):

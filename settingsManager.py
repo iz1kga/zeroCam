@@ -299,9 +299,11 @@ class SettingsManager:
         Tutto insieme perché la pagina si aggiorna a intervalli: chiedere
         le stesse cose con più richieste le mostrerebbe disallineate.
         """
+        self.zerocam.netwatch.note_activity()
         state = network.status()
         state['saved'] = network.saved_wifi() if state['available'] else []
         state['wifiDevice'] = network.wifi_device()
+        state['hotspotConfig'] = self.zerocam.netwatch.status()
         return jsonify(state)
 
     @login_required
@@ -313,6 +315,7 @@ class SettingsManager:
         qualche secondo: va fatta quando l'utente la chiede, non a ogni
         aggiornamento della pagina.
         """
+        self.zerocam.netwatch.note_activity()
         try:
             return jsonify(success=True, networks=network.scan())
         except network.NetworkError as e:
@@ -330,6 +333,15 @@ class SettingsManager:
         """
         data = request.json or {}
         ssid = (data.get('ssid') or '').strip()
+        self.zerocam.netwatch.note_activity()
+
+        # La radio è una sola: collegarsi a una rete spegne l'hotspot, e con
+        # esso la connessione di chi sta configurando proprio da lì. Se il
+        # tentativo fallisce l'access point va rimesso su subito, altrimenti
+        # il dispositivo resterebbe muto e irraggiungibile per il tempo del
+        # watchdog.
+        hotspot_was_up = network.hotspot_active()
+
         self.logger.info(f"Wifi connection to '{ssid}' requested from web UI.")
         try:
             network.wifi_connect(ssid,
@@ -339,7 +351,26 @@ class SettingsManager:
             return jsonify(success=True, message=f"Connesso a {ssid}.")
         except network.NetworkError as e:
             self.logger.error(f"Wifi connection to '{ssid}' failed: {e}")
+            if hotspot_was_up:
+                self._restore_hotspot()
             return jsonify(success=False, message=str(e)), 400
+
+    def _restore_hotspot(self):
+        """
+        Riaccende l'hotspot dopo un tentativo di connessione fallito.
+
+        Se anche questo non riesce non c'è altro da fare qui: il watchdog se
+        ne accorgerà al giro successivo e ci riproverà per conto suo. È il
+        motivo per cui i due meccanismi coesistono — questo è veloce, quello
+        è l'ultima rete di sicurezza.
+        """
+        hotspot = self.zerocam.netwatch
+        try:
+            network.hotspot_start(hotspot.ssid, hotspot.password, network.wifi_device())
+            self.logger.warning("Wifi attempt failed: the hotspot is back up.")
+        except network.NetworkError as e:
+            self.logger.error(f"Could not bring the hotspot back after a failed "
+                              f"wifi attempt: {e}")
 
     @login_required
     def network_wifi_forget(self):
@@ -366,6 +397,7 @@ class SettingsManager:
         connessione aperta: per questo gli indirizzi sono controllati prima
         di toccare qualsiasi cosa, e l'esito resta comunque nel log.
         """
+        self.zerocam.netwatch.note_activity()
         data = request.json or {}
         connection = (data.get('connection') or '').strip()
         if not connection:

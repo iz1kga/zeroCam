@@ -46,6 +46,10 @@ La pagina **Network** elenca le interfacce con i loro indirizzi e permette di co
 
 Cambiando l'indirizzo dell'interfaccia da cui si sta navigando la risposta non torna, perché la connessione aperta cade insieme al vecchio indirizzo: non è un errore, si riapre l'interfaccia al nuovo indirizzo.
 
+**Hotspot di appoggio.** Quando la webcam resta senza connettività per due minuti accende un access point proprio, con nome e password stampati sull'etichetta: ci si collega dal telefono, l'interfaccia risponde su `http://10.42.0.1:8080` e da lì si indica il wifi. È il modo per configurare una webcam appena consegnata senza terminale e senza schermo. Il nome, se non lo si impone, viene ricavato dall'hostname, che l'installazione rende unico: due webcam accese vicine non si confondono. Senza password l'hotspot non parte, perché aperto darebbe a chiunque passi l'accesso alla console.
+
+La radio è una sola, quindi collegando il wifi l'hotspot si spegne e la pagina smette di rispondere: se la password era sbagliata l'access point torna da solo entro un paio di minuti e si può riprovare. Con l'hotspot acceso, ogni dieci minuti la radio viene liberata per un minuto per lasciare che la webcam ritenti le reti che conosce — ma mai mentre qualcuno sta usando la pagina *Network*.
+
 Le reti e le loro password stanno in NetworkManager, non in `.conf.json`: non finiscono nel backup della configurazione e un ripristino non le tocca.
 
 Serve **Raspberry Pi OS Bookworm o successivo**. Le versioni precedenti usano `dhcpcd` e `wpa_supplicant` invece di NetworkManager, e su quelle la pagina non ha nessuno con cui parlare: zeroCAM non le supporta.
@@ -207,6 +211,10 @@ Now you can configure your camera and start using it!
 The **Network** page lists the interfaces with their addresses and lets you configure them without touching a terminal: switching between DHCP and a fixed address — for the wired interface as well as for wifi — scanning for wifi networks, joining one, hidden networks, and the list of saved ones. Wifi can be joined with the cable plugged in: both interfaces stay up, and NetworkManager prefers the wired one while it is there.
 
 Changing the address of the interface you are browsing from means the answer never comes back, because the open connection dies along with the old address: that is not a failure, just reopen the interface at the new address.
+
+**Fallback hotspot.** When the camera has been without connectivity for two minutes it raises an access point of its own, with the name and password printed on the device label: join it from a phone, the interface answers at `http://10.42.0.1:8080`, and from there you point the camera at a wifi network. That is how a camera delivered ready-made gets configured with no terminal and no screen. Unless you set one, the name is derived from the hostname, which the installation makes unique, so two cameras powered up nearby do not clash. Without a password the hotspot stays off: an open one would hand the admin console to anyone walking past.
+
+There is only one radio, so joining a wifi network takes the hotspot down and the page stops answering: if the password was wrong the access point comes back on its own within a couple of minutes and you can try again. While the hotspot is up, the radio is freed for a minute every ten so the camera can retry the networks it knows — never while someone is using the *Network* page.
 
 Networks and their passwords live in NetworkManager, not in `.conf.json`: they are not part of the configuration backup and a restore does not touch them.
 

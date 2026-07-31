@@ -135,8 +135,17 @@
                                 Connetti
                             </button>
                         </div>
-                        <div class="form-text">
+                        <div class="form-text" v-if="!state.hotspotConfig || !state.hotspotConfig.active">
                             La connessione può richiedere fino a un minuto.
+                        </div>
+                        <!-- La radio è una sola: collegando il wifi, l'hotspot da cui
+                             si sta navigando sparisce insieme a questa pagina. -->
+                        <div class="alert alert-warning mt-2 mb-0 py-2 small"
+                             v-else>
+                            Stai navigando dall'hotspot: collegando il wifi l'access point si spegne
+                            e questa pagina smette di rispondere. Se la password è giusta, la webcam
+                            sarà sulla rete scelta; se è sbagliata, l'hotspot torna da solo entro un
+                            paio di minuti e puoi riprovare.
                         </div>
                     </div>
                 </div>
@@ -163,6 +172,62 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hotspot di appoggio -->
+    <div class="card mt-4" v-if="state.available && state.hotspotConfig">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">Hotspot di appoggio</h5>
+                <span class="badge bg-success" v-if="state.hotspotConfig.active">acceso ora</span>
+            </div>
+
+            <p class="text-muted small">
+                Quando la webcam resta senza rete, dopo
+                [[ state.hotspotConfig.delay ]] secondi accende un access point suo:
+                collegandosi a quello, l'interfaccia risponde su
+                <code>http://10.42.0.1:8080</code> e si può indicare a quale wifi collegarsi.
+                Ogni tanto l'hotspot si spegne per un minuto, il tempo di lasciare che la
+                webcam riprovi da sola con le reti che conosce.
+            </p>
+
+            <div v-if="state.hotspotConfig.enabled && !state.hotspotConfig.password"
+                 class="alert alert-danger py-2 small">
+                Nessuna password impostata: l'hotspot resta spento. Un access point aperto
+                darebbe a chiunque passi l'accesso a questa console.
+            </div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="hotspotEnabled"
+                               :checked="state.hotspotConfig.enabled" disabled>
+                        <label class="form-check-label" for="hotspotEnabled">
+                            [[ state.hotspotConfig.enabled ? 'Attivo' : 'Disattivato' ]]
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nome della rete</label>
+                    <input type="text" class="form-control" :value="state.hotspotConfig.ssid" readonly>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                        <input :type="showHotspotPassword ? 'text' : 'password'" class="form-control"
+                               :value="state.hotspotConfig.password" readonly>
+                        <button class="btn btn-outline-secondary" type="button"
+                                @click="showHotspotPassword = !showHotspotPassword">
+                            <i class="bi" :class="showHotspotPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-text mt-2">
+                Sono gli stessi valori stampati sull'etichetta del dispositivo. Si cambiano in
+                <strong>Configuration &rarr; Network</strong>; cambiandoli, l'etichetta non vale più.
             </div>
         </div>
     </div>

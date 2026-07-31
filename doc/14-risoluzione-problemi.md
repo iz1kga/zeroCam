@@ -18,7 +18,7 @@ Verificare che il servizio sia attivo. Se non parte, il log di systemd dice quas
 * `DEVICE_ID environment variable not set` — stessa origine.
 * `Configuration file not found` — manca `data/.conf.json`.
 
-All'avvio l'applicazione attende la connessione a Internet, riprovando ogni 60 secondi: se la rete non c'è, il servizio risulta attivo ma l'interfaccia non risponde ancora. Il log lo scrive: `No internet connection. Retrying in 60 seconds...`.
+L'assenza di rete non è più fra le cause: l'applicazione la guarda all'avvio ma non la aspetta, e scrive `No internet connection: starting anyway`. È voluto. Una webcam appena accesa dove verrà usata non ha ancora una rete, ed è esattamente il momento in cui servono l'interfaccia web per dargliene una e l'hotspot per raggiungerla: fermandosi lì non mostrerebbe nulla e l'unico modo per configurarla sarebbe un terminale.
 
 ## La pagina Network dice che NetworkManager non risponde
 
@@ -29,6 +29,21 @@ Il sistema è più vecchio di Bookworm, e configura la rete con `dhcpcd` e `wpa_
 * Una password sbagliata dà `Secrets were required, but not provided`. Il profilo appena creato viene cancellato da solo, quindi basta riprovare: se ne resta uno vecchio con la password sbagliata, si cancella con **Dimentica**.
 * La radio può essere bloccata quando il paese non è impostato: `rfkill list` mostra `Soft blocked: yes`. Si rimedia con `sudo raspi-config nonint do_wifi_country IT`.
 * Una rete che non compare nella scansione può essere nascosta, e allora va scritta a mano, oppure a 5 GHz su un canale che il paese impostato non consente.
+
+## L'hotspot non compare
+
+* Senza password configurata l'hotspot non parte: aperto darebbe a chiunque passi l'accesso alla console. Il log lo dice una volta sola, `No hotspot password configured`. Si imposta in **Configuration → Network**.
+* L'attesa predefinita è di due minuti dall'ultima connettività: prima di allora non compare nulla, ed è voluto, altrimenti un router che si riavvia lo farebbe apparire per niente.
+* La radio può essere bloccata se il paese non è impostato: `rfkill list` mostra `Soft blocked: yes`, e si rimedia con `sudo raspi-config nonint do_wifi_country IT`.
+* Il log racconta ogni decisione: `No connectivity: the hotspot will come up in 120 seconds`, poi `Starting the fallback hotspot`.
+
+## L'hotspot si spegne da solo mentre lo sto usando
+
+Non mentre lo si usa: ogni dieci minuti il watchdog lo abbassa per poco più di un minuto, per lasciare che NetworkManager riprovi con le reti che conosce — senza, una webcam finita in hotspot ci resterebbe anche con il suo wifi di nuovo disponibile. La finestra però non si apre finché la pagina *Network* è in uso, e comunque non si apre affatto se non ci sono reti salvate a cui tornare. Se capita, sono passati più di cinque minuti dall'ultima richiesta: basta ricaricare la pagina e l'hotspot torna entro un paio di minuti.
+
+## Ho sbagliato la password del wifi e la webcam è sparita
+
+È il caso previsto. Collegandosi a una rete l'hotspot si spegne, perché la radio è una sola; se la password è sbagliata la connessione fallisce e l'hotspot viene rimesso su subito. Se anche quello non riesce, ci pensa il watchdog al giro successivo. In pratica, entro un paio di minuti la rete dell'hotspot ricompare e si può riprovare.
 
 ## L'indirizzo fisso non è stato applicato, o così sembra
 

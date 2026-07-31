@@ -195,6 +195,17 @@ def test_lhotspot_nasce_in_modalita_condivisa_col_nome_previsto(nmcli):
     assert comando[comando.index("ifname") + 1] == "wlan0"
 
 
+def test_lhotspot_non_deve_riaccendersi_da_solo(nmcli):
+    network.hotspot_start("zeroCAM-1234", "unapassword")
+
+    # Con l'autoconnessione accesa l'hotspot si riprenderebbe la radio
+    # all'avvio, prima che le reti salvate possano provarci, e ogni volta
+    # che il watchdog la libera per lasciarle ritentare.
+    modifica = nmcli.command("connection.autoconnect")
+    assert modifica[modifica.index("connection.autoconnect") + 1] == "no"
+    assert network.HOTSPOT_CONNECTION in modifica
+
+
 def test_lhotspot_attivo_si_riconosce_dal_nome_del_profilo(nmcli):
     nmcli.replies = {"device status":
                      f"wlan0:wifi:connected:{network.HOTSPOT_CONNECTION}\n"}

@@ -68,7 +68,17 @@ DEFAULT_SECTIONS = {
         "description": "",
         "privacy": "public",
         "made_for_kids": False,
-    }
+    },
+    # L'hotspot nasce acceso ma senza password, quindi inerte: senza una
+    # password l'access point non parte, perché aperto darebbe a chiunque
+    # passi la console di amministrazione. La riempie l'installazione, che
+    # è anche il momento in cui viene stampata sull'etichetta.
+    "network": {
+        "hotspot_enabled": True,
+        "hotspot_ssid": "",
+        "hotspot_password": "",
+        "hotspot_delay": 120,
+    },
 }
 
 class ConfigManager:
@@ -108,6 +118,7 @@ class ConfigManager:
                 self._decrypt_field(['youtubeLive', 'client_secret'])
                 self._decrypt_field(['youtubeLive', 'refresh_token'])
                 self._decrypt_field(['HttpUploader', 'token'])
+                self._decrypt_field(['network', 'hotspot_password'])
 
         except (json.JSONDecodeError, IOError) as e:
             self.logger.critical(f"Failed to load or parse configuration: {e}. Shutting down.", exc_info=True)
@@ -152,6 +163,7 @@ class ConfigManager:
                 self._encrypt_field(config_to_save, ['youtubeLive', 'client_secret'])
                 self._encrypt_field(config_to_save, ['youtubeLive', 'refresh_token'])
                 self._encrypt_field(config_to_save, ['HttpUploader', 'token'])
+                self._encrypt_field(config_to_save, ['network', 'hotspot_password'])
                 
                 with open(self.config_path, 'w') as f:
                     json.dump(config_to_save, f, indent=2)

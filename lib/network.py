@@ -421,6 +421,15 @@ def hotspot_start(ssid, password, ifname="wlan0"):
     _run(["--wait", str(ACTIVATE_TIMEOUT), "device", "wifi", "hotspot",
           "ifname", ifname, "con-name", HOTSPOT_CONNECTION,
           "ssid", ssid, "password", password], ACTIVATE_TIMEOUT + 10)
+
+    # nmcli crea il profilo con l'autoconnessione accesa, e lasciarcela
+    # rovinerebbe le due cose che contano. All'avvio l'hotspot si
+    # prenderebbe la radio prima che le reti salvate possano provarci, e
+    # ogni volta che il watchdog lo abbassa per lasciarle ritentare
+    # NetworkManager lo rimetterebbe su da solo, rendendo la finestra
+    # inutile. L'hotspot deve salire soltanto quando lo decidiamo noi.
+    _run(["connection", "modify", HOTSPOT_CONNECTION,
+          "connection.autoconnect", "no"], READ_TIMEOUT)
     return True
 
 

@@ -19,6 +19,7 @@ from lib.components.mqtt_manager import MQTTManager
 from lib.components.stats_collector import StatsCollector
 from lib.components.component_manager import ComponentManager
 from lib.components.scheduler_manager import SchedulerManager
+from lib.netwatch import NetworkWatchdog
 
 # Importa le funzioni di supporto ancora necessarie
 from lib.helpers import (
@@ -78,6 +79,8 @@ class ZeroCamApp:
         self.stats_collector = StatsCollector(self.logger)
         self.mqtt_manager = MQTTManager(self.device_id, self.config_manager.get("mqtt", {}), self.logger, self)
         self.scheduler_manager = SchedulerManager(self, self.logger)
+        self.netwatch = NetworkWatchdog(
+            self.config_manager.decrypted_config.get("network", {}), self.logger)
 
     def start(self):
         """Starts all application services."""
@@ -93,6 +96,11 @@ class ZeroCamApp:
         # Start the scheduler
         scheduler_thread = self.scheduler_manager.start()
         self.threads.append(scheduler_thread)
+
+        # Sorveglianza della rete: accende l'hotspot quando non ce n'è una.
+        # Parte con tutto il resto e non dipende da nulla, perché il caso in
+        # cui serve è proprio quello in cui il resto non funziona.
+        self.threads.append(self.netwatch.start())
 
         # Start the thread supervisor
         supervisor_thread = threading.Thread(target=self.monitor_threads, name="SupervisorThread", daemon=True)
@@ -390,6 +398,7 @@ class ZeroCamApp:
         # pianificatore, non nei componenti: vanno ricostruiti a parte.
         if self.scheduler_manager:
             self.scheduler_manager.reload_jobs()
+        self.netwatch.update_config(new_config.get("network", {}))
 
 # --- Main Execution ---
 class ClientIPFilter(logging.Filter):
@@ -453,11 +462,16 @@ def run_pre_start_checks(logger):
         logger.critical("DEVICE_ID environment variable not set. Exiting.")
         exit(1)
 
-    logger.info("Checking internet connection...")
-    while not check_internet_connection():
-        logger.warning("No internet connection. Retrying in 60 seconds...")
-        time.sleep(60)
-    logger.info("Internet connection is available.")
+    # La connessione si guarda, ma non si aspetta. Una webcam appena accesa
+    # a casa di chi la usa non ha ancora una rete, ed è proprio quello il
+    # momento in cui servono l'interfaccia web per dargliene una e l'hotspot
+    # per raggiungerla: restando fermi qui il dispositivo non mostrerebbe
+    # nulla, e l'unico modo per configurarlo sarebbe un terminale.
+    if check_internet_connection():
+        logger.info("Internet connection is available.")
+    else:
+        logger.warning("No internet connection: starting anyway, so that the web "
+                       "interface and the fallback hotspot can be reached.")
     return device_id
 
 if __name__ == "__main__":

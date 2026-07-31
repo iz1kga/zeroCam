@@ -682,6 +682,32 @@
         </div>
     </div>
 
+    <!-- Rete: l'hotspot di appoggio. Lo stato delle interfacce sta invece
+         nella pagina Network, che non passa dalla configurazione. -->
+    <div v-if="configPage === 'network' && config.network">
+        <h4>Rete</h4>
+        <div class="card card-body mb-3">
+            <h5>Hotspot di appoggio</h5>
+            <div class="row align-items-end mb-3">
+                <div class="col-md-3"><field-renderer :model="config.network" key-name="hotspot_enabled"
+                        :schema="schema" label="Hotspot attivo" /></div>
+                <div class="col-md-4"><label class="form-label">Nome della rete</label><field-renderer
+                        :model="config.network" key-name="hotspot_ssid" :schema="schema" /></div>
+                <div class="col-md-3"><label class="form-label">Password</label><field-renderer
+                        :model="config.network" key-name="hotspot_password" :schema="schema" /></div>
+                <div class="col-md-2"><label class="form-label">Attesa (s)</label><field-renderer
+                        :model="config.network" key-name="hotspot_delay" :schema="schema" /></div>
+            </div>
+            <div class="form-text">
+                Senza password l'hotspot resta spento: aperto, darebbe a chiunque passi l'accesso a
+                questa console. Lasciando vuoto il nome, viene ricavato dall'hostname del dispositivo,
+                che l'installazione rende unico: &egrave; il modo per non far collidere due webcam
+                accese vicine. Questi due valori sono quelli stampati sull'etichetta, quindi
+                cambiandoli l'etichetta non vale pi&ugrave;.
+            </div>
+        </div>
+    </div>
+
     <!-- Assets: audio e loghi caricati dall'utente -->
     <div v-if="configPage === 'assets'">
         <h4>Assets</h4>

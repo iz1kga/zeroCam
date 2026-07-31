@@ -54,7 +54,7 @@ In alto compaiono il marchio e la parola *Console*, con la versione in esecuzion
 
 ![La pagina Cam Control: menu a sinistra, ultima immagine con le maschere privacy disegnate sopra, elenco delle maschere a destra.](img/ui-cam-control.png){ width=100% }
 
-**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Upload, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Assets. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
+**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Upload, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Network, Assets. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
 
 **Cam Control** mostra l'ultima immagine scattata e permette di disegnarci sopra le maschere privacy. Da qui si scatta a comando (*Take Photo*), si avvia l'aiuto alla messa a fuoco (*Start Focus Aid*) e si riavvia il dispositivo (*Riavvia*). Quando lo streaming è in corso compare l'interruttore **Anteprima diretta**, che sostituisce l'ultimo scatto con un fotogramma al secondo preso dal video.
 

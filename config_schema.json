@@ -88,5 +88,9 @@
   "threads": { "type": "number" },
   "min_frames": { "type": "number" },
   "retention_weeks": { "type": "number" },
-  "keep_local": { "type": "boolean" }
+  "keep_local": { "type": "boolean" },
+  "hotspot_enabled": { "type": "boolean" },
+  "hotspot_ssid": { "type": "text" },
+  "hotspot_password": { "type": "password" },
+  "hotspot_delay": { "type": "number" }
 }

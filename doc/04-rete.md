@@ -67,9 +67,44 @@ Ogni rete a cui la webcam si è collegata resta salvata in NetworkManager, che c
 
 Anche un tentativo fallito non lascia nulla dietro di sé. Il profilo appena creato viene rimosso, altrimenti NetworkManager continuerebbe per conto suo a riprovare con la password sbagliata.
 
+## L'hotspot di appoggio
+
+Una webcam consegnata già installata viene accesa dove sarà usata, e lì non conosce nessuna rete. Perché sia configurabile senza terminale e senza schermo, quando resta senza connettività accende un access point proprio: ci si collega dal telefono e l'interfaccia risponde su `http://10.42.0.1:8080`, da dove si indica il wifi di casa.
+
+Nome della rete e password sono quelli stampati sull'etichetta del dispositivo. Il nome, se non lo si impone, viene ricavato dall'hostname — che l'installazione rende unico per dispositivo — così due webcam accese vicine non si confondono e l'etichetta, l'SSID e l'indirizzo da digitare dicono la stessa cosa. Si cambiano in **Configuration → Network**, ricordando che a quel punto l'etichetta non vale più.
+
+**Senza password l'hotspot non parte.** Un access point aperto darebbe a chiunque passi l'accesso a questa console, che riconfigura e riavvia il dispositivo. La pagina *Network* lo segnala in rosso finché la password manca.
+
+### Quando si accende e quando si spegne
+
+| Situazione | Cosa succede |
+|---|---|
+| Connettività presente (cavo o wifi) | L'hotspot resta spento |
+| Connettività assente da due minuti | L'hotspot si accende |
+| Il cavo torna mentre l'hotspot è acceso | L'hotspot si spegne |
+| Hotspot acceso, ci sono reti salvate | Ogni dieci minuti la radio viene liberata per poco più di un minuto |
+
+L'attesa di due minuti serve a non far comparire l'access point per un router che si riavvia. Si cambia in **Configuration → Network**.
+
+La finestra di ritentativo esiste perché la radio è una sola: finché l'hotspot è acceso, NetworkManager non può cercare le reti conosciute né riassociarsi. Senza quella pausa periodica, una webcam finita in hotspot ci resterebbe fino al riavvio anche con il suo wifi di nuovo disponibile.
+
+La pausa però stacca chi si è collegato all'hotspot proprio per configurarlo, quindi non si apre mai mentre la pagina *Network* è in uso: le richieste segnalano l'attività, e il watchdog aspetta cinque minuti di quiete. E non si apre affatto se non c'è nessuna rete salvata a cui tornare, perché non servirebbe a niente se non a scollegare chi sta configurando.
+
+### Sbagliare la password non blocca fuori
+
+Collegandosi a una rete l'hotspot si spegne, e con esso la connessione di chi sta configurando proprio da lì: la pagina smette di rispondere ed è normale. Se la password era giusta, la webcam è sulla rete scelta. Se era sbagliata, la connessione fallisce e l'hotspot viene rimesso su subito, in modo che la rete ricompaia e si possa riprovare.
+
+Le protezioni sono due, e volutamente ridondanti. La prima è immediata e sta nella richiesta stessa; se anche quella fallisce, il watchdog se ne accorge al giro successivo e riaccende comunque l'hotspot. In pratica, nel peggiore dei casi la rete torna entro un paio di minuti.
+
+Anche il profilo del tentativo fallito viene cancellato, altrimenti NetworkManager continuerebbe per conto suo a riprovare con la password sbagliata.
+
+### Perché l'applicazione non aspetta più la rete all'avvio
+
+Fino alla versione precedente l'avvio si fermava finché non c'era Internet, riprovando ogni minuto. Con l'hotspot quel comportamento diventava un vicolo cieco: la webcam senza rete non arrivava mai ad avviare l'interfaccia web, quindi nemmeno l'hotspot, e restava configurabile solo da terminale — cioè esattamente ciò che l'hotspot esiste per evitare. Ora la connessione viene guardata e annotata nel log, ma non attesa.
+
 ## Che cosa non finisce nel backup
 
-Le reti e le loro password stanno in NetworkManager, non in `.conf.json`: il backup della configurazione (**System → Backup**) non se le porta dietro, e un ripristino non le tocca. È voluto. Un backup ripristinato su un altro dispositivo, magari in un altro luogo, non ha motivo di portarsi appresso le reti di casa di qualcun altro, e NetworkManager le sue le conserva già per conto proprio.
+Le reti e le loro password stanno in NetworkManager, non in `.conf.json`: il backup della configurazione (**System → Backup**) non se le porta dietro, e un ripristino non le tocca. Le impostazioni dell'hotspot invece sì, perché sono configurazione e non stato della rete: nome, password e attesa vivono nella sezione `network` di `.conf.json` e seguono il backup come tutto il resto. È voluto. Un backup ripristinato su un altro dispositivo, magari in un altro luogo, non ha motivo di portarsi appresso le reti di casa di qualcun altro, e NetworkManager le sue le conserva già per conto proprio.
 
 Di conseguenza, dopo una reinstallazione o un cambio di SD la rete va riconfigurata: è l'unica cosa che il ripristino non rimette a posto.
 

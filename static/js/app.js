@@ -936,6 +936,7 @@ const startApp = async () => {
         selected: '',
         password: '',
         showPassword: false,
+        showHotspotPassword: false,
         hiddenOpen: false,
         hidden: { ssid: '', password: '' },
         editing: '',
