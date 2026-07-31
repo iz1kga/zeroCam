@@ -20,6 +20,26 @@ Verificare che il servizio sia attivo. Se non parte, il log di systemd dice quas
 
 All'avvio l'applicazione attende la connessione a Internet, riprovando ogni 60 secondi: se la rete non c'è, il servizio risulta attivo ma l'interfaccia non risponde ancora. Il log lo scrive: `No internet connection. Retrying in 60 seconds...`.
 
+## La pagina Network dice che NetworkManager non risponde
+
+Il sistema è più vecchio di Bookworm, e configura la rete con `dhcpcd` e `wpa_supplicant`. `nmcli general status` lo conferma: se il comando non esiste, non c'è nulla da configurare da lì. La rete va impostata a mano dal terminale, e per il resto zeroCAM su quelle versioni non è supportato.
+
+## Il wifi non si collega
+
+* Una password sbagliata dà `Secrets were required, but not provided`. Il profilo appena creato viene cancellato da solo, quindi basta riprovare: se ne resta uno vecchio con la password sbagliata, si cancella con **Dimentica**.
+* La radio può essere bloccata quando il paese non è impostato: `rfkill list` mostra `Soft blocked: yes`. Si rimedia con `sudo raspi-config nonint do_wifi_country IT`.
+* Una rete che non compare nella scansione può essere nascosta, e allora va scritta a mano, oppure a 5 GHz su un canale che il paese impostato non consente.
+
+## L'indirizzo fisso non è stato applicato, o così sembra
+
+Se lo si è cambiato sull'interfaccia da cui si stava navigando, la risposta non poteva tornare: la connessione è caduta con il vecchio indirizzo. La modifica di solito è andata a buon fine. Lo dice il log:
+
+```
+Profile 'Wired connection 1' switched to the fixed address 192.168.1.50/24
+```
+
+Se invece il log riporta un errore di `nmcli`, la vecchia configurazione è ancora in uso e il dispositivo resta raggiungibile dov'era.
+
 ## Non vengono scattate foto
 
 * Controllare che la fase del giorno sia riconosciuta: `Day period is 'unknown', skipping capture` indica coordinate o offset incoerenti in Device Details.

@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
 
-from lib import assets, config_backup, paths, tls
+from lib import assets, config_backup, network, paths, tls
 from lib.version import get_version
 from lib.youtube_auth import YouTubeDeviceFlow
 
@@ -136,6 +136,13 @@ class SettingsManager:
         self.app.add_url_rule('/assets/<category>/<name>', 'serve_asset', self.serve_asset, methods=['GET'])
         self.app.add_url_rule('/api/privacy_mask', 'get_privacy_mask', self.get_privacy_mask, methods=['GET'])
         self.app.add_url_rule('/api/save_privacy_mask', 'save_privacy_mask', self.save_privacy_mask, methods=['POST'])
+
+        # Rete
+        self.app.add_url_rule('/api/network', 'network_status', self.network_status, methods=['GET'])
+        self.app.add_url_rule('/api/network/scan', 'network_scan', self.network_scan, methods=['GET'])
+        self.app.add_url_rule('/api/network/wifi', 'network_wifi_connect', self.network_wifi_connect, methods=['POST'])
+        self.app.add_url_rule('/api/network/forget', 'network_wifi_forget', self.network_wifi_forget, methods=['POST'])
+        self.app.add_url_rule('/api/network/address', 'network_address', self.network_address, methods=['POST'])
 
         
         # Focus Aid Routes
@@ -281,6 +288,107 @@ class SettingsManager:
         except Exception as e:
             self.logger.error(f"Failed to save privacy mask: {e}", exc_info=True)
             return jsonify(success=False, message=f"An error occurred: {e}"), 500
+
+    # --- Rete ---
+
+    @login_required
+    def network_status(self):
+        """
+        Interfacce, indirizzi, connettività e reti wifi già salvate.
+
+        Tutto insieme perché la pagina si aggiorna a intervalli: chiedere
+        le stesse cose con più richieste le mostrerebbe disallineate.
+        """
+        state = network.status()
+        state['saved'] = network.saved_wifi() if state['available'] else []
+        state['wifiDevice'] = network.wifi_device()
+        return jsonify(state)
+
+    @login_required
+    def network_scan(self):
+        """
+        Le reti wifi in portata.
+
+        Separata dallo stato perché una scansione vera occupa la radio per
+        qualche secondo: va fatta quando l'utente la chiede, non a ogni
+        aggiornamento della pagina.
+        """
+        try:
+            return jsonify(success=True, networks=network.scan())
+        except network.NetworkError as e:
+            self.logger.error(f"Wifi scan failed: {e}")
+            return jsonify(success=False, message=str(e)), 400
+
+    @login_required
+    def network_wifi_connect(self):
+        """
+        Collega il wifi a una rete.
+
+        La risposta arriva a connessione conclusa, quindi può metterci
+        quasi un minuto: è l'unico modo per riportare all'utente il motivo
+        di un rifiuto invece di lasciarlo indovinare.
+        """
+        data = request.json or {}
+        ssid = (data.get('ssid') or '').strip()
+        self.logger.info(f"Wifi connection to '{ssid}' requested from web UI.")
+        try:
+            network.wifi_connect(ssid,
+                                 password=data.get('password') or '',
+                                 hidden=bool(data.get('hidden')))
+            self.logger.info(f"Wifi connected to '{ssid}'.")
+            return jsonify(success=True, message=f"Connesso a {ssid}.")
+        except network.NetworkError as e:
+            self.logger.error(f"Wifi connection to '{ssid}' failed: {e}")
+            return jsonify(success=False, message=str(e)), 400
+
+    @login_required
+    def network_wifi_forget(self):
+        """Cancella un profilo salvato."""
+        name = ((request.json or {}).get('name') or '').strip()
+        if not name:
+            return jsonify(success=False, message="Manca il nome della rete."), 400
+        try:
+            network.forget(name)
+            self.logger.info(f"Wifi profile '{name}' deleted from web UI.")
+            return jsonify(success=True, message=f"Rete {name} dimenticata.")
+        except network.NetworkError as e:
+            self.logger.error(f"Could not delete wifi profile '{name}': {e}")
+            return jsonify(success=False, message=str(e)), 400
+
+    @login_required
+    def network_address(self):
+        """
+        Passa un'interfaccia all'indirizzo fisso o al DHCP.
+
+        Vale per la cablata come per il wifi: cambia solo il profilo su cui
+        si scrive. Se l'interfaccia è quella da cui arriva la richiesta la
+        risposta non tornerà mai, perché l'indirizzo cambia sotto la
+        connessione aperta: per questo gli indirizzi sono controllati prima
+        di toccare qualsiasi cosa, e l'esito resta comunque nel log.
+        """
+        data = request.json or {}
+        connection = (data.get('connection') or '').strip()
+        if not connection:
+            return jsonify(success=False, message="Manca il profilo da modificare."), 400
+
+        method = data.get('method') or 'auto'
+        try:
+            if method == 'manual':
+                network.set_static(connection,
+                                   (data.get('address') or '').strip(),
+                                   gateway=(data.get('gateway') or '').strip(),
+                                   dns=[d.strip() for d in (data.get('dns') or []) if d.strip()])
+                self.logger.warning(
+                    f"Profile '{connection}' switched to the fixed address {data.get('address')}."
+                )
+                return jsonify(success=True, message="Indirizzo fisso applicato.")
+
+            network.set_dhcp(connection)
+            self.logger.warning(f"Profile '{connection}' switched back to DHCP.")
+            return jsonify(success=True, message="Indirizzo automatico applicato.")
+        except network.NetworkError as e:
+            self.logger.error(f"Could not reconfigure '{connection}': {e}")
+            return jsonify(success=False, message=str(e)), 400
 
     @login_required
     def restart(self):

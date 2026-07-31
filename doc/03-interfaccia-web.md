@@ -64,6 +64,8 @@ In alto compaiono il marchio e la parola *Console*, con la versione in esecuzion
 
 **Log** mostra il file di log dell'applicazione, aggiornato ogni due secondi.
 
+**Network** mostra le interfacce di rete con i loro indirizzi, permette di passarle all'indirizzo fisso o al DHCP e di collegare il wifi. Ha un capitolo suo, *La rete*.
+
 **System** contiene il cambio password, le porte e il certificato dell'interfaccia, l'interruttore della pagina pubblica e il backup/ripristino della configurazione.
 
 **License** riporta i termini di licenza.
@@ -106,6 +108,10 @@ L'interfaccia è una pagina Vue che parla con alcune rotte HTTP. Tutte richiedon
 | `/api/privacy_mask`, `/api/save_privacy_mask` | GET, POST | Maschere privacy |
 | `/api/assets` | GET, POST | Elenca e carica audio e loghi |
 | `/api/assets/<categoria>/<nome>` | DELETE | Elimina un asset |
+| `/api/network` | GET | Interfacce, indirizzi e connettività |
+| `/api/network/scan` | GET | Reti wifi in portata |
+| `/api/network/wifi`, `/api/network/forget` | POST | Collega o dimentica una rete wifi |
+| `/api/network/address` | POST | Indirizzo automatico o fisso di un'interfaccia |
 | `/latest.jpg`, `/stream_latest.jpg` | GET | Ultimo scatto, ultimo fotogramma della diretta |
 | `/`, `/public`, `/public/latest.jpg`, `/public/info` | GET | Vetrina pubblica: **senza autenticazione**, e solo se abilitata |
 | `/zc-admin` | GET | La console: sempre autenticata |

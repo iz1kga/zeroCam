@@ -41,6 +41,8 @@ Serve inoltre:
 * Raspberry Pi OS a 64 bit basato su Debian Bookworm o successivo.
 * Lo script di installazione porta con sé tutto il resto: `python3-picamera2`, `ffmpeg`, `libcamera`, ambiente virtuale Python e dipendenze.
 
+Bookworm è un requisito, non una raccomandazione. Le versioni precedenti configurano la rete con `dhcpcd` e `wpa_supplicant`, mentre da Bookworm il compito è di **NetworkManager**: la pagina *Network* parla con quest'ultimo e su un sistema più vecchio non ha nessuno con cui parlare. Anche il resto — `picamera2`, le versioni di `libcamera`, `ffmpeg` — è provato lì e soltanto lì. Su Bullseye o precedenti zeroCAM non è supportato, e non lo sarà.
+
 ## Come è fatto
 
 L'applicazione è un unico processo Python (`zeroCam.py`) che avvia alcuni thread:
@@ -59,7 +61,7 @@ Il ciclo di lavoro è sempre lo stesso: lo streaming, se attivo, viene interrott
 
 ## Come leggere questo manuale
 
-I capitoli seguono l'ordine naturale di lavoro: installazione, primo accesso, configurazione, poi una parte per ciascuna funzione (scatto, privacy, annotazione, pubblicazione, diretta, timelapse) e infine l'integrazione ONVIF, la manutenzione e la risoluzione dei problemi.
+I capitoli seguono l'ordine naturale di lavoro: installazione, primo accesso, rete, configurazione, poi una parte per ciascuna funzione (scatto, privacy, annotazione, pubblicazione, diretta, timelapse) e infine l'integrazione ONVIF, la manutenzione e la risoluzione dei problemi.
 
 Il capitolo *Riferimento della configurazione* raccoglie tutte le chiavi del file `.conf.json` con il loro significato, utile quando si sa già cosa cercare.
 

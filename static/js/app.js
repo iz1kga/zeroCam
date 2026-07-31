@@ -75,7 +75,8 @@ const startApp = async () => {
     logTemplate,
     systemTemplate,
     licenseTemplate,
-    timelapseTemplate
+    timelapseTemplate,
+    networkTemplate
   ] = await Promise.all([
     loadTemplate('config'),
     loadTemplate('control'),
@@ -83,7 +84,8 @@ const startApp = async () => {
     loadTemplate('log'),
     loadTemplate('system'),
     loadTemplate('license'),
-    loadTemplate('timelapse')
+    loadTemplate('timelapse'),
+    loadTemplate('network')
   ]);
 
   const app = createApp({
@@ -916,6 +918,212 @@ const startApp = async () => {
   app.component('page-log', {
     props: ['logContent'],
     template: logTemplate
+  });
+  app.component('page-network', {
+    template: networkTemplate,
+    data() {
+      return {
+        state: {
+          available: false, connectivity: 'unknown', devices: [],
+          saved: [], hotspot: false, wifiDevice: ''
+        },
+        loaded: false,
+        busy: false,
+        scanning: false,
+        message: '',
+        success: false,
+        networks: [],
+        selected: '',
+        password: '',
+        showPassword: false,
+        hiddenOpen: false,
+        hidden: { ssid: '', password: '' },
+        editing: '',
+        form: { method: 'auto', address: '', gateway: '', dns: '' }
+      };
+    },
+    computed: {
+      messageClass() {
+        return this.success ? 'alert-success' : 'alert-danger';
+      },
+      connectivityLabel() {
+        return {
+          full: 'Internet raggiungibile',
+          limited: 'Rete senza internet',
+          portal: 'Dietro un portale di accesso',
+          none: 'Nessuna connettività'
+        }[this.state.connectivity] || 'Connettività sconosciuta';
+      },
+      connectivityClass() {
+        if (this.state.connectivity === 'full') return 'bg-success';
+        if (this.state.connectivity === 'none') return 'bg-danger';
+        return 'bg-warning text-dark';
+      }
+    },
+    created() {
+      // Il timer non deve essere reattivo: serve solo a fermarlo.
+      this.statusTimer = null;
+    },
+    mounted() {
+      this.loadStatus();
+      // Lo stato cambia da solo quando un cavo viene staccato o il wifi
+      // cade, quindi la pagina si riaggiorna senza che nessuno prema nulla.
+      this.statusTimer = setInterval(() => {
+        if (!this.busy && !this.scanning) this.loadStatus();
+      }, 10000);
+    },
+    unmounted() {
+      clearInterval(this.statusTimer);
+    },
+    methods: {
+      setMessage(text, success) {
+        this.message = text;
+        this.success = success;
+      },
+      async loadStatus() {
+        try {
+          const response = await secureFetch('/api/network');
+          this.state = await response.json();
+          this.loaded = true;
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setMessage('Impossibile leggere lo stato della rete.', false);
+          }
+        }
+      },
+      async scan() {
+        this.scanning = true;
+        this.setMessage('', false);
+        try {
+          const response = await secureFetch('/api/network/scan');
+          const result = await response.json();
+          if (result.success) {
+            this.networks = result.networks;
+            if (!this.networks.length) this.setMessage('Nessuna rete in portata.', false);
+          } else {
+            this.setMessage(result.message || 'Scansione non riuscita.', false);
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setMessage('Errore di connessione durante la scansione.', false);
+          }
+        } finally {
+          this.scanning = false;
+        }
+      },
+      signalIcon(signal) {
+        if (signal >= 70) return 'bi-reception-4';
+        if (signal >= 45) return 'bi-reception-3';
+        if (signal >= 20) return 'bi-reception-2';
+        return 'bi-reception-1';
+      },
+      pick(net) {
+        this.selected = this.selected === net.ssid ? '' : net.ssid;
+        this.password = '';
+        this.showPassword = false;
+      },
+      async connect(net) {
+        await this.joinWifi(net.ssid, net.open ? '' : this.password, false);
+      },
+      async connectHidden() {
+        await this.joinWifi(this.hidden.ssid, this.hidden.password, true);
+      },
+      async joinWifi(ssid, password, hidden) {
+        this.busy = true;
+        this.setMessage('', false);
+        try {
+          const response = await secureFetch('/api/network/wifi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ssid, password, hidden })
+          });
+          const result = await response.json();
+          this.setMessage(result.message, !!result.success);
+          if (result.success) {
+            this.selected = '';
+            this.password = '';
+            this.hidden = { ssid: '', password: '' };
+            await this.loadStatus();
+          }
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setMessage('Errore di connessione durante il tentativo.', false);
+          }
+        } finally {
+          this.busy = false;
+        }
+      },
+      async forget(name) {
+        if (!confirm(`Dimenticare la rete ${name}? La password salvata verrà cancellata.`)) return;
+        this.busy = true;
+        try {
+          const response = await secureFetch('/api/network/forget', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+          });
+          const result = await response.json();
+          this.setMessage(result.message, !!result.success);
+          await this.loadStatus();
+        } catch (error) {
+          if (error.message !== 'Session expired') {
+            this.setMessage('Errore di connessione.', false);
+          }
+        } finally {
+          this.busy = false;
+        }
+      },
+      editAddress(device) {
+        this.editing = this.editing === device.device ? '' : device.device;
+        this.form = {
+          method: device.method === 'manual' ? 'manual' : 'auto',
+          address: device.addresses[0] || '',
+          gateway: device.gateway || '',
+          dns: (device.dns || []).join('\n')
+        };
+      },
+      async applyAddress(device) {
+        this.busy = true;
+        this.setMessage('', false);
+        // Cambiando l'indirizzo dell'interfaccia da cui arriva la richiesta,
+        // la risposta non tornerà mai: senza un limite la pagina resterebbe
+        // appesa per sempre a un'attesa che è invece l'esito normale.
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 25000);
+        try {
+          const response = await secureFetch('/api/network/address', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              connection: device.connection,
+              method: this.form.method,
+              address: this.form.address,
+              gateway: this.form.gateway,
+              dns: this.form.dns.split('\n').map(s => s.trim()).filter(s => s)
+            }),
+            signal: controller.signal
+          });
+          const result = await response.json();
+          this.setMessage(result.message, !!result.success);
+          if (result.success) {
+            this.editing = '';
+            await this.loadStatus();
+          }
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            this.setMessage(
+              'Nessuna risposta: probabilmente l\'indirizzo è cambiato proprio ' +
+              'sotto questa connessione. Riapri l\'interfaccia al nuovo indirizzo ' +
+              'e controlla il log.', false);
+          } else if (error.message !== 'Session expired') {
+            this.setMessage('Errore di connessione.', false);
+          }
+        } finally {
+          clearTimeout(timeout);
+          this.busy = false;
+        }
+      }
+    }
   });
   app.component('page-system', {
     template: systemTemplate,

@@ -9,18 +9,19 @@ Il manuale è scritto in Markdown, un file per capitolo, e viene unito in un uni
 | [01-introduzione.md](01-introduzione.md) | Che cos'è zeroCAM, requisiti, architettura |
 | [02-installazione.md](02-installazione.md) | Installazione, cartelle, servizio, aggiornamento |
 | [03-interfaccia-web.md](03-interfaccia-web.md) | Le pagine dell'interfaccia e le API |
-| [04-configurazione-base.md](04-configurazione-base.md) | Device Details, fasi del giorno, sicurezza |
-| [05-cattura-immagini.md](05-cattura-immagini.md) | Ciclo di scatto, esposizione, ritaglio, focus aid |
-| [06-privacy-mask.md](06-privacy-mask.md) | Maschere privacy su foto e video |
-| [07-annotazione-loghi.md](07-annotazione-loghi.md) | Barra di annotazione, loghi e assets |
-| [08-pubblicazione-immagini.md](08-pubblicazione-immagini.md) | Upload FTP e HTTP |
-| [09-streaming.md](09-streaming.md) | Diretta YouTube, ritrasmissione, anteprima |
-| [10-timelapse.md](10-timelapse.md) | Raccolta, montaggio, pubblicazione, galleria |
-| [11-onvif.md](11-onvif.md) | Integrazione ONVIF |
-| [12-manutenzione.md](12-manutenzione.md) | Backup, log, statistiche, spazio su disco |
-| [13-risoluzione-problemi.md](13-risoluzione-problemi.md) | Sintomi, cause, rimedi |
-| [14-riferimento-configurazione.md](14-riferimento-configurazione.md) | Tutte le chiavi di `.conf.json` |
-| [15-licenza.md](15-licenza.md) | Termini di licenza |
+| [04-rete.md](04-rete.md) | Interfacce, indirizzo fisso o DHCP, reti wifi |
+| [05-configurazione-base.md](05-configurazione-base.md) | Device Details, fasi del giorno, sicurezza |
+| [06-cattura-immagini.md](06-cattura-immagini.md) | Ciclo di scatto, esposizione, ritaglio, focus aid |
+| [07-privacy-mask.md](07-privacy-mask.md) | Maschere privacy su foto e video |
+| [08-annotazione-loghi.md](08-annotazione-loghi.md) | Barra di annotazione, loghi e assets |
+| [09-pubblicazione-immagini.md](09-pubblicazione-immagini.md) | Upload FTP e HTTP |
+| [10-streaming.md](10-streaming.md) | Diretta YouTube, ritrasmissione, anteprima |
+| [11-timelapse.md](11-timelapse.md) | Raccolta, montaggio, pubblicazione, galleria |
+| [12-onvif.md](12-onvif.md) | Integrazione ONVIF |
+| [13-manutenzione.md](13-manutenzione.md) | Backup, log, statistiche, spazio su disco |
+| [14-risoluzione-problemi.md](14-risoluzione-problemi.md) | Sintomi, cause, rimedi |
+| [15-riferimento-configurazione.md](15-riferimento-configurazione.md) | Tutte le chiavi di `.conf.json` |
+| [16-licenza.md](16-licenza.md) | Termini di licenza |
 
 L'ordine dei capitoli nel PDF è quello alfabetico dei nomi dei file: per inserirne uno nuovo basta numerarlo di conseguenza.
 

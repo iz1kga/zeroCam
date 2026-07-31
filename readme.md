@@ -40,6 +40,16 @@ Una volta completata l'installazione, puoi accedere all'interfaccia web del disp
 
 Ora puoi configurare la tua telecamera e iniziare a usarla!
 
+### Configurazione di rete
+
+La pagina **Network** elenca le interfacce con i loro indirizzi e permette di configurarle senza toccare il terminale: passaggio fra DHCP e indirizzo fisso — per la cablata come per il wifi — scansione delle reti wifi, connessione, reti nascoste ed elenco di quelle memorizzate. Il wifi si può collegare anche con il cavo attaccato: le due interfacce restano attive insieme e NetworkManager preferisce la cablata finché c'è.
+
+Cambiando l'indirizzo dell'interfaccia da cui si sta navigando la risposta non torna, perché la connessione aperta cade insieme al vecchio indirizzo: non è un errore, si riapre l'interfaccia al nuovo indirizzo.
+
+Le reti e le loro password stanno in NetworkManager, non in `.conf.json`: non finiscono nel backup della configurazione e un ripristino non le tocca.
+
+Serve **Raspberry Pi OS Bookworm o successivo**. Le versioni precedenti usano `dhcpcd` e `wpa_supplicant` invece di NetworkManager, e su quelle la pagina non ha nessuno con cui parlare: zeroCAM non le supporta.
+
 ### Dove stanno i dati
 
 L'installazione è divisa in due cartelle:
@@ -191,6 +201,16 @@ Once the installation is complete, you can access the device's web interface:
 * **Password:** The one you provided during installation.
 
 Now you can configure your camera and start using it!
+
+### Network configuration
+
+The **Network** page lists the interfaces with their addresses and lets you configure them without touching a terminal: switching between DHCP and a fixed address — for the wired interface as well as for wifi — scanning for wifi networks, joining one, hidden networks, and the list of saved ones. Wifi can be joined with the cable plugged in: both interfaces stay up, and NetworkManager prefers the wired one while it is there.
+
+Changing the address of the interface you are browsing from means the answer never comes back, because the open connection dies along with the old address: that is not a failure, just reopen the interface at the new address.
+
+Networks and their passwords live in NetworkManager, not in `.conf.json`: they are not part of the configuration backup and a restore does not touch them.
+
+**Raspberry Pi OS Bookworm or newer is required.** Earlier releases use `dhcpcd` and `wpa_supplicant` instead of NetworkManager, and there the page has nobody to talk to: zeroCAM does not support them.
 
 ### Where the data lives
 
