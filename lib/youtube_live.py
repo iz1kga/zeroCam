@@ -229,6 +229,41 @@ class YouTubeLiveManager:
                 .replace("{date}", now.strftime("%d/%m/%Y"))
                 .replace("{time}", now.strftime("%H:%M")))
 
+    def _sync_description(self, broadcast):
+        """
+        Allinea la descrizione di un broadcast riusato alla configurazione.
+
+        Lo snippet di un broadcast resta quello del momento in cui è nato: senza
+        questo passaggio una descrizione cambiata dall'interfaccia comparirebbe
+        solo sulla diretta successiva, cioè mai finché la stessa resta in onda.
+        Il titolo non si tocca: contiene i segnaposto {date} e {time}, che vanno
+        fotografati alla creazione e non riscritti a ogni scatto.
+        """
+        wanted = self.cfg.get("description", "") or ""
+        snippet = broadcast.get("snippet", {})
+        if (snippet.get("description") or "") == wanted:
+            return
+
+        # L'API non accetta aggiornamenti parziali dello snippet: titolo e
+        # orario vanno ripetuti tali e quali, altrimenti li azzera.
+        new_snippet = {
+            "title": snippet.get("title") or self._build_title(),
+            "description": wanted,
+        }
+        if snippet.get("scheduledStartTime"):
+            new_snippet["scheduledStartTime"] = snippet["scheduledStartTime"]
+
+        try:
+            self._api("PUT", "liveBroadcasts",
+                      params={"part": "id,snippet"},
+                      body={"id": broadcast["id"], "snippet": new_snippet})
+            self.logger.info(f"Updated the description of YouTube broadcast {broadcast['id']}.")
+        except Exception as e:
+            # Una descrizione non allineata non giustifica il salto della diretta.
+            self.logger.warning(
+                f"Could not update the description of broadcast {broadcast['id']}: {e}"
+            )
+
     def _create_broadcast(self):
         """Crea un broadcast con avvio automatico e senza interruzione automatica."""
         start = datetime.now(timezone.utc) + timedelta(minutes=1)
@@ -301,6 +336,7 @@ class YouTubeLiveManager:
                     self.logger.info(
                         f"Reusing YouTube broadcast {self._broadcast_id} ({self._rollover_note()})."
                     )
+                    self._sync_description(broadcast)
                     return True
 
                 broadcast = self._create_broadcast()

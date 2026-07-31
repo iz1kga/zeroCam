@@ -144,6 +144,8 @@ Prima di ogni ripartenza dello streaming il software cerca un broadcast già col
 
 Il campo **Nuova diretta alle (HH:MM)** forza invece un ricambio quotidiano: al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con il titolo rivalutato dai segnaposto. Impostandolo a `00:00` si ottiene una diretta al giorno, con la data corretta nel titolo. Lasciando il campo vuoto il comportamento resta quello precedente: il campo è vuoto anche nelle installazioni nuove, quindi il ricambio va abilitato esplicitamente.
 
+Il campo **Descrizione** fa eccezione al riuso: se viene cambiato dall'interfaccia, la diretta già in onda viene aggiornata alla ripartenza successiva dello streaming, senza aspettare che YouTube la chiuda. Il titolo no, e volutamente: contiene i segnaposto `{date}` e `{time}`, che vanno fotografati alla creazione e non riscritti a ogni scatto. Se YouTube rifiuta l'aggiornamento la diretta prosegue lo stesso con la vecchia descrizione, e il motivo finisce nel log come `Could not update the description of broadcast`.
+
 Ogni volta che una diretta viene riusata il log dice perché non è stata sostituita, così è immediato capire se il ricambio è attivo:
 
 ```
