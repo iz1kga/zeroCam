@@ -181,7 +181,13 @@
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="mb-0">Hotspot di appoggio</h5>
-                <span class="badge bg-success" v-if="state.hotspotConfig.active">acceso ora</span>
+                <span>
+                    <span class="badge bg-success me-2" v-if="state.hotspotConfig.active">acceso ora</span>
+                    <button class="btn btn-sm btn-outline-primary"
+                            @click="$emit('go-to-config', 'network')">
+                        Modifica
+                    </button>
+                </span>
             </div>
 
             <p class="text-muted small">
@@ -197,6 +203,7 @@
                  class="alert alert-danger py-2 small">
                 Nessuna password impostata: l'hotspot resta spento. Un access point aperto
                 darebbe a chiunque passi l'accesso a questa console.
+                Si imposta con <strong>Modifica</strong>, qui sopra.
             </div>
 
             <div class="row g-2 align-items-end">
@@ -209,16 +216,20 @@
                         </label>
                     </div>
                 </div>
+                <!-- Disabilitati e non readonly: un campo readonly prende il
+                     fuoco e mostra il cursore, quindi sembra scrivibile e non
+                     lo è. Qui si legge soltanto, si modifica dal pulsante. -->
                 <div class="col-md-4">
                     <label class="form-label">Nome della rete</label>
-                    <input type="text" class="form-control" :value="state.hotspotConfig.ssid" readonly>
+                    <input type="text" class="form-control" :value="state.hotspotConfig.ssid" disabled>
                 </div>
                 <div class="col-md-5">
                     <label class="form-label">Password</label>
                     <div class="input-group">
                         <input :type="showHotspotPassword ? 'text' : 'password'" class="form-control"
-                               :value="state.hotspotConfig.password" readonly>
+                               :value="state.hotspotConfig.password" disabled>
                         <button class="btn btn-outline-secondary" type="button"
+                                :disabled="!state.hotspotConfig.password"
                                 @click="showHotspotPassword = !showHotspotPassword">
                             <i class="bi" :class="showHotspotPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
                         </button>
@@ -226,8 +237,9 @@
                 </div>
             </div>
             <div class="form-text mt-2">
-                Sono gli stessi valori stampati sull'etichetta del dispositivo. Si cambiano in
-                <strong>Configuration &rarr; Network</strong>; cambiandoli, l'etichetta non vale più.
+                Sono gli stessi valori stampati sull'etichetta del dispositivo, e qui si leggono
+                soltanto: si cambiano con <strong>Modifica</strong>, che porta a
+                <strong>Configuration &rarr; Network</strong>. Cambiandoli, l'etichetta non vale più.
             </div>
         </div>
     </div>

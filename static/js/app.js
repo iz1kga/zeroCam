@@ -921,6 +921,10 @@ const startApp = async () => {
   });
   app.component('page-network', {
     template: networkTemplate,
+    // Le impostazioni dell'hotspot vivono nella configurazione, che si
+    // salva tutta insieme: qui si mostrano soltanto, e il pulsante porta
+    // dove si modificano.
+    emits: ['go-to-config'],
     data() {
       return {
         state: {

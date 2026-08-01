@@ -110,6 +110,7 @@
                     @update:active-camera-tab="activeCameraTab = $event"
                     @update:active-stream-tab="activeStreamTab = $event"
                     @restart-app="restartApp"
+                    @go-to-config="page = 'config'; configPage = $event"
                     v-on:take-photo="takePhoto"
                     v-on:start-focus-aid="startFocusAid"
                     v-on:stop-focus-aid="stopFocusAid"
