@@ -54,7 +54,9 @@ L'annuncio è un file in `/etc/avahi/services/`, riscritto dall'applicazione qua
 
 ## La pagina Network
 
-Elenca le interfacce che NetworkManager conosce — tipicamente `eth0` ed `wlan0` — con lo stato, il profilo attivo, gli indirizzi, il gateway e i DNS. In alto un'etichetta riassume la connettività secondo NetworkManager:
+Elenca le interfacce cablate e wifi — tipicamente `eth0` e `wlan0` — con lo stato, il profilo attivo, gli indirizzi, il gateway e i DNS.
+
+Sono le uniche che si possono configurare da qui, ed è voluto. Tunnel VPN, bridge e interfacce virtuali compaiono in `nmcli device status` ma non nella pagina: comparirebbero con accanto il pulsante per cambiarne l'indirizzo, e riconfigurare il tunnel da cui si sta amministrando la webcam è il modo più rapido per perderne l'accesso. Il filtro guarda il tipo e non il nome, quindi un secondo adattatore wifi su USB resta configurabile anche se non si chiama `wlan0`. In alto un'etichetta riassume la connettività secondo NetworkManager:
 
 | Etichetta | Significato |
 |---|---|

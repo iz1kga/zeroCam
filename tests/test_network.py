@@ -79,11 +79,15 @@ def test_la_scansione_tiene_il_segnale_migliore_di_ogni_rete(nmcli):
     assert reti[0]["open"] is False
 
 
-def test_le_interfacce_virtuali_restano_fuori_dallelenco(nmcli):
+def test_solo_le_interfacce_cablate_e_wifi_sono_configurabili(nmcli):
     nmcli.replies = {"device status": "\n".join([
         "lo:loopback:unmanaged:--",
         "eth0:ethernet:connected:Wired connection 1",
         "wlan0:wifi:disconnected:--",
+        # Un tunnel VPN: riconfigurarne l'indirizzo dalla pagina
+        # significherebbe perdere l'accesso da cui lo si sta facendo.
+        "netmaker:wireguard:connected:netmaker",
+        "docker0:bridge:unmanaged:--",
     ]) + "\n"}
 
     interfacce = network.devices()
@@ -92,6 +96,17 @@ def test_le_interfacce_virtuali_restano_fuori_dallelenco(nmcli):
     # nmcli scrive '--' dove non c'è un profilo: la pagina non deve mostrarlo.
     assert interfacce[1]["connection"] == ""
     assert interfacce[0]["connection"] == "Wired connection 1"
+
+
+def test_un_secondo_adattatore_wifi_resta_configurabile(nmcli):
+    # Il filtro è sul tipo e non sul nome: un dongle USB si chiama wlan1 e
+    # deve comparire, altrimenti non ci sarebbe modo di configurarlo.
+    nmcli.replies = {"device status": "\n".join([
+        "wlan0:wifi:connected:CasaMia",
+        "wlan1:wifi:disconnected:--",
+    ]) + "\n"}
+
+    assert [d["device"] for d in network.devices()] == ["wlan0", "wlan1"]
 
 
 def test_gli_indirizzi_ripetuti_finiscono_tutti_nella_lista(nmcli):

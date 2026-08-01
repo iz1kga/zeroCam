@@ -128,9 +128,20 @@ def connectivity():
     return rows[0][0] if rows else "unknown"
 
 
+# Le sole interfacce che la webcam offre di configurare. È un elenco di
+# cose ammesse e non di cose escluse, perché il rischio sta in quello che
+# non abbiamo previsto: un tunnel VPN, un bridge, una interfaccia virtuale
+# comparirebbero nella pagina con accanto il pulsante per cambiarne
+# l'indirizzo, e riconfigurare il tunnel da cui si sta amministrando la
+# webcam è il modo più rapido per perderne l'accesso. Il filtro è sul tipo
+# e non sul nome: un secondo adattatore wifi su USB resta configurabile,
+# anche se non si chiama wlan0.
+MANAGEABLE_TYPES = ("ethernet", "wifi")
+
+
 def devices():
     """
-    Le interfacce viste da NetworkManager, con stato e profilo attivo.
+    Le interfacce cablate e wifi viste da NetworkManager.
 
     Restituisce una lista di dizionari con `device`, `type`, `state` e
     `connection`; quest'ultimo è vuoto se l'interfaccia non ha un profilo
@@ -142,9 +153,7 @@ def devices():
         if len(row) < 4:
             continue
         device, kind, state, connection = row[0], row[1], row[2], row[3]
-        # Loopback e interfacce virtuali non interessano a chi configura
-        # la webcam, e nella pagina sarebbero solo rumore.
-        if kind in ("loopback", "bridge", "tun"):
+        if kind not in MANAGEABLE_TYPES:
             continue
         result.append({
             "device": device,
