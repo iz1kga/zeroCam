@@ -16,7 +16,9 @@ Se il comando non esiste, il sistema è troppo vecchio. L'installatore fa lo ste
 
 ### I permessi
 
-Il servizio gira come utente normale, non come root, e senza un'autorizzazione esplicita ogni comando di scrittura verrebbe rifiutato: la pagina *Network* mostrerebbe lo stato ma non potrebbe cambiare nulla. L'installazione crea per questo una regola polkit in `/etc/polkit-1/rules.d/50-zerocam-network.rules`, che concede a quell'utente — e solo a lui — le azioni di NetworkManager.
+Il servizio gira come utente normale, non come root, e senza un'autorizzazione esplicita ogni comando di scrittura verrebbe rifiutato: la pagina *Network* mostrerebbe lo stato ma non potrebbe cambiare nulla. L'installazione crea per questo una regola polkit in `/etc/polkit-1/rules.d/10-zerocam-network.rules`, che concede a quell'utente — e solo a lui — le azioni di NetworkManager.
+
+Il numero iniziale non è arbitrario. polkit valuta i file in ordine alfabetico e si ferma al primo che risponde, e Raspberry Pi OS installa `49-polkit-pkla-compat.rules`, il ponte verso i vecchi file `.pkla`, che risponde e interrompe la catena. Una regola numerata `50-` non verrebbe mai eseguita, e il sintomo è particolarmente ostico: il file risulta caricato, nel log di polkit non compare nessun errore, e ogni modifica fallisce con `Insufficient privileges`.
 
 Su un'installazione aggiornata da una versione precedente la regola viene creata al primo aggiornamento. Se la pagina legge ma ogni modifica fallisce, è il primo posto da guardare.
 

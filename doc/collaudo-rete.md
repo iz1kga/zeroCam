@@ -48,13 +48,31 @@ a un utente senza sessione le azioni di NetworkManager, che di norma
 vogliono un'autenticazione interattiva.
 
 ```bash
-ls -l /etc/polkit-1/rules.d/50-zerocam-network.rules
-sudo -u <utente-del-servizio> nmcli connection show
+sudo ls -l /etc/polkit-1/rules.d/10-zerocam-network.rules
+sudo ls -1 /usr/share/polkit-1/rules.d/
 ```
+
+Il nome deve cominciare per `10-`: polkit valuta i file in ordine alfabetico
+e si ferma al primo che risponde, e `49-polkit-pkla-compat.rules` risponde
+prima. Con la numerazione `50-` la regola risulta caricata, il log di polkit
+non segnala nulla, e ogni modifica fallisce lo stesso.
 
 La prova vera si fa dall'interfaccia: **Network → Indirizzo** su `eth0`,
 mettere un indirizzo fisso, poi rimetterlo in DHCP. Se il log riporta
-`Not authorized to control networking`, la regola non ha effetto.
+`Insufficient privileges`, la regola non ha effetto; l'audit di
+NetworkManager conferma di chi era il tentativo:
+
+```bash
+sudo journalctl -u NetworkManager | grep 'result="fail"'
+```
+
+Attenzione a due prove che sembrano equivalenti e non lo sono. Provare con
+`sudo -u <utente> nmcli` da un terminale non riproduce il caso vero: quel
+processo eredita una sessione di login, e polkit tratta diversamente un
+soggetto con sessione da un servizio che non ne ha. E `polkit.log()` dentro
+una regola può non comparire nel journal, quindi la sua assenza non prova
+che la regola non sia stata eseguita. L'unica prova affidabile è
+un'operazione di scrittura fatta dalla pagina.
 
 Cambiando l'indirizzo dell'interfaccia da cui si sta navigando la pagina
 resta senza risposta e dopo venticinque secondi lo dice: è il

@@ -365,8 +365,18 @@ echo_step "Passo 13: Permessi per configurare la rete..."
 # nmcli che scrive verrebbe rifiutato, e la pagina Network potrebbe solo
 # leggere. polkit vuole una regola in JavaScript, perché da bookworm i
 # vecchi file .pkla non sono più supportati.
-POLKIT_RULE="/etc/polkit-1/rules.d/50-zerocam-network.rules"
+#
+# Il numero conta, e non è una preferenza estetica. polkit valuta i file in
+# ordine alfabetico e si ferma al primo che risponde: Raspberry Pi OS
+# installa '49-polkit-pkla-compat.rules', che risponde per conto dei vecchi
+# file .pkla e interrompe la catena. Numerata '50-' la nostra regola non
+# veniva mai eseguita, senza che nulla lo segnalasse - il file risultava
+# caricato e nessun errore compariva nel log.
+POLKIT_RULE="/etc/polkit-1/rules.d/10-zerocam-network.rules"
 mkdir -p /etc/polkit-1/rules.d
+# Le installazioni fatte con la numerazione sbagliata si portano dietro un
+# file che non serve a niente ma confonde chi va a cercare.
+rm -f /etc/polkit-1/rules.d/50-zerocam-network.rules
 cat > "$POLKIT_RULE" <<EOL
 // zeroCAM configura la rete dalla sua interfaccia web: il servizio gira
 // come $SUDO_USER e senza questa regola polkit gli rifiuterebbe ogni

@@ -32,13 +32,16 @@ Il sistema è più vecchio di Bookworm, e configura la rete con `dhcpcd` e `wpa_
 
 ## La pagina Network legge ma non salva
 
-Manca il permesso: il servizio gira come utente normale, e senza la regola polkit NetworkManager rifiuta ogni modifica. Il log riporta il rifiuto di `nmcli`, tipicamente `Not authorized to control networking`.
+Manca il permesso: il servizio gira come utente normale, e senza la regola polkit NetworkManager rifiuta ogni modifica. Nel log dell'applicazione il messaggio è `Insufficient privileges`, e in quello di NetworkManager compare la riga corrispondente:
 
 ```bash
-ls -l /etc/polkit-1/rules.d/50-zerocam-network.rules
+sudo ls -l /etc/polkit-1/rules.d/10-zerocam-network.rules
+sudo journalctl -u NetworkManager | grep 'result="fail"'
 ```
 
-Se non c'è, la crea un aggiornamento; in alternativa si rilancia l'installatore, che è idempotente.
+Se il file non c'è, lo crea un aggiornamento; in alternativa si rilancia l'installatore, che è idempotente.
+
+**Se il file c'è e il rifiuto resta, guardare il nome.** Una regola numerata `50-` viene caricata ma mai eseguita, perché `49-polkit-pkla-compat.rules` risponde prima e interrompe la valutazione. È un guasto silenzioso: polkit dichiara di aver caricato il file e non registra nessun errore. Il nome giusto comincia per `10-`, e un residuo `50-zerocam-network.rules` di un'installazione precedente si può cancellare.
 
 ## `zerocam-XXXX.local` non risponde
 
