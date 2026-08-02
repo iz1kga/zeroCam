@@ -1,5 +1,17 @@
 # Annotazione, loghi e assets
 
+## L'anteprima
+
+Le pagine **Annotation** e **Overlays** mostrano in cima l'ultimo scatto con la barra e i loghi disegnati sopra, aggiornati mentre si cambiano i valori. Serve a non dover salvare e aspettare lo scatto successivo per capire dove va a finire un logo.
+
+**I loghi si trascinano.** Prendendone uno con il mouse, i campi *X* e *Y* si aggiornano da soli: è il modo naturale di posizionarli, e funziona come l'editor delle maschere privacy.
+
+Niente di quello che si vede nell'anteprima è salvato finché non si preme **Salva Configurazione**: chiudendo la pagina le prove fatte si perdono, e lo scatto successivo esce con i valori vecchi.
+
+L'anteprima è disegnata dal browser, non dal dispositivo, quindi è immediata e non lo carica di lavoro. Il carattere è lo stesso file che il dispositivo usa per stampare l'annotazione, quindi il testo ha le proporzioni giuste; restano possibili scarti di qualche pixel nella posizione verticale del testo e nella lunghezza dei nomi di giorni e mesi, che nell'anteprima seguono la lingua del browser e nello scatto quella del dispositivo. La verifica definitiva resta la foto.
+
+L'immagine di fondo è l'ultimo scatto **senza** barra né loghi, che il dispositivo conserva in memoria volatile a ogni cattura. Dopo un riavvio, e finché non arriva il primo scatto, l'anteprima non c'è e la pagina lo dice: da **Cam Control** si può scattare subito con *Take Photo*.
+
 ## La barra di annotazione
 
 **Configuration → Annotation** definisce la fascia che compare in fondo all'immagine, con un testo libero a sinistra e la data/ora a destra.

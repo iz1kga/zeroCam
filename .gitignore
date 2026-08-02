@@ -50,6 +50,9 @@ Thumbs.db
 
 zerocamVenv
 .venv/
+
+# Appunti di lavoro, non documentazione: quello che e' vero e attivo sta in doc/
+TODO.local.md
 logs/
 images/
 

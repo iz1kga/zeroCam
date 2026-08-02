@@ -22,7 +22,7 @@ import cv2
 import numpy as np
 
 from lib import assets
-from lib.paths import LATEST_IMAGE, PRIVACY_MASK_FILE as PRIVACY_MASK_PATH
+from lib.paths import LATEST_IMAGE, STILL_BASE, PRIVACY_MASK_FILE as PRIVACY_MASK_PATH
 
 
 def load_privacy_rois(logger=None):
@@ -505,6 +505,40 @@ class DayPeriodCalculator:
 def saveImage(logger, image_buffer):
     image = Image.open(image_buffer)
     image.save(LATEST_IMAGE, format="JPEG")
+
+
+def saveStillBase(logger, image_buffer):
+    """
+    Conserva lo scatto com'è prima della barra di annotazione e dei loghi.
+
+    È la tela su cui l'editor dell'interfaccia ridisegna gli stessi elementi
+    mentre li si regola: `latest.jpg` non va bene, perché li ha già stampati
+    sopra e quelli vecchi resterebbero sotto ai nuovi.
+
+    Viene chiamata dopo il ritaglio e le maschere privacy, quindi
+    l'immagine ha le stesse garanzie dello scatto pubblicato: servirla non
+    espone niente in più.
+
+    Un errore qui non deve fermare la cattura. È una comodità
+    dell'interfaccia, non un pezzo della pubblicazione: se il tmpfs non c'è
+    o è pieno, l'editor lo dirà e lo scatto prosegue.
+    """
+    position = image_buffer.tell()
+    try:
+        # Image.open riavvolge già il buffer per conto suo, ma è un dettaglio
+        # della sua implementazione e non una promessa: qui il punto di
+        # partenza lo dichiariamo noi.
+        image_buffer.seek(0)
+        image = Image.open(image_buffer)
+        image.save(STILL_BASE, format="JPEG")
+    except Exception as e:
+        logger.warning(f"Could not save the still base for the editor: {e}")
+    finally:
+        # Il chiamante continua a usare lo stesso buffer per annotarlo e
+        # pubblicarlo, e va restituito dove l'abbiamo trovato *comunque*:
+        # lasciarlo spostato dopo un errore pubblicherebbe un file mozzo,
+        # cioè un guasto molto peggiore di un'anteprima mancante.
+        image_buffer.seek(position)
 
 def unsharpMask(logger, image_buffer, radius=3, percent=75, threshold=5):
     image = Image.open(image_buffer)

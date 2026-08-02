@@ -490,6 +490,9 @@
     <!-- Overlay Images -->
     <div v-if="configPage === 'overlayImages' && config.OverlayImages">
         <h4>Overlay Images</h4>
+        <div class="card card-body mb-3">
+            <overlay-preview :config="config" />
+        </div>
         <div class="card card-body">
             <div v-for="(img, index) in config.OverlayImages" :key="index" class="border rounded p-3 mb-3">
                 <h5>Overlay #[[ index + 1 ]]</h5>
@@ -533,6 +536,9 @@
     <!-- Annotation -->
     <div v-if="configPage === 'annotation' && config.Annotation">
         <h4>Annotation</h4>
+        <div class="card card-body mb-3">
+            <overlay-preview :config="config" />
+        </div>
         <div class="card card-body">
             <h5>Container Background</h5>
             <div class="row mb-3">

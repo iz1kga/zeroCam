@@ -105,6 +105,7 @@ class SettingsManager:
         self.app.add_url_rule('/zc-admin', 'index', self.index)
         self.app.add_url_rule('/latest.jpg', 'latest_image', self.latest_image)
         self.app.add_url_rule('/stream_latest.jpg', 'stream_latest_image', self.stream_latest_image)
+        self.app.add_url_rule('/latest_base.jpg', 'still_base_image', self.still_base_image)
         self.app.add_url_rule('/view/pages/<page_name>', 'serve_page_template', self.serve_page_template)
         
         # API Routes
@@ -230,6 +231,21 @@ class SettingsManager:
         # L'anteprima cambia ogni secondo: nessuna cache, altrimenti il
         # browser continuerebbe a mostrare il fotogramma già scaricato.
         return send_file(paths.STREAM_PREVIEW, mimetype='image/jpeg', max_age=0, conditional=False)
+
+    @login_required
+    def still_base_image(self):
+        """
+        Lo scatto senza barra di annotazione né loghi, per l'editor.
+
+        Manca finché non arriva il primo scatto dopo l'aggiornamento, e
+        dopo ogni riavvio, perché vive in tmpfs: il 404 non è un errore ma
+        lo stato normale di un dispositivo appena acceso, e la pagina lo
+        traduce in "scatta una foto".
+        """
+        if not os.path.exists(paths.STILL_BASE):
+            return "Still base not available yet", 404
+        return send_file(paths.STILL_BASE, mimetype='image/jpeg',
+                         max_age=0, conditional=False)
 
     @login_required
     def serve_page_template(self, page_name):

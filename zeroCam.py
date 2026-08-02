@@ -28,7 +28,8 @@ from lib.helpers import (
     unsharpMask,
     check_internet_connection,
     get_raspberry_pi_stats,
-    saveImage
+    saveImage,
+    saveStillBase
 )
 from cameras import AWB_MANUAL
 from lib import exif, paths
@@ -186,6 +187,11 @@ class ZeroCamApp:
 
                 if self.components.privacy_masker:
                     image_buffer = self.components.privacy_masker.apply_masks(image_buffer)
+
+                # Prima di annotare: è la tela su cui l'editor
+                # dell'interfaccia ridisegna barra e loghi mentre li si
+                # regola, e deve essere senza quelli dello scatto scorso.
+                saveStillBase(self.logger, image_buffer)
 
                 image_buffer = self.components.annotator.annotate(image_buffer)
                 image_buffer = self.components.overlay.add_overlays(image_buffer)

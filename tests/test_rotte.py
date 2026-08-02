@@ -85,7 +85,7 @@ def test_le_rotte_pubbliche_non_espongono_altro(app):
     """Tutto cio' che risponde senza sessione deve essere solo la vetrina."""
     client, _ = app
     for percorso in ("/api/config", "/api/log", "/api/stats", "/latest.jpg",
-                     "/api/assets", "/api/timelapse",
+                     "/latest_base.jpg", "/api/assets", "/api/timelapse",
                      "/api/network", "/api/network/scan"):
         risposta = client.get(percorso)
         assert risposta.status_code in (302, 401), f"{percorso} risponde {risposta.status_code}"
@@ -99,6 +99,33 @@ def test_le_rotte_pubbliche_spariscono_quando_la_vetrina_e_spenta(app):
     conf["settingsManager"]["public_page"] = False
     for percorso in ("/public", "/public/latest.jpg", "/public/info"):
         assert client.get(percorso).status_code == 404, percorso
+
+
+# --- Immagine base per l'anteprima ---
+
+
+def test_senza_scatti_la_base_risponde_404(app, monkeypatch, tmp_path):
+    # Vive in tmpfs: dopo ogni riavvio non c'e' finche' non arriva uno
+    # scatto. La pagina lo traduce in "scatta una foto", quindi il 404 e'
+    # uno stato previsto e non un errore da nascondere.
+    client, _ = app
+    client.application.config["LOGIN_DISABLED"] = True
+    monkeypatch.setattr(sm.paths, "STILL_BASE", str(tmp_path / "non-c-e.jpg"))
+
+    assert client.get("/latest_base.jpg").status_code == 404
+
+
+def test_la_base_viene_servita_quando_c_e(app, monkeypatch, tmp_path):
+    client, _ = app
+    client.application.config["LOGIN_DISABLED"] = True
+    percorso = tmp_path / "latest_base.jpg"
+    percorso.write_bytes(b"\xff\xd8jpeg-finto")
+    monkeypatch.setattr(sm.paths, "STILL_BASE", str(percorso))
+
+    risposta = client.get("/latest_base.jpg")
+
+    assert risposta.status_code == 200
+    assert risposta.mimetype == "image/jpeg"
 
 
 # --- Rete ---

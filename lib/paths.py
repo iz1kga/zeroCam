@@ -67,6 +67,11 @@ BUNDLED_ASSETS_DIR = os.path.join(APP_DIR, "assets")
 # /etc/fstab e il suo contenuto è per definizione volatile.
 SHMEM_DIR = os.path.join(APP_DIR, "shmem")
 STREAM_PREVIEW = os.path.join(SHMEM_DIR, "stream_latest.jpg")
+# Lo scatto com'era prima della barra di annotazione e dei loghi: serve
+# all'editor dell'interfaccia, che li ridisegna sopra mentre li si regola.
+# Sta in tmpfs perché è un doppione volatile di ogni scatto, e sulla SD
+# significherebbe raddoppiare le scritture per una comodità.
+STILL_BASE = os.path.join(SHMEM_DIR, "latest_base.jpg")
 
 # Quanto veniva tenuto nella cartella dell'applicazione fino alla versione
 # precedente e va spostato al primo avvio.

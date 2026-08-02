@@ -113,6 +113,7 @@ L'interfaccia è una pagina Vue che parla con alcune rotte HTTP. Tutte richiedon
 | `/api/network/wifi`, `/api/network/forget` | POST | Collega o dimentica una rete wifi |
 | `/api/network/address` | POST | Indirizzo automatico o fisso di un'interfaccia |
 | `/latest.jpg`, `/stream_latest.jpg` | GET | Ultimo scatto, ultimo fotogramma della diretta |
+| `/latest_base.jpg` | GET | Ultimo scatto senza annotazione né loghi, per l'anteprima |
 | `/`, `/public`, `/public/latest.jpg`, `/public/info` | GET | Vetrina pubblica: **senza autenticazione**, e solo se abilitata |
 | `/zc-admin` | GET | La console: sempre autenticata |
 

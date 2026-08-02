@@ -89,6 +89,12 @@ Nel titolo della diretta puoi usare i segnaposto `{date}` e `{time}`. Il broadca
 
 Il campo **Nuova diretta alle (HH:MM)** forza il ricambio giornaliero: se valorizzato (es. `00:00`), al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con titolo aggiornato dai segnaposto. Lasciandolo vuoto il comportamento resta quello precedente (ricambio solo quando YouTube chiude la diretta).
 
+### Anteprima di annotazione e loghi
+
+Le pagine **Annotation** e **Overlays** mostrano l'ultimo scatto con barra e loghi disegnati sopra, aggiornati mentre si cambiano i valori: i loghi si trascinano con il mouse e i campi *X* e *Y* si aggiornano da soli, come nell'editor delle maschere privacy. Niente è salvato finché non si preme *Salva Configurazione*.
+
+L'anteprima la disegna il browser sull'ultimo scatto senza annotazione, che il dispositivo conserva in memoria volatile a ogni cattura: è immediata e non carica il Raspberry. Il carattere è lo stesso che usa il dispositivo, ma restano possibili scarti di qualche pixel: la verifica definitiva è la foto.
+
 ### Ritrasmissione su più destinazioni
 
 In **Config → Stream**, nel campo *Destinazioni aggiuntive*, puoi elencare altri URL RTMP (uno per riga) verso cui inviare lo stesso flusso: Twitch, un server tuo, un'altra piattaforma. Il video viene codificato una volta sola e semplicemente duplicato, quindi il carico sulla CPU non cambia. Una destinazione irraggiungibile non interrompe le altre.
@@ -260,6 +266,12 @@ The channel that live broadcasts and timelapses go to is the one chosen during a
 The broadcast title supports the `{date}` and `{time}` placeholders. An existing broadcast is reused while valid and recreated automatically once YouTube closes it (12 hour limit).
 
 The **Nuova diretta alle (HH:MM)** field forces a daily rollover: when set (e.g. `00:00`), the first capture after that local time closes the running broadcast and starts a fresh one, with the title placeholders re-evaluated. Leave it empty to keep the previous behaviour (a new broadcast only when YouTube ends the current one).
+
+### Live preview of annotation and logos
+
+The **Annotation** and **Overlays** pages show the last picture with the bar and the logos drawn on top, updating as the values change: logos are dragged with the mouse and the *X* and *Y* fields follow, the same way the privacy mask editor works. Nothing is saved until *Salva Configurazione* is pressed.
+
+The preview is drawn by the browser over the last picture without annotation, which the device keeps in volatile memory at every capture: it is instant and costs the Raspberry nothing. The font is the same file the device uses, but a few pixels of difference remain possible — the photo is still the final word.
 
 ### Restreaming to several destinations
 

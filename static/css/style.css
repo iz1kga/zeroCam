@@ -180,3 +180,41 @@ html, body {
 .roi-editor-component .list-group-item {
   font-size: 0.9rem;
 }
+/* --- Anteprima di annotazione e loghi ---------------------------------- */
+
+/* Lo stesso file che PIL usa per stampare l'annotazione sullo scatto: senza
+   di questo l'anteprima mostrerebbe un carattere di sistema e le larghezze
+   del testo non corrisponderebbero alla foto. */
+@font-face {
+  font-family: "zerocam-annotation";
+  src: url("fonts/Arial.ttf") format("truetype");
+  font-display: block;
+}
+
+.overlay-preview .preview-container {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  max-width: 100%;
+}
+.overlay-preview .preview-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.overlay-preview .preview-logo {
+  cursor: grab;
+}
+.overlay-preview .preview-logo.dragging {
+  cursor: grabbing;
+}
+/* Riquadro attorno al logo che si sta trascinando: senza, su uno sfondo
+   mosso non si capisce quale si sta muovendo. */
+.overlay-preview .preview-logo-frame {
+  fill: none;
+  stroke: rgba(255, 140, 0, 0.9);
+  stroke-width: 3;
+  pointer-events: none;
+}

@@ -20,6 +20,244 @@ const loadTemplate = async (name) => {
 };
 
 
+/**
+ * Formato data alla maniera di strftime, che è quello che il dispositivo
+ * usa per stampare l'ora sullo scatto.
+ *
+ * I nomi di giorni e mesi (%A, %B) vengono dalla lingua del browser, che
+ * può non essere quella del dispositivo: sono l'unica parte dell'anteprima
+ * che può leggersi diversa dalla foto.
+ */
+const strftime = (format, date) => {
+  const pad = (n, len = 2) => String(n).padStart(len, '0');
+  const name = (options) => date.toLocaleDateString(undefined, options);
+  const codes = {
+    d: pad(date.getDate()),
+    m: pad(date.getMonth() + 1),
+    Y: String(date.getFullYear()),
+    y: pad(date.getFullYear() % 100),
+    H: pad(date.getHours()),
+    M: pad(date.getMinutes()),
+    S: pad(date.getSeconds()),
+    I: pad(((date.getHours() + 11) % 12) + 1),
+    p: date.getHours() < 12 ? 'AM' : 'PM',
+    A: name({ weekday: 'long' }),
+    a: name({ weekday: 'short' }),
+    B: name({ month: 'long' }),
+    b: name({ month: 'short' }),
+    '%': '%'
+  };
+  // Un codice che non conosciamo resta com'è: meglio vederlo scritto che
+  // farlo sparire e chiedersi dove sia finito.
+  return String(format || '').replace(/%(.)/g, (whole, code) =>
+    (code in codes) ? codes[code] : whole);
+};
+
+/**
+ * Anteprima di annotazione e loghi sopra l'ultimo scatto.
+ *
+ * Disegna nel browser gli stessi elementi che il dispositivo stampa sulla
+ * foto, sull'immagine base salvata prima di annotarla. Il livello è un SVG
+ * con `viewBox` grande quanto lo scatto vero, quindi le coordinate della
+ * configurazione si usano tali e quali, senza nessun fattore di scala: a
+ * ridimensionare ci pensa il browser.
+ *
+ * È lo stesso impianto dell'editor delle maschere privacy, e per lo stesso
+ * motivo: trascinare è l'unico modo sensato di posizionare qualcosa.
+ */
+const OverlayPreview = defineComponent({
+  name: 'OverlayPreview',
+  props: ['config'],
+  data() {
+    return {
+      available: true,
+      natural: { w: 0, h: 0 },
+      // Dimensioni native dei loghi, per URL già risolto.
+      sizes: {},
+      drag: null,
+      baseUrl: '/latest_base.jpg?t=' + Date.now(),
+      now: new Date()
+    };
+  },
+  computed: {
+    annotation() { return this.config?.Annotation || {}; },
+    content() { return this.annotation.Content || {}; },
+    container() { return this.annotation.Container || {}; },
+    fontSize() { return Math.max(1, Number(this.content.FontSize) || 30); },
+    offset() { return Math.max(0, Number(this.container.Offset) || 0); },
+    barHeight() { return this.fontSize + 2 * this.offset; },
+    barY() { return this.natural.h - this.barHeight; },
+    // PIL disegna il testo con l'angolo superiore qui; in SVG lo stesso
+    // effetto si ottiene ancorando al bordo superiore del carattere.
+    textY() { return this.natural.h - (this.fontSize + this.offset); },
+    containerFill() { return this.rgba(this.container); },
+    textFill() { return this.rgba(this.content.Color || {}); },
+    dateText() { return strftime(this.annotation.DTFormat, this.now); },
+    // v-for e v-if sullo stesso elemento non convivono: l'indice serve per
+    // scrivere le coordinate nella configurazione mentre si trascina.
+    visibleLogos() {
+      return (this.config?.OverlayImages || [])
+        .map((logo, index) => ({ logo, index }))
+        .filter(entry => entry.logo && entry.logo.enabled);
+    }
+  },
+  watch: {
+    visibleLogos: {
+      handler() { this.measureAll(); },
+      deep: true
+    }
+  },
+  mounted() {
+    this.measureAll();
+    // L'ora sull'anteprima deve scorrere come scorre sulla foto.
+    this.clock = setInterval(() => { this.now = new Date(); }, 1000);
+  },
+  unmounted() {
+    clearInterval(this.clock);
+  },
+  methods: {
+    rgba(color) {
+      const channel = (key, fallback) => {
+        const value = Number(color?.[key]);
+        return Number.isFinite(value) ? Math.min(255, Math.max(0, value)) : fallback;
+      };
+      const alpha = channel('A', 255) / 255;
+      return `rgba(${channel('R', 0)},${channel('G', 0)},${channel('B', 0)},${alpha})`;
+    },
+    resolveUrl(url) {
+      // Gli assets caricati dall'utente arrivano come 'asset:categoria/nome'.
+      return (url || '').startsWith('asset:')
+        ? '/assets/' + url.slice('asset:'.length)
+        : (url || '');
+    },
+    measureAll() {
+      this.visibleLogos.forEach(entry => {
+        const src = this.resolveUrl(entry.logo.url);
+        if (!src || this.sizes[src]) return;
+        const probe = new Image();
+        probe.onload = () => {
+          this.sizes[src] = { w: probe.naturalWidth, h: probe.naturalHeight };
+        };
+        probe.src = src;
+      });
+    },
+    logoBox(logo) {
+      const size = this.sizes[this.resolveUrl(logo.url)];
+      if (!size || !size.w) return null;
+      // thumbnail() rimpicciolisce e basta: sopra il 100% il dispositivo
+      // lascia il logo alla sua dimensione, e l'anteprima deve fare lo
+      // stesso o mostrerebbe un logo che nello scatto non c'è.
+      const percent = Math.min(100, Math.max(1, Number(logo.scale) || 100));
+      return {
+        w: size.w * percent / 100,
+        h: size.h * percent / 100,
+        x: Number(logo.X) || 0,
+        y: Number(logo.Y) || 0,
+        opacity: Math.min(100, Math.max(0, Number(logo.opacity ?? 100))) / 100
+      };
+    },
+    onBaseLoad(event) {
+      this.available = true;
+      this.natural = {
+        w: event.target.naturalWidth,
+        h: event.target.naturalHeight
+      };
+    },
+    refreshBase() {
+      this.available = true;
+      this.baseUrl = '/latest_base.jpg?t=' + Date.now();
+    },
+    startDrag(entry, event) {
+      event.preventDefault();
+      const rect = this.$refs.container.getBoundingClientRect();
+      if (!rect.width) return;
+      this.drag = {
+        index: entry.index,
+        // Un pixel sullo schermo vale questo nella scala dello scatto.
+        ratio: this.natural.w / rect.width,
+        fromX: event.clientX,
+        fromY: event.clientY,
+        originX: Number(entry.logo.X) || 0,
+        originY: Number(entry.logo.Y) || 0
+      };
+    },
+    onMove(event) {
+      if (!this.drag) return;
+      const logo = (this.config.OverlayImages || [])[this.drag.index];
+      if (!logo) return;
+      const box = this.logoBox(logo) || { w: 0, h: 0 };
+      const clamp = (value, limit) => Math.round(Math.min(Math.max(value, 0), limit));
+      logo.X = clamp(this.drag.originX + (event.clientX - this.drag.fromX) * this.drag.ratio,
+                     Math.max(0, this.natural.w - box.w));
+      logo.Y = clamp(this.drag.originY + (event.clientY - this.drag.fromY) * this.drag.ratio,
+                     Math.max(0, this.natural.h - box.h));
+    },
+    endDrag() { this.drag = null; }
+  },
+  template: `
+    <div class="overlay-preview">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Anteprima</h5>
+        <button class="btn btn-sm btn-outline-secondary" @click="refreshBase">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
+      </div>
+
+      <div v-if="!available" class="alert alert-secondary py-2 small mb-0">
+        L'anteprima compare dopo il primo scatto successivo all'aggiornamento.
+        Da <strong>Cam Control</strong> si pu&ograve; scattare subito con
+        <em>Take Photo</em>.
+      </div>
+
+      <div v-else class="preview-container" ref="container">
+        <img :src="baseUrl" alt="Ultimo scatto senza annotazione"
+             class="img-fluid rounded border" style="max-height: 520px"
+             @load="onBaseLoad" @error="available = false">
+
+        <svg v-if="natural.w" class="preview-layer"
+             :viewBox="'0 0 ' + natural.w + ' ' + natural.h"
+             preserveAspectRatio="none"
+             @pointermove="onMove" @pointerup="endDrag" @pointerleave="endDrag">
+
+          <rect x="0" :y="barY" :width="natural.w" :height="barHeight" :fill="containerFill" />
+
+          <text x="10" :y="textY" dominant-baseline="text-before-edge"
+                font-family="zerocam-annotation" :font-size="fontSize" :fill="textFill"
+                >[[ content.Text ]]</text>
+
+          <text :x="natural.w - offset" :y="textY" text-anchor="end"
+                dominant-baseline="text-before-edge"
+                font-family="zerocam-annotation" :font-size="fontSize" :fill="textFill"
+                >[[ dateText ]]</text>
+
+          <template v-for="entry in visibleLogos" :key="entry.index">
+            <g v-if="logoBox(entry.logo)">
+              <image :href="resolveUrl(entry.logo.url)"
+                     :x="logoBox(entry.logo).x" :y="logoBox(entry.logo).y"
+                     :width="logoBox(entry.logo).w" :height="logoBox(entry.logo).h"
+                     :opacity="logoBox(entry.logo).opacity"
+                     preserveAspectRatio="none"
+                     class="preview-logo" :class="{ dragging: drag && drag.index === entry.index }"
+                     @pointerdown="startDrag(entry, $event)" />
+              <rect v-if="drag && drag.index === entry.index"
+                    :x="logoBox(entry.logo).x" :y="logoBox(entry.logo).y"
+                    :width="logoBox(entry.logo).w" :height="logoBox(entry.logo).h"
+                    class="preview-logo-frame" />
+            </g>
+          </template>
+        </svg>
+      </div>
+
+      <div class="form-text mt-2">
+        I loghi si trascinano: <strong>X</strong> e <strong>Y</strong> si aggiornano da soli.
+        &Egrave; un'anteprima disegnata dal browser, quindi qualche pixel di differenza
+        rispetto allo scatto &egrave; normale. Nulla di ci&ograve; che si vede qui &egrave;
+        salvato finch&eacute; non si preme <strong>Salva Configurazione</strong>.
+      </div>
+    </div>
+  `
+});
+
 const FieldRenderer = defineComponent({
   name: 'FieldRenderer',
   // 1. Accetta la nuova prop 'disabled'
@@ -734,7 +972,7 @@ const startApp = async () => {
       }
     },
     template: configTemplate,
-    components: { FieldRenderer }
+    components: { FieldRenderer, OverlayPreview }
   });
   app.component('page-control', {
     props: {
