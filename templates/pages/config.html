@@ -488,46 +488,62 @@
     </div>
 
     <!-- Overlay Images -->
+    <!-- Overlays: come Annotation, comandi accanto all'anteprima. Qui in
+         più serve capire quale voce dell'elenco sia quale logo sulla foto:
+         passandoci sopra, quello si evidenzia. -->
     <div v-if="configPage === 'overlayImages' && config.OverlayImages">
         <h4>Overlay Images</h4>
-        <div class="card card-body mb-3">
-            <overlay-preview :config="config" />
-        </div>
-        <div class="card card-body">
-            <div v-for="(img, index) in config.OverlayImages" :key="index" class="border rounded p-3 mb-3">
-                <h5>Overlay #[[ index + 1 ]]</h5>
-                <div class="row mb-3 align-items-end">
-                    <div class="col-md-2"><field-renderer :model="img" key-name="enabled" :schema="schema"
-                            label="Enabled" /></div>
-                    <div class="col-md-4"><label class="form-label">Name</label><field-renderer :model="img"
-                            key-name="name" :schema="schema" /></div>
-                    <div class="col-md-6"><label class="form-label">URL</label><field-renderer :model="img"
-                            key-name="url" :schema="schema" /></div>
+        <div class="row g-3">
+            <div class="col-xl-7">
+                <div class="card card-body h-100">
+                    <overlay-preview :config="config" :highlight="highlightedOverlay" />
                 </div>
-                <div class="row mb-3 align-items-end" v-if="logoAssets.length">
-                    <div class="col-md-6"><label class="form-label">...oppure un logo caricato</label>
-                        <select class="form-select" :value="assetReference(img.url)"
+            </div>
+            <div class="col-xl-5">
+                <div class="card card-body h-100 overlay-list">
+                    <div v-for="(img, index) in config.OverlayImages" :key="index"
+                        class="border rounded p-2 mb-2"
+                        :class="{ 'border-warning': highlightedOverlay === index }"
+                        @mouseenter="highlightedOverlay = index"
+                        @mouseleave="highlightedOverlay = null">
+
+                        <div class="d-flex align-items-center gap-2">
+                            <field-renderer :model="img" key-name="enabled" :schema="schema" label="" />
+                            <div class="flex-grow-1">
+                                <field-renderer :model="img" key-name="name" :schema="schema" />
+                            </div>
+                            <img v-if="assetReference(img.url)" :src="assetUrl(img.url)" alt=""
+                                class="border rounded bg-light p-1" style="height: 32px">
+                        </div>
+
+                        <select class="form-select" v-if="logoAssets.length"
+                            :value="assetReference(img.url)"
                             @change="img.url = $event.target.value || img.url">
-                            <option value="">Scegli fra gli assets...</option>
+                            <option value="">Indirizzo scritto a mano...</option>
                             <option v-for="item in logoAssets" :key="item.reference" :value="item.reference">
                                 [[ item.name ]]
                             </option>
                         </select>
+                        <field-renderer v-if="!assetReference(img.url)" :model="img" key-name="url"
+                            :schema="schema" />
+
+                        <div class="row g-2">
+                            <div class="col-6"><label class="form-label mb-0 small">X</label>
+                                <field-renderer :model="img" key-name="X" :schema="schema" /></div>
+                            <div class="col-6"><label class="form-label mb-0 small">Y</label>
+                                <field-renderer :model="img" key-name="Y" :schema="schema" /></div>
+                            <div class="col-6"><label class="form-label mb-0 small">Scala %</label>
+                                <field-renderer :model="img" key-name="scale" :schema="schema" /></div>
+                            <div class="col-6"><label class="form-label mb-0 small">Opacit&agrave; %</label>
+                                <field-renderer :model="img" key-name="opacity" :schema="schema" /></div>
+                        </div>
                     </div>
-                    <div class="col-md-2" v-if="assetReference(img.url)">
-                        <img :src="assetUrl(img.url)" alt="" class="img-fluid border rounded bg-light p-1"
-                            style="max-height: 60px">
+
+                    <div class="form-text mt-auto">
+                        I loghi si trascinano sull'anteprima. La <strong>scala riduce soltanto</strong>:
+                        sopra il 100% il logo resta alla sua dimensione, perch&eacute; ingrandire un PNG
+                        lo sfoca. L'opacit&agrave; moltiplica la trasparenza gi&agrave; presente nel file.
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-3"><label class="form-label">X</label><field-renderer :model="img" key-name="X"
-                            :schema="schema" /></div>
-                    <div class="col-md-3"><label class="form-label">Y</label><field-renderer :model="img" key-name="Y"
-                            :schema="schema" /></div>
-                    <div class="col-md-3"><label class="form-label">Scale</label><field-renderer :model="img"
-                            key-name="scale" :schema="schema" /></div>
-                    <div class="col-md-3"><label class="form-label">Opacity</label><field-renderer :model="img"
-                            key-name="opacity" :schema="schema" /></div>
                 </div>
             </div>
         </div>

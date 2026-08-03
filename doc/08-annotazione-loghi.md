@@ -47,7 +47,9 @@ Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
 
 ## I loghi
 
-**Configuration → Overlays** gestisce un elenco di immagini da sovrapporre, ciascuna con:
+**Configuration → Overlays** ha la stessa impostazione della pagina precedente: anteprima a sinistra, elenco dei loghi a destra. Passando con il mouse su una voce dell'elenco, il logo corrispondente si evidenzia sull'anteprima — con più loghi sovrapposti è l'unico modo per sapere quale si sta modificando.
+
+Ogni immagine ha:
 
 | Campo | Significato |
 |---|---|
@@ -58,7 +60,7 @@ Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
 | Scale | Percentuale di ridimensionamento |
 | Opacity | Opacità in percentuale |
 
-![La pagina Overlays: due loghi, entrambi presi dagli assets, con l'anteprima accanto alla tendina.](img/ui-config-overlays.png){ width=100% }
+![La pagina Overlays: anteprima a sinistra, elenco dei loghi a destra.](img/ui-config-overlays.png){ width=100% }
 
 L'indirizzo può essere un URL http, come è sempre stato, oppure un file caricato in **Configuration → Assets**: in quel caso, invece di scriverlo a mano, si sceglie dal menu *...oppure un logo caricato*, che compila il campo URL con un riferimento del tipo `asset:logo/nome.png` e mostra l'anteprima. Un logo caricato è preferibile a uno remoto: non dipende da un sito che può cambiare o sparire, e funziona anche con la webcam senza accesso a internet in uscita.
 

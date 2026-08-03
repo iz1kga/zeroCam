@@ -67,7 +67,7 @@ const strftime = (format, date) => {
  */
 const OverlayPreview = defineComponent({
   name: 'OverlayPreview',
-  props: ['config'],
+  props: ['config', 'highlight'],
   data() {
     return {
       available: true,
@@ -239,7 +239,7 @@ const OverlayPreview = defineComponent({
                      preserveAspectRatio="none"
                      class="preview-logo" :class="{ dragging: drag && drag.index === entry.index }"
                      @pointerdown="startDrag(entry, $event)" />
-              <rect v-if="drag && drag.index === entry.index"
+              <rect v-if="(drag && drag.index === entry.index) || highlight === entry.index"
                     :x="logoBox(entry.logo).x" :y="logoBox(entry.logo).y"
                     :width="logoBox(entry.logo).w" :height="logoBox(entry.logo).h"
                     class="preview-logo-frame" />
@@ -844,7 +844,10 @@ const startApp = async () => {
         assets: [],
         assetCategories: {},
         assetFilter: '',
-        assetUpload: { category: 'audio', busy: false, message: '', ok: false }
+        assetUpload: { category: 'audio', busy: false, message: '', ok: false },
+        // Con più loghi accanto all'anteprima non si capisce quale sia
+        // quale: passandoci sopra nell'elenco, quello si evidenzia.
+        highlightedOverlay: null
       };
     },
     created() {
