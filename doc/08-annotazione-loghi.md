@@ -4,7 +4,7 @@
 
 Le pagine **Annotation** e **Overlays** mostrano in cima l'ultimo scatto con la barra e i loghi disegnati sopra, aggiornati mentre si cambiano i valori. Serve a non dover salvare e aspettare lo scatto successivo per capire dove va a finire un logo.
 
-**I loghi si trascinano.** Prendendone uno con il mouse, i campi *X* e *Y* si aggiornano da soli: è il modo naturale di posizionarli, e funziona come l'editor delle maschere privacy. Vale in entrambe le pagine, perché l'anteprima è la stessa; la nota che lo ricorda compare solo quando c'è almeno un logo attivo da trascinare.
+**I loghi si trascinano.** Prendendone uno con il mouse, i campi *X* e *Y* si aggiornano da soli: è il modo naturale di posizionarli, e funziona come l'editor delle maschere privacy. Funziona anche dalla pagina *Annotation*, perché l'anteprima è la stessa, ma è in *Overlays* che i loghi si gestiscono ed è lì che la pagina lo ricorda.
 
 Niente di quello che si vede nell'anteprima è salvato finché non si preme **Save Configuration**: chiudendo la pagina le prove fatte si perdono, e lo scatto successivo esce con i valori vecchi.
 

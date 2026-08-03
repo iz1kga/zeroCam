@@ -248,11 +248,13 @@ const OverlayPreview = defineComponent({
         </svg>
       </div>
 
+      <!-- Niente qui sul trascinamento dei loghi: e' materia della pagina
+           Overlays, che lo dice gia' accanto al suo elenco, e su Annotation
+           sarebbe fuori posto. Qui resta solo cio' che vale per entrambe. -->
       <div class="form-text mt-2">
-        <span v-if="visibleLogos.length">Logos can be dragged: <strong>X</strong> and
-        <strong>Y</strong> update on their own. </span>This preview is drawn by the browser,
-        so a few pixels of difference from the actual shot are normal. Nothing you see here
-        is saved until you press <strong>Save Configuration</strong>.
+        This preview is drawn by the browser, so a few pixels of difference from the actual
+        shot are normal. Nothing you see here is saved until you press
+        <strong>Save Configuration</strong>.
       </div>
     </div>
   `
