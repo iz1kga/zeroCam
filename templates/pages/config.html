@@ -151,7 +151,7 @@
                         :schema="schema" label="Crop Enabled" /></div>
                 <div class="col-md-4">
                     <label class="form-label">Crop Size</label>
-                    <div class="input-group">
+                    <div class="input-group mb-3">
                         <input type="number" class="form-control" v-model.number="config.cameraParameters.crop.width">
                         <span class="input-group-text">x</span>
                         <input type="number" class="form-control" v-model.number="config.cameraParameters.crop.height">
@@ -159,7 +159,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Crop Offset</label>
-                    <div class="input-group">
+                    <div class="input-group mb-3">
                         <span class="input-group-text">X</span>
                         <input type="number" class="form-control"
                             v-model.number="config.cameraParameters.crop.x_offset">
@@ -243,12 +243,12 @@
                         <div class="row align-items-end">
                             <div class="col-md-3">
                                 <label class="form-label">Min Target Brightness</label>
-                                <input type="number" class="form-control"
+                                <input type="number" class="form-control mb-3"
                                     v-model.number="config.cameraParameters[phase].MinTargetBrightness">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Max Target Brightness</label>
-                                <input type="number" class="form-control"
+                                <input type="number" class="form-control mb-3"
                                     v-model.number="config.cameraParameters[phase].MaxTargetBrightness">
                             </div>
                             <div class="col-md-3">
@@ -334,7 +334,7 @@
 
             <div class="row mb-3">
                 <div class="col-md-6"><label class="form-label">Background audio</label>
-                    <select class="form-select" v-model="config.streamParameters.audio_file">
+                    <select class="form-select mb-3" v-model="config.streamParameters.audio_file">
                         <option value="">None (silent)</option>
                         <option v-for="item in audioAssets" :key="item.reference" :value="item.reference">
                             [[ item.name ]]
@@ -410,14 +410,14 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3"><label class="form-label">Privacy</label>
-                        <select class="form-select" v-model="config.youtubeLive.privacy">
+                        <select class="form-select mb-3" v-model="config.youtubeLive.privacy">
                             <option value="public">Public</option>
                             <option value="unlisted">Unlisted</option>
                             <option value="private">Private</option>
                         </select>
                     </div>
                     <div class="col-md-3"><label class="form-label">Latency</label>
-                        <select class="form-select" v-model="config.youtubeLive.latency">
+                        <select class="form-select mb-3" v-model="config.youtubeLive.latency">
                             <option value="normal">Normal</option>
                             <option value="low">Low</option>
                             <option value="ultraLow">Ultra low</option>
@@ -628,7 +628,7 @@
                         label="Timelapse enabled" />
                 </div>
                 <div class="col-md-3"><label class="form-label">Day</label>
-                    <select class="form-select" v-model="config.timelapse.day">
+                    <select class="form-select mb-3" v-model="config.timelapse.day">
                         <option value="monday">Monday</option>
                         <option value="tuesday">Tuesday</option>
                         <option value="wednesday">Wednesday</option>
@@ -670,12 +670,12 @@
         <div class="card card-body mb-3">
             <h5>Video</h5>
             <div class="row align-items-end mb-3">
-                <div class="col-md-2"><label class="form-label">FPS</label><input type="number" class="form-control"
+                <div class="col-md-2"><label class="form-label">FPS</label><input type="number" class="form-control mb-3"
                         v-model.number="config.timelapse.fps" /></div>
                 <div class="col-md-2"><label class="form-label">CRF</label><field-renderer :model="config.timelapse"
                         key-name="crf" :schema="schema" /></div>
                 <div class="col-md-3"><label class="form-label">x264 preset</label>
-                    <select class="form-select" v-model="config.timelapse.preset">
+                    <select class="form-select mb-3" v-model="config.timelapse.preset">
                         <option value="ultrafast">ultrafast</option>
                         <option value="veryfast">veryfast</option>
                         <option value="fast">fast</option>
@@ -685,7 +685,7 @@
                 </div>
                 <div class="col-md-2"><label class="form-label">Threads</label><field-renderer :model="config.timelapse"
                         key-name="threads" :schema="schema" /></div>
-                <div class="col-md-3 align-self-center"><field-renderer :model="config.timelapse" key-name="keep_local"
+                <div class="col-md-3"><field-renderer :model="config.timelapse" key-name="keep_local"
                         :schema="schema" label="Keep the file on the Pi" /></div>
             </div>
             <div class="row mb-3">
@@ -696,7 +696,7 @@
             </div>
             <div class="row align-items-end">
                 <div class="col-md-3"><label class="form-label">Privacy</label>
-                    <select class="form-select" v-model="config.timelapse.privacy">
+                    <select class="form-select mb-3" v-model="config.timelapse.privacy">
                         <option value="public">Public</option>
                         <option value="unlisted">Unlisted</option>
                         <option value="private">Private</option>
@@ -716,7 +716,7 @@
             <h5>Audio</h5>
             <div class="row align-items-end">
                 <div class="col-md-6"><label class="form-label">Background track</label>
-                    <select class="form-select" v-model="config.timelapse.audio_file">
+                    <select class="form-select mb-3" v-model="config.timelapse.audio_file">
                         <option value="">None (silent video)</option>
                         <option v-for="item in audioAssets" :key="item.reference" :value="item.reference">
                             [[ item.name ]]

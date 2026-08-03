@@ -249,10 +249,10 @@ const OverlayPreview = defineComponent({
       </div>
 
       <div class="form-text mt-2">
-        Logos can be dragged: <strong>X</strong> and <strong>Y</strong> update on their own.
-        This preview is drawn by the browser, so a few pixels of difference from the actual
-        shot are normal. Nothing you see here is saved until you press
-        <strong>Save Configuration</strong>.
+        <span v-if="visibleLogos.length">Logos can be dragged: <strong>X</strong> and
+        <strong>Y</strong> update on their own. </span>This preview is drawn by the browser,
+        so a few pixels of difference from the actual shot are normal. Nothing you see here
+        is saved until you press <strong>Save Configuration</strong>.
       </div>
     </div>
   `
