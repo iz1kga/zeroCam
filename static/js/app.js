@@ -258,6 +258,65 @@ const OverlayPreview = defineComponent({
   `
 });
 
+/**
+ * Colore con trasparenza, come lo vuole la configurazione.
+ *
+ * Sotto restano quattro numeri da 0 a 255 (R, G, B, A), che è la forma in
+ * cui il dispositivo li usa; sopra c'è il selettore del sistema operativo
+ * più un cursore per la trasparenza, che `input type="color"` non gestisce.
+ *
+ * Il valore risultante è scritto per esteso accanto ai comandi: serve a chi
+ * deve riprodurre lo stesso colore altrove, e a controllare a colpo d'occhio
+ * che sia quello voluto.
+ */
+const ColorField = defineComponent({
+  name: 'ColorField',
+  props: ['model', 'label'],
+  computed: {
+    channels() { return this.model || {}; },
+    hex: {
+      get() {
+        const part = (key) => {
+          const value = Number(this.channels[key]);
+          const clamped = Number.isFinite(value) ? Math.min(255, Math.max(0, Math.round(value))) : 0;
+          return clamped.toString(16).padStart(2, '0');
+        };
+        return '#' + part('R') + part('G') + part('B');
+      },
+      set(value) {
+        const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(value || '');
+        if (!match || !this.model) return;
+        this.model.R = parseInt(match[1], 16);
+        this.model.G = parseInt(match[2], 16);
+        this.model.B = parseInt(match[3], 16);
+      }
+    },
+    alpha: {
+      get() {
+        const value = Number(this.channels.A);
+        return Number.isFinite(value) ? Math.min(255, Math.max(0, Math.round(value))) : 255;
+      },
+      set(value) { if (this.model) this.model.A = Number(value); }
+    },
+    readable() {
+      return `rgba(${this.channels.R || 0}, ${this.channels.G || 0}, ` +
+             `${this.channels.B || 0}, ${(this.alpha / 255).toFixed(2)})`;
+    }
+  },
+  template: `
+    <div class="color-field">
+      <label class="form-label mb-1">[[ label ]]</label>
+      <div class="d-flex align-items-center gap-2">
+        <input type="color" class="form-control form-control-color" v-model="hex"
+               :title="label">
+        <input type="range" class="form-range flex-grow-1" min="0" max="255" v-model.number="alpha">
+        <span class="badge bg-light text-dark border">[[ alpha ]]</span>
+      </div>
+      <div class="form-text">[[ readable ]]</div>
+    </div>
+  `
+});
+
 const FieldRenderer = defineComponent({
   name: 'FieldRenderer',
   // 1. Accetta la nuova prop 'disabled'
@@ -972,7 +1031,7 @@ const startApp = async () => {
       }
     },
     template: configTemplate,
-    components: { FieldRenderer, OverlayPreview }
+    components: { FieldRenderer, OverlayPreview, ColorField }
   });
   app.component('page-control', {
     props: {

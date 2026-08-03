@@ -534,35 +534,52 @@
     </div>
 
     <!-- Annotation -->
+    <!-- Annotation: comandi accanto all'anteprima, non sotto. Regolare un
+         colore guardando l'effetto richiede di avere entrambi sott'occhio. -->
     <div v-if="configPage === 'annotation' && config.Annotation">
         <h4>Annotation</h4>
-        <div class="card card-body mb-3">
-            <overlay-preview :config="config" />
-        </div>
-        <div class="card card-body">
-            <h5>Container Background</h5>
-            <div class="row mb-3">
-                <div class="col-md-2" v-for="key in ['R', 'G', 'B', 'A']"><label class="form-label">[[ key
-                        ]]</label><field-renderer :model="config.Annotation.Container" :key-name="key"
-                        :schema="schema" /></div>
-                <div class="col-md-2"><label class="form-label">Offset</label><field-renderer
-                        :model="config.Annotation.Container" key-name="Offset" :schema="schema" /></div>
+        <div class="row g-3">
+            <div class="col-xl-7">
+                <div class="card card-body h-100">
+                    <overlay-preview :config="config" />
+                </div>
             </div>
-            <h5 class="mt-4">Text</h5>
-            <div class="row mb-3">
-                <div class="col-md-2" v-for="key in ['R', 'G', 'B', 'A']"><label class="form-label">[[ key
-                        ]]</label><field-renderer :model="config.Annotation.Content.Color" :key-name="key"
-                        :schema="schema" /></div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Text Content</label><field-renderer :model="config.Annotation.Content"
-                    key-name="Text" :schema="schema" />
-            </div>
-            <div class="row">
-                <div class="col-md-6"><label class="form-label">Font Size</label><field-renderer
-                        :model="config.Annotation.Content" key-name="FontSize" :schema="schema" /></div>
-                <div class="col-md-6"><label class="form-label">Date/Time Format</label><field-renderer
-                        :model="config.Annotation" key-name="DTFormat" :schema="schema" /></div>
+            <div class="col-xl-5">
+                <div class="card card-body h-100">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <color-field :model="config.Annotation.Container" label="Sfondo della fascia" />
+                        </div>
+                        <div class="col-sm-6">
+                            <color-field :model="config.Annotation.Content.Color" label="Colore del testo" />
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="row g-3">
+                        <div class="col-sm-6"><label class="form-label">Corpo del carattere</label>
+                            <field-renderer :model="config.Annotation.Content" key-name="FontSize"
+                                :schema="schema" /></div>
+                        <div class="col-sm-6"><label class="form-label">Margine</label>
+                            <field-renderer :model="config.Annotation.Container" key-name="Offset"
+                                :schema="schema" /></div>
+                    </div>
+
+                    <div><label class="form-label">Testo</label>
+                        <field-renderer :model="config.Annotation.Content" key-name="Text"
+                            :schema="schema" /></div>
+
+                    <div><label class="form-label">Formato di data e ora</label>
+                        <field-renderer :model="config.Annotation" key-name="DTFormat"
+                            :schema="schema" /></div>
+
+                    <div class="form-text mt-auto">
+                        L'altezza della fascia &egrave; il corpo del carattere pi&ugrave; due volte il
+                        margine. Nel formato della data valgono i codici <code>strftime</code>:
+                        <code>%d-%m-%Y %H:%M</code> d&agrave; <code>03-08-2026 14:05</code>.
+                    </div>
+                </div>
             </div>
         </div>
     </div>

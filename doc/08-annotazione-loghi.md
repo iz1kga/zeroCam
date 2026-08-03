@@ -16,16 +16,20 @@ L'immagine di fondo è l'ultimo scatto **senza** barra né loghi, che il disposi
 
 **Configuration → Annotation** definisce la fascia che compare in fondo all'immagine, con un testo libero a sinistra e la data/ora a destra.
 
+I comandi stanno a destra dell'anteprima, così l'effetto di ogni modifica è sotto gli occhi mentre la si fa.
+
 | Campo | Significato |
 |---|---|
-| Container R, G, B, A | Colore e trasparenza della fascia (0–255; A a 0 la rende invisibile) |
-| Container Offset | Margine in pixel fra testo e bordi; determina anche l'altezza della fascia |
-| Text R, G, B, A | Colore del testo |
-| Text Content | Testo fisso, tipicamente nome della località e indirizzo del sito |
-| Font Size | Corpo del carattere in pixel |
-| Date/Time Format | Formato della data, con i codici `strftime` |
+| Sfondo della fascia | Colore e trasparenza della fascia |
+| Colore del testo | Colore e trasparenza del testo |
+| Corpo del carattere | Altezza del carattere in pixel |
+| Margine | Distanza fra testo e bordi; determina anche l'altezza della fascia |
+| Testo | Testo fisso, tipicamente nome della località e indirizzo del sito |
+| Formato di data e ora | Formato della data, con i codici `strftime` |
 
-![La pagina Annotation: colori della fascia, colore e corpo del testo, formato della data.](img/ui-config-annotation.png){ width=100% }
+I due colori si scelgono con il selettore del sistema, e la trasparenza con il cursore accanto: da 0, che rende l'elemento invisibile, a 255, che lo rende pieno. Sotto a ciascuno è scritto il valore risultante in forma `rgba(...)`, utile per riprodurre lo stesso colore altrove. Nel file di configurazione restano quattro numeri da 0 a 255 — `R`, `G`, `B`, `A` — che è la forma in cui il dispositivo li usa.
+
+![La pagina Annotation: anteprima a sinistra, colori e testo a destra.](img/ui-config-annotation.png){ width=100% }
 
 L'altezza della fascia è calcolata come corpo del carattere più due volte l'offset: per una barra più alta si aumenta l'offset, per un testo più grande il corpo.
 
