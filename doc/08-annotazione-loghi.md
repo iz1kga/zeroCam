@@ -49,6 +49,10 @@ Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
 
 **Configuration → Overlays** ha la stessa impostazione della pagina precedente: anteprima a sinistra, elenco dei loghi a destra. Passando con il mouse su una voce dell'elenco, il logo corrispondente si evidenzia sull'anteprima — con più loghi sovrapposti è l'unico modo per sapere quale si sta modificando.
 
+L'elenco parte vuoto. **Aggiungi** inserisce un logo, e lo si può premere quante volte serve; il cestino accanto a ciascuno lo toglie. Non c'è un numero massimo, ma ogni logo attivo viene scaricato e sovrapposto a ogni scatto, quindi il tempo di elaborazione cresce con la quantità.
+
+Un logo appena aggiunto non ha ancora un indirizzo: finché non lo si sceglie viene semplicemente saltato, senza comparire nel log come errore. Aggiunte e rimozioni valgono solo dopo **Salva Configurazione**: chiudendo la pagina prima, si perdono.
+
 Ogni immagine ha:
 
 | Campo | Significato |

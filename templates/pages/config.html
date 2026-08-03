@@ -501,6 +501,19 @@
             </div>
             <div class="col-xl-5">
                 <div class="card card-body h-100 overlay-list">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0">Loghi</h5>
+                        <button class="btn btn-sm btn-outline-primary" @click="addOverlay">
+                            <i class="bi bi-plus-lg"></i> Aggiungi
+                        </button>
+                    </div>
+
+                    <p class="text-muted small" v-if="!config.OverlayImages.length">
+                        Nessun logo. Con <em>Aggiungi</em> se ne mette uno, e poi un altro:
+                        non c'&egrave; un numero massimo, ma ognuno di quelli attivi viene
+                        scaricato e sovrapposto a ogni scatto.
+                    </p>
+
                     <div v-for="(img, index) in config.OverlayImages" :key="index"
                         class="border rounded p-2 mb-2"
                         :class="{ 'border-warning': highlightedOverlay === index }"
@@ -514,6 +527,10 @@
                             </div>
                             <img v-if="assetReference(img.url)" :src="assetUrl(img.url)" alt=""
                                 class="border rounded bg-light p-1" style="height: 32px">
+                            <button class="btn btn-sm btn-outline-danger" @click="removeOverlay(index)"
+                                title="Rimuovi questo logo">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </div>
 
                         <select class="form-select" v-if="logoAssets.length"
@@ -543,6 +560,7 @@
                         I loghi si trascinano sull'anteprima. La <strong>scala riduce soltanto</strong>:
                         sopra il 100% il logo resta alla sua dimensione, perch&eacute; ingrandire un PNG
                         lo sfoca. L'opacit&agrave; moltiplica la trasparenza gi&agrave; presente nel file.
+                        Aggiunte e rimozioni valgono solo dopo <strong>Salva Configurazione</strong>.
                     </div>
                 </div>
             </div>

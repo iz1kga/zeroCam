@@ -35,26 +35,7 @@
     "timeout": 30,
     "send_timestamp": true
   },
-  "OverlayImages": [
-    {
-      "X": 3440,
-      "Y": 10,
-      "enabled": true,
-      "name": "My Fancy Logo",
-      "opacity": 80,
-      "scale": 180,
-      "url": "https://www.myimage.com/logo.png"
-    },
-    {
-      "X": 3800,
-      "Y": 10,
-      "enabled": false,
-      "name": "My other Logo",
-      "opacity": 80,
-      "scale": 180,
-      "url": "https://www.myimage.com/another_logo.png"
-    }
-  ],
+  "OverlayImages": [],
   "cameraParameters": {
     "archiveImages": false,
     "crop": {

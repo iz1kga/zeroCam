@@ -261,7 +261,14 @@ class ImageOverlay:
     def downloadImages(self):
         self.logger.info("Downloading overlay images")
         for OverlayImage in self.OverlayImages:
-            if not OverlayImage["enabled"]:
+            if not OverlayImage.get("enabled"):
+                continue
+            # Un logo appena aggiunto dall'interfaccia non ha ancora un
+            # indirizzo: è una configurazione a metà, non un guasto, e non
+            # deve comparire nel log come errore a ogni salvataggio.
+            if not str(OverlayImage.get("url") or "").strip():
+                self.logger.info(
+                    f"Overlay '{OverlayImage.get('name') or 'senza nome'}' has no image yet.")
                 continue
             try:
                 # Un logo scelto fra gli assets è un file locale: resolve_url
@@ -303,22 +310,29 @@ class ImageOverlay:
             return image_buffer
         self.logger.info("Adding overlays")
         for OverlayImage in self.OverlayImages:
-            if not OverlayImage["enabled"]:
+            if not OverlayImage.get("enabled"):
                 continue
+            # Senza immagine caricata non c'è niente da incollare: o manca
+            # l'indirizzo, o lo scaricamento è fallito, e in entrambi i casi
+            # il motivo sta già nel log di downloadImages.
+            if OverlayImage.get("image") is None:
+                continue
+            name = OverlayImage.get("name") or "senza nome"
             try:
                 # Si lavora su una copia: thumbnail() ridimensiona in place e
                 # sull'originale in cache lo scatto successivo ripartirebbe da
                 # un logo già rimpicciolito.
                 olImg = OverlayImage["image"].copy()
                 width, height = olImg.size
-                width = width * int(OverlayImage["scale"])/100
-                height = height * int(OverlayImage["scale"])/100
+                width = width * int(OverlayImage.get("scale", 100))/100
+                height = height * int(OverlayImage.get("scale", 100))/100
                 olImg.thumbnail((width, height), Image.LANCZOS)
                 olImg = self._with_opacity(olImg, OverlayImage.get("opacity", 100))
-                image.paste(olImg, (OverlayImage["X"], OverlayImage["Y"]), olImg)
-                self.logger.info(f"Added {OverlayImage['name']} at {OverlayImage['X']}, {OverlayImage['Y']}")
+                position = (int(OverlayImage.get("X", 0)), int(OverlayImage.get("Y", 0)))
+                image.paste(olImg, position, olImg)
+                self.logger.info(f"Added {name} at {position[0]}, {position[1]}")
             except Exception as e:
-                self.logger.error(f"Failed to add {OverlayImage['name']}: {e}")
+                self.logger.error(f"Failed to add {name}: {e}")
         out_buffer = BytesIO()
         try:
             image.save(out_buffer, format='JPEG')

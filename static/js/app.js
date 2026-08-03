@@ -953,6 +953,22 @@ const startApp = async () => {
         if (!reference) return '';
         return '/assets/' + reference.slice('asset:'.length);
       },
+      addOverlay() {
+        if (!Array.isArray(this.config.OverlayImages)) this.config.OverlayImages = [];
+        // Attivo da subito: chi lo aggiunge lo vuole usare. Finché non ha
+        // un indirizzo il dispositivo lo salta senza lamentarsi.
+        this.config.OverlayImages.push({
+          enabled: true, name: '', url: '',
+          X: 0, Y: 0, scale: 100, opacity: 100
+        });
+        this.highlightedOverlay = this.config.OverlayImages.length - 1;
+      },
+      removeOverlay(index) {
+        this.config.OverlayImages.splice(index, 1);
+        // L'evidenziazione punta a una posizione, e le posizioni sono
+        // appena cambiate sotto: meglio spegnerla che accenderne un'altra.
+        this.highlightedOverlay = null;
+      },
       formatSize(bytes) {
         if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
         if (bytes >= 1024) return Math.round(bytes / 1024) + ' kB';

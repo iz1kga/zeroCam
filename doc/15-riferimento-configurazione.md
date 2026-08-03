@@ -134,7 +134,7 @@ I valori di `AwbMode` sono quelli di libcamera:
 
 ## OverlayImages
 
-Elenco di oggetti:
+Elenco di oggetti, vuoto nelle installazioni nuove e gestito dalla pagina *Overlays*. Le chiavi mancanti valgono i loro default, e un oggetto senza `url` viene saltato: una voce incompleta non interrompe lo scatto.
 
 | Chiave | Tipo | Significato |
 |---|---|---|
