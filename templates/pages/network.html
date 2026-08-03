@@ -1,9 +1,9 @@
 <div>
-    <h4>Rete</h4>
+    <h4>Network</h4>
 
     <div v-if="loaded && !state.available" class="alert alert-warning">
-        NetworkManager non risponde su questo sistema: la rete va configurata da riga di comando.
-        zeroCAM richiede Raspberry Pi OS Bookworm o successivo.
+        NetworkManager is not answering on this system: the network has to be configured from the
+        command line. zeroCAM requires Raspberry Pi OS Bookworm or later.
     </div>
 
     <div v-if="message" class="alert" :class="messageClass" role="alert">[[ message ]]</div>
@@ -12,7 +12,7 @@
     <div class="card" v-if="state.available">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Interfacce</h5>
+                <h5 class="mb-0">Interfaces</h5>
                 <span>
                     <span class="badge me-2" :class="connectivityClass">[[ connectivityLabel ]]</span>
                     <button class="btn btn-sm btn-outline-secondary" @click="loadStatus" :disabled="busy">
@@ -28,7 +28,7 @@
                             <i class="bi me-1" :class="device.type === 'wifi' ? 'bi-wifi' : 'bi-ethernet'"></i>
                             [[ device.device ]]
                         </strong>
-                        <span class="text-muted ms-2">[[ device.connection || 'nessun profilo' ]]</span>
+                        <span class="text-muted ms-2">[[ device.connection || 'no profile' ]]</span>
                         <div class="small text-muted mt-1">
                             <span>[[ device.state ]]</span>
                             <span v-if="device.addresses.length"> &middot; [[ device.addresses.join(', ') ]]</span>
@@ -38,7 +38,7 @@
                     </div>
                     <button class="btn btn-sm btn-outline-primary" v-if="device.connection"
                             @click="editAddress(device)">
-                        Indirizzo
+                        Address
                     </button>
                 </div>
 
@@ -48,18 +48,18 @@
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" value="auto"
                                    :id="'auto-' + device.device" v-model="form.method">
-                            <label class="form-check-label" :for="'auto-' + device.device">Automatico (DHCP)</label>
+                            <label class="form-check-label" :for="'auto-' + device.device">Automatic (DHCP)</label>
                         </div>
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="radio" value="manual"
                                    :id="'manual-' + device.device" v-model="form.method">
-                            <label class="form-check-label" :for="'manual-' + device.device">Indirizzo fisso</label>
+                            <label class="form-check-label" :for="'manual-' + device.device">Static address</label>
                         </div>
                     </div>
 
                     <div class="row g-2" v-if="form.method === 'manual'">
                         <div class="col-md-4">
-                            <label class="form-label">Indirizzo e prefisso</label>
+                            <label class="form-label">Address and prefix</label>
                             <input type="text" class="form-control" placeholder="192.168.1.50/24"
                                    v-model="form.address">
                         </div>
@@ -69,23 +69,24 @@
                                    v-model="form.gateway">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">DNS (uno per riga)</label>
+                            <label class="form-label">DNS (one per line)</label>
                             <textarea class="form-control" rows="1" placeholder="8.8.8.8"
                                       v-model="form.dns"></textarea>
                         </div>
                     </div>
 
                     <div class="alert alert-warning mt-3 mb-2 py-2 small">
-                        Se stai navigando da questa interfaccia, l'indirizzo cambia sotto la connessione
-                        aperta: la pagina resterà in attesa senza risposta. In quel caso non è un errore,
-                        riapri l'interfaccia al nuovo indirizzo. L'esito resta scritto nel log.
+                        If you are browsing over this very interface, the address changes underneath the
+                        open connection: the page will wait without ever getting an answer. That is not a
+                        failure &mdash; reopen the interface at the new address. The outcome is written to
+                        the log either way.
                     </div>
 
                     <button class="btn btn-primary btn-sm" @click="applyAddress(device)" :disabled="busy">
                         <span v-if="busy" class="spinner-border spinner-border-sm me-1"></span>
-                        Applica
+                        Apply
                     </button>
-                    <button class="btn btn-link btn-sm" @click="editing = ''">Annulla</button>
+                    <button class="btn btn-link btn-sm" @click="editing = ''">Cancel</button>
                 </div>
             </div>
         </div>
@@ -98,13 +99,13 @@
                 <h5 class="mb-0">Wi-Fi</h5>
                 <button class="btn btn-sm btn-outline-secondary" @click="scan" :disabled="scanning || busy">
                     <span v-if="scanning" class="spinner-border spinner-border-sm me-1"></span>
-                    Cerca reti
+                    Scan networks
                 </button>
             </div>
 
             <p class="text-muted small" v-if="!networks.length && !scanning">
-                Premi <em>Cerca reti</em> per elencare quelle in portata. La scansione occupa la radio
-                per qualche secondo.
+                Press <em>Scan networks</em> to list the ones in range. Scanning keeps the radio busy for
+                a few seconds.
             </p>
 
             <div class="list-group mb-3" v-if="networks.length">
@@ -113,18 +114,18 @@
                         <div>
                             <i class="bi me-2" :class="signalIcon(net.signal)"></i>
                             <strong>[[ net.ssid ]]</strong>
-                            <span class="badge bg-secondary ms-2" v-if="net.active">connessa</span>
-                            <span class="badge bg-warning text-dark ms-2" v-if="net.open">aperta</span>
+                            <span class="badge bg-secondary ms-2" v-if="net.active">connected</span>
+                            <span class="badge bg-warning text-dark ms-2" v-if="net.open">open</span>
                             <span class="text-muted small ms-2">[[ net.signal ]]%</span>
                         </div>
                         <button class="btn btn-sm btn-outline-primary" @click="pick(net)"
-                                :disabled="busy">Connetti</button>
+                                :disabled="busy">Connect</button>
                     </div>
 
                     <div v-if="selected === net.ssid" class="mt-2">
                         <div class="input-group input-group-sm">
                             <input :type="showPassword ? 'text' : 'password'" class="form-control"
-                                   placeholder="Password della rete" v-model="password"
+                                   placeholder="Network password" v-model="password"
                                    :disabled="net.open" @keyup.enter="connect(net)">
                             <button class="btn btn-outline-secondary" type="button"
                                     @click="showPassword = !showPassword" :disabled="net.open">
@@ -132,20 +133,20 @@
                             </button>
                             <button class="btn btn-primary" @click="connect(net)" :disabled="busy">
                                 <span v-if="busy" class="spinner-border spinner-border-sm me-1"></span>
-                                Connetti
+                                Connect
                             </button>
                         </div>
                         <div class="form-text" v-if="!state.hotspotConfig || !state.hotspotConfig.active">
-                            La connessione può richiedere fino a un minuto.
+                            Connecting can take up to a minute.
                         </div>
                         <!-- La radio è una sola: collegando il wifi, l'hotspot da cui
                              si sta navigando sparisce insieme a questa pagina. -->
                         <div class="alert alert-warning mt-2 mb-0 py-2 small"
                              v-else>
-                            Stai navigando dall'hotspot: collegando il wifi l'access point si spegne
-                            e questa pagina smette di rispondere. Se la password è giusta, la webcam
-                            sarà sulla rete scelta; se è sbagliata, l'hotspot torna da solo entro un
-                            paio di minuti e puoi riprovare.
+                            You are browsing over the hotspot: joining a Wi-Fi network switches the access
+                            point off and this page stops answering. If the password is right, the camera
+                            will be on the network you picked; if it is wrong, the hotspot comes back on its
+                            own within a couple of minutes and you can try again.
                         </div>
                     </div>
                 </div>
@@ -155,11 +156,11 @@
             <div class="border-top pt-3">
                 <a href="#" @click.prevent="hiddenOpen = !hiddenOpen" class="small">
                     <i class="bi" :class="hiddenOpen ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
-                    Rete nascosta
+                    Hidden network
                 </a>
                 <div class="row g-2 mt-1" v-if="hiddenOpen">
                     <div class="col-md-5">
-                        <input type="text" class="form-control form-control-sm" placeholder="Nome della rete"
+                        <input type="text" class="form-control form-control-sm" placeholder="Network name"
                                v-model="hidden.ssid">
                     </div>
                     <div class="col-md-5">
@@ -168,7 +169,7 @@
                     </div>
                     <div class="col-md-2">
                         <button class="btn btn-sm btn-primary w-100" @click="connectHidden" :disabled="busy">
-                            Connetti
+                            Connect
                         </button>
                     </div>
                 </div>
@@ -180,30 +181,30 @@
     <div class="card mt-4" v-if="state.available && state.hotspotConfig">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="mb-0">Hotspot di appoggio</h5>
+                <h5 class="mb-0">Fallback hotspot</h5>
                 <span>
-                    <span class="badge bg-success me-2" v-if="state.hotspotConfig.active">acceso ora</span>
+                    <span class="badge bg-success me-2" v-if="state.hotspotConfig.active">on right now</span>
                     <button class="btn btn-sm btn-outline-primary"
                             @click="$emit('go-to-config', 'network')">
-                        Modifica
+                        Edit
                     </button>
                 </span>
             </div>
 
             <p class="text-muted small">
-                Quando la webcam resta senza rete, dopo
-                [[ state.hotspotConfig.delay ]] secondi accende un access point suo:
-                collegandosi a quello, l'interfaccia risponde su
-                <code>http://10.42.0.1:8080</code> e si può indicare a quale wifi collegarsi.
-                Ogni tanto l'hotspot si spegne per un minuto, il tempo di lasciare che la
-                webcam riprovi da sola con le reti che conosce.
+                When the camera is left without a network, after
+                [[ state.hotspotConfig.delay ]] seconds it brings up an access point of its own:
+                join that one and the interface answers at
+                <code>http://10.42.0.1:8080</code>, where you can tell it which Wi-Fi to join.
+                Every so often the hotspot goes down for a minute, long enough to let the camera
+                retry the networks it already knows.
             </p>
 
             <div v-if="state.hotspotConfig.enabled && !state.hotspotConfig.password"
                  class="alert alert-danger py-2 small">
-                Nessuna password impostata: l'hotspot resta spento. Un access point aperto
-                darebbe a chiunque passi l'accesso a questa console.
-                Si imposta con <strong>Modifica</strong>, qui sopra.
+                No password set: the hotspot stays off. An open access point would hand this console
+                to anyone walking past.
+                Set one with <strong>Edit</strong>, above.
             </div>
 
             <div class="row g-2 align-items-end">
@@ -212,7 +213,7 @@
                         <input class="form-check-input" type="checkbox" id="hotspotEnabled"
                                :checked="state.hotspotConfig.enabled" disabled>
                         <label class="form-check-label" for="hotspotEnabled">
-                            [[ state.hotspotConfig.enabled ? 'Attivo' : 'Disattivato' ]]
+                            [[ state.hotspotConfig.enabled ? 'Enabled' : 'Disabled' ]]
                         </label>
                     </div>
                 </div>
@@ -220,7 +221,7 @@
                      fuoco e mostra il cursore, quindi sembra scrivibile e non
                      lo è. Qui si legge soltanto, si modifica dal pulsante. -->
                 <div class="col-md-4">
-                    <label class="form-label">Nome della rete</label>
+                    <label class="form-label">Network name</label>
                     <input type="text" class="form-control" :value="state.hotspotConfig.ssid" disabled>
                 </div>
                 <div class="col-md-5">
@@ -237,9 +238,10 @@
                 </div>
             </div>
             <div class="form-text mt-2">
-                Sono gli stessi valori stampati sull'etichetta del dispositivo, e qui si leggono
-                soltanto: si cambiano con <strong>Modifica</strong>, che porta a
-                <strong>Configuration &rarr; Network</strong>. Cambiandoli, l'etichetta non vale più.
+                These are the same values printed on the device label, and here they are read-only:
+                change them with <strong>Edit</strong>, which takes you to
+                <strong>Configuration &rarr; Network</strong>. Once you change them, the label no longer
+                matches.
             </div>
         </div>
     </div>
@@ -247,20 +249,20 @@
     <!-- Profili salvati -->
     <div class="card mt-4" v-if="state.available && state.saved.length">
         <div class="card-body">
-            <h5>Reti memorizzate</h5>
+            <h5>Saved networks</h5>
             <p class="text-muted small">
-                Il dispositivo si ricollega da solo a queste reti quando le trova. Dimenticarne una
-                cancella anche la password salvata.
+                The device reconnects to these on its own whenever it finds them. Forgetting one also
+                deletes the stored password.
             </p>
             <ul class="list-group">
                 <li class="list-group-item d-flex justify-content-between align-items-center"
                     v-for="saved in state.saved" :key="saved.name">
                     <span>
                         [[ saved.name ]]
-                        <span class="badge bg-success ms-2" v-if="saved.device">attiva su [[ saved.device ]]</span>
+                        <span class="badge bg-success ms-2" v-if="saved.device">active on [[ saved.device ]]</span>
                     </span>
                     <button class="btn btn-sm btn-outline-danger" @click="forget(saved.name)" :disabled="busy">
-                        Dimentica
+                        Forget
                     </button>
                 </li>
             </ul>

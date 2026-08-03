@@ -1,7 +1,7 @@
 <!-- Sezione Focus Aid -->
 <div v-if="focusAidActive">
   <h4>Focus Aid</h4>
-  <p class="text-muted">Regola la messa a fuoco. Il ciclo di cattura principale è in pausa.</p>
+  <p class="text-muted">Adjust the focus. The main capture loop is paused.</p>
   <div class="mb-3 border rounded text-center">
     <img src="/focus-aid/stream" class="img-fluid" alt="Focus Aid Stream" 
           style="max-width: 100%; max-height: calc(100vh - 250px); object-fit: contain;" />
@@ -18,16 +18,16 @@
         <input class="form-check-input" type="checkbox" role="switch" id="livePreviewToggle"
           :checked="livePreview" @change="$emit('toggle-live-preview', $event.target.checked)">
         <label class="form-check-label" for="livePreviewToggle">
-          Anteprima diretta
-          <span class="text-muted small">(un fotogramma al secondo dallo stream)</span>
+          Live preview
+          <span class="text-muted small">(one frame per second from the stream)</span>
         </label>
       </div>
       <div class="image-container mb-3" ref="imageContainer">
-        <img :src="displayedImageUrl" @error="onImageError" @load="onImageLoad" alt="Ultima immagine"
+        <img :src="displayedImageUrl" @error="onImageError" @load="onImageLoad" alt="Latest image"
           class="img-fluid rounded border" style="max-height: 720px;" />
         <div v-if="livePreview" class="form-text mb-0">
-          Le privacy mask non sono modificabili sull'anteprima: l'inquadratura dello streaming
-          &egrave; diversa da quella dello scatto. Torna all'ultima immagine per ridisegnarle.
+          Privacy masks cannot be edited on the live preview: the streaming framing differs from the
+          one used for the shot. Switch back to the latest image to redraw them.
         </div>
         <svg v-if="imageDimensions.width > 0 && !livePreview" :width="imageDimensions.width" :height="imageDimensions.height"
           @click="handleSvgClick" @dblclick="completeCurrentRoi" class="drawing-overlay">
@@ -48,13 +48,13 @@
           <span v-if="isCapturing" class="spinner-border spinner-border-sm me-1" role="status"
             aria-hidden="true"></span>
           <i v-else class="bi bi-camera me-1"></i>
-          [[ isCapturing ? ('Scatto in corso' + (captureElapsedLabel ? ' — ' + captureElapsedLabel : '')) : 'Take Photo' ]]
+          [[ isCapturing ? ('Capturing' + (captureElapsedLabel ? ' — ' + captureElapsedLabel : '')) : 'Take Photo' ]]
         </button>
         <button class="btn btn-info me-2" @click="$emit('start-focus-aid')" :disabled="isCapturing">
           <i class="bi bi-bullseye me-1"></i> Start Focus Aid
         </button>
         <button class="btn btn-danger" @click="$emit('restart-app')">
-          <i class="bi bi-arrow-clockwise me-1"></i> Riavvia
+          <i class="bi bi-arrow-clockwise me-1"></i> Restart
         </button>
       </div>
     </div>
@@ -73,8 +73,8 @@
             <div class="d-flex align-items-center gap-2">
               <select class="form-select form-select-sm w-auto" :value="roi.mode || 'blur'"
                 @change="setRoiMode(roi, $event.target.value)">
-                <option value="blur">Sfocata</option>
-                <option value="filled">Coperta</option>
+                <option value="blur">Blurred</option>
+                <option value="filled">Filled</option>
               </select>
               <button class="btn btn-outline-danger btn-sm" @click="deleteRoi(roi.id)"><i
                   class="bi bi-trash"></i></button>

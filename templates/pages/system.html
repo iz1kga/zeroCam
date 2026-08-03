@@ -1,78 +1,78 @@
 <div>
-    <h4>Cambio Password</h4>
+    <h4>Change Password</h4>
     <div class="card">
         <div class="card-body">
             <div v-if="message" class="alert" :class="messageClass" role="alert">[[ message ]]</div>
-            
+
             <div class="mb-3">
-                <label for="currentPassword" class="form-label">Password Attuale</label>
+                <label for="currentPassword" class="form-label">Current Password</label>
                 <input type="password" class="form-control" id="currentPassword" v-model="passwords.current">
             </div>
             <div class="mb-3">
-                <label for="newPassword" class="form-label">Nuova Password</label>
+                <label for="newPassword" class="form-label">New Password</label>
                 <input type="password" class="form-control" id="newPassword" v-model="passwords.new">
             </div>
             <div class="mb-3">
-                <label for="confirmPassword" class="form-label">Conferma Nuova Password</label>
+                <label for="confirmPassword" class="form-label">Confirm New Password</label>
                 <input type="password" class="form-control" id="confirmPassword" v-model="passwords.confirm">
             </div>
             <button class="btn btn-primary" @click="$emit('change-password', passwords)" :disabled="isLoading">
                 <span v-if="isLoading" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                Cambia Password
+                Change Password
             </button>
         </div>
     </div>
 
-    <h4 class="mt-4">Accesso all'interfaccia</h4>
+    <h4 class="mt-4">Web interface access</h4>
     <div class="card" v-if="config && config.settingsManager">
         <div class="card-body">
             <div class="row align-items-end">
-                <div class="col-md-3"><label class="form-label">Porta HTTP</label>
+                <div class="col-md-3"><label class="form-label">HTTP port</label>
                     <input type="number" class="form-control" v-model.number="config.settingsManager.port">
                 </div>
                 <div class="col-md-3 mb-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="httpEnabled"
                             v-model="config.settingsManager.http_enabled">
-                        <label class="form-check-label" for="httpEnabled">HTTP attivo</label>
+                        <label class="form-check-label" for="httpEnabled">HTTP enabled</label>
                     </div>
                 </div>
                 <div class="col-md-3 mb-3">
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="httpsEnabled"
                             v-model="config.settingsManager.https_enabled">
-                        <label class="form-check-label" for="httpsEnabled">HTTPS attivo</label>
+                        <label class="form-check-label" for="httpsEnabled">HTTPS enabled</label>
                     </div>
                 </div>
-                <div class="col-md-3"><label class="form-label">Porta HTTPS</label>
+                <div class="col-md-3"><label class="form-label">HTTPS port</label>
                     <input type="number" class="form-control" v-model.number="config.settingsManager.https_port"
                         :disabled="!config.settingsManager.https_enabled">
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6">
-                    <label class="form-label">Nomi da includere nel certificato (uno per riga)</label>
+                    <label class="form-label">Names to include in the certificate (one per line)</label>
                     <textarea class="form-control" rows="2" v-model="certificateNames"
                         :disabled="!config.settingsManager.https_enabled"></textarea>
                 </div>
             </div>
             <div class="form-text mt-2">
-                L'HTTPS usa un certificato che il dispositivo si firma da s&eacute;: la connessione &egrave;
-                cifrata, ma il browser mostra un avviso la prima volta perch&eacute; nessuno attesta quel
-                certificato. Il certificato copre da s&eacute; <em>localhost</em>, il nome del dispositivo e i
-                suoi indirizzi IP; qui si aggiungono gli altri nomi con cui lo raggiungi, per esempio quello
-                pubblico. L'impronta SHA-256 con cui confrontarlo &egrave; scritta nel log all'avvio.
+                HTTPS uses a certificate the device signs itself: the connection is encrypted, but the
+                browser warns you the first time because nobody vouches for that certificate. The
+                certificate covers <em>localhost</em>, the device name and its IP addresses on its own;
+                here you add the other names you reach it by, for example the public one. The SHA-256
+                fingerprint to compare it against is written to the log at startup.
             </div>
             <div class="form-text">
-                Spegnendo l'HTTP resta solo l'HTTPS: <strong>ONVIF smette di funzionare</strong>, perch&eacute;
-                i client ONVIF parlano solo HTTP in chiaro. Le modifiche di questa sezione hanno effetto al
-                riavvio dell'applicazione.
+                Turning HTTP off leaves HTTPS only: <strong>ONVIF stops working</strong>, because ONVIF
+                clients only speak plain HTTP. Changes in this section take effect when the application
+                restarts.
             </div>
-            <button class="btn btn-success mt-3" @click="$emit('save-config')">Salva e ricorda di riavviare</button>
+            <button class="btn btn-success mt-3" @click="$emit('save-config')">Save, then remember to restart</button>
         </div>
     </div>
 
-    <h4 class="mt-4">Pagina pubblica</h4>
+    <h4 class="mt-4">Public page</h4>
     <div class="card" v-if="config && config.settingsManager">
         <div class="card-body">
             <div class="row align-items-end">
@@ -80,31 +80,31 @@
                     <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" id="publicPage"
                             v-model="config.settingsManager.public_page">
-                        <label class="form-check-label" for="publicPage">Pagina pubblica attiva</label>
+                        <label class="form-check-label" for="publicPage">Public page enabled</label>
                     </div>
                 </div>
-                <div class="col-md-4"><label class="form-label">Titolo</label>
+                <div class="col-md-4"><label class="form-label">Title</label>
                     <input type="text" class="form-control" v-model="config.settingsManager.public_title"
                         :disabled="!config.settingsManager.public_page"
-                        placeholder="Nome del dispositivo">
+                        placeholder="Device name">
                 </div>
-                <div class="col-md-5"><label class="form-label">Link alla diretta (facoltativo)</label>
+                <div class="col-md-5"><label class="form-label">Live stream link (optional)</label>
                     <input type="text" class="form-control" v-model="config.settingsManager.public_live_url"
                         :disabled="!config.settingsManager.public_page"
                         placeholder="https://youtube.com/...">
                 </div>
             </div>
             <div class="form-text mt-2">
-                Espone <code>/public</code> come vetrina in sola lettura: ultimo scatto, ora dello scatto e
-                il link alla diretta se lo indichi. Non richiede autenticazione e non mostra n&eacute;
-                configurazione n&eacute; log: &egrave; l'indirizzo da dare a chi vuole solo guardare, al posto
-                di questa console. L'aggiornamento ha effetto subito, senza riavviare.
+                Exposes <code>/public</code> as a read-only shop window: latest shot, capture time and the
+                live stream link if you give one. It needs no authentication and shows neither the
+                configuration nor the log: it is the address to hand to people who only want to watch,
+                instead of this console. Updates take effect immediately, without a restart.
             </div>
-            <button class="btn btn-success mt-3" @click="$emit('save-config')">Salva</button>
+            <button class="btn btn-success mt-3" @click="$emit('save-config')">Save</button>
         </div>
     </div>
 
-    <h4 class="mt-4">Backup e ripristino configurazione</h4>
+    <h4 class="mt-4">Configuration backup and restore</h4>
     <div class="card">
         <div class="card-body">
             <div v-if="backupMessage" class="alert" :class="backupSuccess ? 'alert-success' : 'alert-danger'"
@@ -113,7 +113,7 @@
             <h6>Backup</h6>
             <div class="row align-items-end mb-2">
                 <div class="col-md-6 mb-2">
-                    <label class="form-label">Passphrase (min. 8 caratteri)</label>
+                    <label class="form-label">Passphrase (min. 8 characters)</label>
                     <input type="password" class="form-control" v-model="backupPassphrase"
                         autocomplete="new-password">
                 </div>
@@ -121,27 +121,27 @@
                     <button class="btn btn-primary" @click="downloadBackup" :disabled="backupBusy">
                         <span v-if="backupBusy" class="spinner-border spinner-border-sm me-1" role="status"
                             aria-hidden="true"></span>
-                        Scarica backup
+                        Download backup
                     </button>
                 </div>
             </div>
             <div class="form-text mb-4">
-                Il file contiene tutta la configurazione (password MQTT/FTP/ONVIF, stream key, credenziali YouTube)
-                e la privacy mask, cifrate con questa passphrase: senza di essa il backup non è recuperabile,
-                quindi conservala separatamente. Restano fuori la password di accesso all'interfaccia web e la
-                chiave di sessione, che rimangono quelle del dispositivo su cui ripristini.
+                The file holds the whole configuration (MQTT/FTP/ONVIF passwords, stream key, YouTube
+                credentials) and the privacy mask, encrypted with this passphrase: without it the backup
+                cannot be recovered, so keep it somewhere else. Left out are the web interface password and
+                the session key, which stay those of the device you restore onto.
             </div>
 
             <hr>
-            <h6>Ripristino</h6>
+            <h6>Restore</h6>
             <div class="row align-items-end mb-2">
                 <div class="col-md-6 mb-2">
-                    <label class="form-label">File di backup</label>
+                    <label class="form-label">Backup file</label>
                     <input type="file" class="form-control" accept="application/json,.json"
                         @change="pickBackupFile">
                 </div>
                 <div class="col-md-6 mb-2">
-                    <label class="form-label">Passphrase del backup</label>
+                    <label class="form-label">Backup passphrase</label>
                     <input type="password" class="form-control" v-model="restorePassphrase"
                         autocomplete="off">
                 </div>
@@ -149,11 +149,11 @@
             <button class="btn btn-danger" @click="uploadRestore" :disabled="restoreBusy || !restoreFile">
                 <span v-if="restoreBusy" class="spinner-border spinner-border-sm me-1" role="status"
                     aria-hidden="true"></span>
-                Ripristina configurazione
+                Restore configuration
             </button>
             <div class="form-text">
-                Sovrascrive la configurazione attuale e la privacy mask: operazione non annullabile.
-                Dopo il ripristino conviene riavviare il dispositivo dalla pagina Controllo.
+                Overwrites the current configuration and the privacy mask: this cannot be undone.
+                After a restore it is worth restarting the device from the Cam Control page.
             </div>
         </div>
     </div>

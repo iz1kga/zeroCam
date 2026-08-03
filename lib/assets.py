@@ -27,7 +27,7 @@ CATEGORIES = {
         "extensions": (".mp3", ".aac", ".m4a", ".ogg", ".opus", ".wav", ".flac"),
     },
     "logo": {
-        "label": "Loghi",
+        "label": "Logos",
         "extensions": (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"),
     },
 }
@@ -44,7 +44,7 @@ class AssetError(Exception):
 
 def _category_dir(category):
     if category not in CATEGORIES:
-        raise AssetError(f"Categoria sconosciuta: {category}")
+        raise AssetError(f"Unknown category: {category}")
     return os.path.join(paths.ASSETS_DIR, category)
 
 
@@ -60,7 +60,7 @@ def safe_name(name):
     base = unicodedata.normalize("NFKD", base).encode("ascii", "ignore").decode("ascii")
     base = _SAFE_NAME.sub("-", base).strip("-._")
     if not base or base.startswith("."):
-        raise AssetError("Nome del file non valido.")
+        raise AssetError("Invalid file name.")
     return base[:100]
 
 
@@ -131,7 +131,7 @@ def listing(category=None):
     items = []
     for name in sorted(CATEGORIES) if category is None else [category]:
         if name not in CATEGORIES:
-            raise AssetError(f"Categoria sconosciuta: {name}")
+            raise AssetError(f"Unknown category: {name}")
         directory = os.path.join(paths.ASSETS_DIR, name)
         if not os.path.isdir(directory):
             continue
@@ -163,10 +163,10 @@ def save(category, filename, stream):
     size = os.path.getsize(target)
     if size == 0:
         os.remove(target)
-        raise AssetError("Il file caricato è vuoto.")
+        raise AssetError("The uploaded file is empty.")
     if size > MAX_SIZE:
         os.remove(target)
-        raise AssetError(f"Il file supera il limite di {MAX_SIZE // (1024 * 1024)} MB.")
+        raise AssetError(f"The file exceeds the {MAX_SIZE // (1024 * 1024)} MB limit.")
 
     return {
         "category": category,

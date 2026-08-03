@@ -248,13 +248,13 @@ class ONVIFService:
                     if token_element is not None and token_element.text is not None:
                         requested_config_token = token_element.text
                     else:
-                        self.logger.warning("ConfigurationToken non trovato nella richiesta GetVideoSourceConfiguration.")
+                        self.logger.warning("ConfigurationToken not found in the GetVideoSourceConfiguration request.")
                         fault_body = "<soap:Fault><soap:Reason><soap:Text xml:lang=\"en\">InvalidArgs - ConfigurationToken missing</soap:Text></soap:Reason></soap:Fault>"
                         return Response(self.generate_soap_response(fault_body), status=400, content_type="application/soap+xml")
                     
                     self.logger.info(f"Richiesto VideoSourceConfigurationToken: '{requested_config_token}'")
                 except Exception as e_parse:
-                    self.logger.error(f"Errore nel parsing della richiesta GetVideoSourceConfiguration: {e_parse}")
+                    self.logger.error(f"Error parsing the GetVideoSourceConfiguration request: {e_parse}")
                     fault_body = "<soap:Fault><soap:Reason><soap:Text xml:lang=\"en\">Sender - Error parsing request</soap:Text></soap:Reason></soap:Fault>"
                     return Response(self.generate_soap_response(fault_body), status=400, content_type="application/soap+xml")
 
@@ -279,11 +279,11 @@ class ONVIFService:
                         requested_profile_token = token_element.text
                         self.logger.info(f"Richiesto ProfileToken: '{requested_profile_token}'")
                     else:
-                        self.logger.warning("ProfileToken non trovato nella richiesta GetProfile.")
+                        self.logger.warning("ProfileToken not found in the GetProfile request.")
                         fault_body = "<soap:Fault><soap:Reason><soap:Text xml:lang=\"en\">InvalidArgs - ProfileToken missing</soap:Text></soap:Reason></soap:Fault>"
                         return Response(self.generate_soap_response(fault_body), status=400, content_type="application/soap+xml")
                 except Exception as e_parse:
-                    self.logger.error(f"Errore nel parsing della richiesta GetProfile: {e_parse}")
+                    self.logger.error(f"Error parsing the GetProfile request: {e_parse}")
                     fault_body = "<soap:Fault><soap:Reason><soap:Text xml:lang=\"en\">Sender - Error parsing request</soap:Text></soap:Reason></soap:Fault>"
                     return Response(self.generate_soap_response(fault_body), status=400, content_type="application/soap+xml")
                 
@@ -298,7 +298,7 @@ class ONVIFService:
                     token_element = root.find('.//trt:ProfileToken', ns)
 
                 requested_token = token_element.text if token_element is not None else next(iter(onvif_data.PROFILES_DATA.keys()))
-                self.logger.info(f"Richiesto VideoEncoderConfigurationOptions per il token: {requested_token}")
+                self.logger.info(f"VideoEncoderConfigurationOptions requested for token: {requested_token}")
                 response_body = onvif_responses.get_video_encoder_configuration_options(onvif_data.ENCODER_OPTIONS_DATA, requested_token, self.image_width, self.image_height)
                 return Response(self.generate_soap_response(response_body),
                                 content_type="application/soap+xml")
@@ -344,7 +344,7 @@ class ONVIFService:
                 ns = {'trt': 'http://www.onvif.org/ver10/media/wsdl'}
                 token_element = body_xml.find('.//trt:ProfileToken', namespaces=ns)
                 token = token_element.text if token_element is not None else ''
-                self.logger.info(f"Richiesto GetSnapshotUri per il token: {token}")
+                self.logger.info(f"GetSnapshotUri requested for token: {token}")
                 if "Profile_Snapshot" in token:
                     host, port = self._client_view()
                     response_body = onvif_responses.get_snapshot_uri_response(host, port)
@@ -386,7 +386,7 @@ class ONVIFService:
                         )
             except Exception as e:
                 # Logga l'eccezione per il debug, ma permetti al loop di continuare
-                self.logger.warning(f"ONVIF: Tentativo snapshot fallito, riprovo... Errore: {e}")
+                self.logger.warning(f"ONVIF: Snapshot attempt failed, retrying... Error: {e}")
                 pass
             
             # Se il file non era pronto o il controllo è fallito, attendi e riprova

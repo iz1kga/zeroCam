@@ -16,7 +16,7 @@ L'interfaccia non carica nulla da Internet: Bootstrap, Vue, Chart.js e il resto 
 
 La console è amministrazione: da lì si cambia la configurazione, si leggono i log e si riavvia il dispositivo. Per far vedere la webcam a qualcuno non serve tutto questo, e non conviene darne l'indirizzo.
 
-In **System → Pagina pubblica** si attiva una vetrina in sola lettura. Attivandola i due indirizzi si scambiano di posto:
+In **System → Public page** si attiva una vetrina in sola lettura. Attivandola i due indirizzi si scambiano di posto:
 
 | Indirizzo | Con la vetrina accesa | Con la vetrina spenta |
 |---|---|---|
@@ -34,7 +34,7 @@ La vetrina mostra l'ultimo scatto, l'ora in cui è stato preso e, se lo si indic
 
 Di default l'interfaccia risponde **in chiaro**: chiunque sia in grado di osservare la rete fra il browser e la webcam legge la password e il contenuto della sessione. Su una rete domestica il rischio è modesto; esporre la porta su Internet così com'è significa consegnare le credenziali a chiunque stia in mezzo.
 
-In **System → Accesso all'interfaccia** si attiva l'HTTPS, che risponde su una porta separata (8443 di default):
+In **System → Web interface access** si attiva l'HTTPS, che risponde su una porta separata (8443 di default):
 
 ```
 https://<indirizzo-del-raspberry>:8443/
@@ -54,9 +54,9 @@ In alto compaiono il marchio e la parola *Console*, con la versione in esecuzion
 
 ![La pagina Cam Control: menu a sinistra, ultima immagine con le maschere privacy disegnate sopra, elenco delle maschere a destra.](img/ui-cam-control.png){ width=100% }
 
-**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Upload, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Network, Assets. In fondo alla pagina c'è il pulsante **Salva Configurazione**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
+**Configuration** apre un sottomenu con tutte le sezioni della configurazione: Device Details, ONVIF, FTP Upload, HTTP Upload, Camera, Stream, Overlays, Annotation, Timelapse, Network, Assets. In fondo alla pagina c'è il pulsante **Save Configuration**, che vale per tutte le sottopagine: le modifiche non salvate si perdono cambiando pagina.
 
-**Cam Control** mostra l'ultima immagine scattata e permette di disegnarci sopra le maschere privacy. Da qui si scatta a comando (*Take Photo*), si avvia l'aiuto alla messa a fuoco (*Start Focus Aid*) e si riavvia il dispositivo (*Riavvia*). Quando lo streaming è in corso compare l'interruttore **Anteprima diretta**, che sostituisce l'ultimo scatto con un fotogramma al secondo preso dal video.
+**Cam Control** mostra l'ultima immagine scattata e permette di disegnarci sopra le maschere privacy. Da qui si scatta a comando (*Take Photo*), si avvia l'aiuto alla messa a fuoco (*Start Focus Aid*) e si riavvia il dispositivo (*Restart*). Quando lo streaming è in corso compare l'interruttore **Live preview**, che sostituisce l'ultimo scatto con un fotogramma al secondo preso dal video.
 
 **Timelapse** raccoglie la galleria dei fotogrammi, lo stato (quanti sono, quanto occupano, esito dell'ultimo montaggio) e i pulsanti per montare subito il video, con o senza pubblicazione.
 
@@ -87,7 +87,7 @@ Non tutte le impostazioni entrano in vigore nello stesso momento:
 
 Il salvataggio passa la configurazione ai componenti già in funzione, quindi quasi tutto vale dallo scatto successivo senza riavviare. Cambiando l'intervallo di scatto la pianificazione riparte da quel momento: il primo scatto arriva dopo un intervallo intero.
 
-Il riavvio dell'applicazione si ottiene dal pulsante **Riavvia** in Cam Control (che riavvia l'intero Raspberry Pi) oppure, più rapidamente, da terminale con `sudo systemctl restart zerocam.service`.
+Il riavvio dell'applicazione si ottiene dal pulsante **Restart** in Cam Control (che riavvia l'intero Raspberry Pi) oppure, più rapidamente, da terminale con `sudo systemctl restart zerocam.service`.
 
 ## Sotto l'interfaccia: le API
 

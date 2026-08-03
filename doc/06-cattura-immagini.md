@@ -77,7 +77,7 @@ Ogni fase ha il proprio *AWB Mode*: automatico, incandescenza, tungsteno, fluore
 
 L'automatismo però ha bisogno di un riferimento neutro nell'inquadratura. Di notte quel riferimento non c'è, e le luci stradali al sodio — arancioni per natura — lo portano fuori strada: l'AWB tenta di correggere una dominante che non è un errore, e vira l'intera immagine.
 
-Per questo l'elenco delle modalità finisce con **Manuale (guadagni R/B)**: scegliendola l'automatismo viene spento e il bilanciamento resta fisso sui campi **Guadagno rosso** e **Guadagno blu**, che restano disabilitati con qualunque altra modalità. Se si sceglie Manuale senza indicare guadagni validi il software torna all'automatico e lo scrive nel log: meglio una foto automatica che una con i colori a caso.
+Per questo l'elenco delle modalità finisce con **Manuale (guadagni R/B)**: scegliendola l'automatismo viene spento e il bilanciamento resta fisso sui campi **Red Gain** e **Blue Gain**, che restano disabilitati con qualunque altra modalità. Se si sceglie Manuale senza indicare guadagni validi il software torna all'automatico e lo scrive nel log: meglio una foto automatica che una con i colori a caso.
 
 Come trovare i valori di partenza: si prende uno scatto venuto bene e si legge il campo `ColourGains` nei suoi metadati. I fotogrammi del timelapse li portano scritti negli EXIF, quindi basta uno di quelli:
 

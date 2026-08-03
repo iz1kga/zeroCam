@@ -17,9 +17,9 @@ Lo streaming si ferma a ogni scatto e riparte subito dopo: la camera non può se
 | Streaming Enabled | Attiva la trasmissione |
 | YouTube Stream Key | Chiave di streaming presa da YouTube Studio; cifrata in configurazione |
 | Resolution | Larghezza e altezza del video, per esempio 2560×1440 |
-| Destinazioni aggiuntive | Altri URL RTMP verso cui ritrasmettere |
-| Annotazione e loghi nella diretta | Disegna barra, orologio e loghi sul video |
-| Audio di sottofondo | Brano ripetuto in loop al posto del silenzio |
+| Extra destinations | Altri URL RTMP verso cui ritrasmettere |
+| Annotation and logos on the live stream | Disegna barra, orologio e loghi sul video |
+| Background audio | Brano ripetuto in loop al posto del silenzio |
 | Volume | Attenuazione del brano, in percentuale |
 
 ![La pagina Stream: chiave, risoluzione, destinazioni aggiuntive, overlay, audio e le impostazioni della diretta automatica. I riquadri neri coprono la destinazione aggiuntiva e il Client ID, che sono dati del singolo impianto.](img/ui-config-stream.png){ width=100% }
@@ -32,7 +32,7 @@ Bitrate e buffer (`bitrate`, `buffer`) governano la qualità: 4000–4500 kbit/s
 
 ## L'audio della diretta
 
-Di suo lo streaming è muto: la traccia esiste solo perché senza audio il flusso viene rifiutato. Con *Audio di sottofondo* si sceglie invece un brano fra quelli caricati in **Configuration → Assets**, che viene ripetuto in loop per tutta la durata della diretta. Il *Volume* lo attenua: 20–30% è di norma sufficiente per una musica di sottofondo che non copra tutto.
+Di suo lo streaming è muto: la traccia esiste solo perché senza audio il flusso viene rifiutato. Con *Background audio* si sceglie invece un brano fra quelli caricati in **Configuration → Assets**, che viene ripetuto in loop per tutta la durata della diretta. Il *Volume* lo attenua: 20–30% è di norma sufficiente per una musica di sottofondo che non copra tutto.
 
 Il brano viene letto a velocità reale e ricodificato in AAC dallo stesso ffmpeg che sta già comprimendo il video: il costo aggiuntivo in CPU è irrilevante. Come per l'overlay, il comando si costruisce all'avvio dello streaming, quindi il cambio ha effetto **dopo lo scatto successivo**.
 
@@ -40,7 +40,7 @@ Attenzione ai diritti: una diretta con musica protetta può essere rivendicata d
 
 ## Ritrasmissione su più destinazioni
 
-Nel campo *Destinazioni aggiuntive* si elencano altri URL RTMP completi, uno per riga: Twitch, un server proprio, un'altra piattaforma. Il video viene codificato **una sola volta** e semplicemente duplicato verso tutte le uscite, quindi il carico sulla CPU non cambia con il numero di destinazioni.
+Nel campo *Extra destinations* si elencano altri URL RTMP completi, uno per riga: Twitch, un server proprio, un'altra piattaforma. Il video viene codificato **una sola volta** e semplicemente duplicato verso tutte le uscite, quindi il carico sulla CPU non cambia con il numero di destinazioni.
 
 Una destinazione irraggiungibile non trascina giù le altre: viene ignorata per quella sessione di streaming.
 
@@ -98,7 +98,7 @@ In **Client → Crea client**, come tipo di applicazione scegliere **TV e dispos
 
 ![Il tipo di applicazione è la scelta da non sbagliare.](img/gcp-05-tipo-client.png){ width=85% }
 
-Il tipo conta davvero: zeroCAM usa il *device flow*, quello dei televisori, ed è l'unico che funziona su un dispositivo senza browser raggiunto via LAN. Con un client di tipo *Applicazione desktop* o *Applicazione web* il pulsante *Autentica* risponde «Credenziali non valide o client OAuth del tipo sbagliato».
+Il tipo conta davvero: zeroCAM usa il *device flow*, quello dei televisori, ed è l'unico che funziona su un dispositivo senza browser raggiunto via LAN. Con un client di tipo *Applicazione desktop* o *Applicazione web* il pulsante *Authenticate* risponde «Invalid credentials, or the OAuth client is of the wrong type».
 
 Alla conferma compaiono **ID client** e **Client secret**. Vanno copiati subito: il secret non è più visualizzabile dopo aver chiuso la finestra, e in tal caso va creato un altro client.
 
@@ -106,7 +106,7 @@ Alla conferma compaiono **ID client** e **Client secret**. Vanno copiati subito:
 
 #### 6. Autenticare la webcam
 
-In **Configuration → Stream → Diretta automatica** incollare i due valori e premere **Autentica**.
+In **Configuration → Stream → Automatic broadcast** incollare i due valori e premere **Authenticate**.
 
 ![Client ID e Client Secret incollati, pronti per l'autenticazione.](img/ui-yt-autentica.png){ width=100% }
 
@@ -126,15 +126,15 @@ Cambiando progetto sulla Cloud Console il refresh token va rigenerato, perché �
 
 | Campo | Significato |
 |---|---|
-| Titolo diretta | Accetta i segnaposto `{date}` e `{time}` |
-| Descrizione | Testo della diretta |
-| Privacy | Pubblico, non in elenco o privato |
-| Latenza | Normale, bassa o molto bassa |
-| Timeout API | Attesa massima per le chiamate a YouTube |
-| DVR, Registra dall'inizio | Opzioni di registrazione della diretta |
-| Contenuto per bambini | Dichiarazione richiesta da YouTube |
-| Chiudi diretta allo shutdown | Termina il broadcast quando l'applicazione si arresta |
-| Nuova diretta alle (HH:MM) | Ricambio giornaliero del broadcast |
+| Broadcast title | Accetta i segnaposto `{date}` e `{time}` |
+| Description | Testo della diretta |
+| Privacy | Public, unlisted o private |
+| Latency | Normal, low o ultra low |
+| API timeout | Attesa massima per le chiamate a YouTube |
+| DVR, Record from the start | Opzioni di registrazione della diretta |
+| Made for kids | Dichiarazione richiesta da YouTube |
+| End broadcast on shutdown | Termina il broadcast quando l'applicazione si arresta |
+| New broadcast at (HH:MM) | Ricambio giornaliero del broadcast |
 
 Il broadcast viene creato con avvio automatico e senza interruzione automatica: va in onda da solo appena ffmpeg comincia a pubblicare e sopravvive alle pause per la cattura. Il monitor stream è disattivato, altrimenti l'avvio automatico porterebbe la diretta in "testing" invece che in onda.
 
@@ -142,9 +142,9 @@ Il broadcast viene creato con avvio automatico e senza interruzione automatica: 
 
 Prima di ogni ripartenza dello streaming il software cerca un broadcast già collegato alla stream key e in stato `active` o `upcoming`, e lo riusa. Ne crea uno nuovo solo quando non ne trova, cosa che accade tipicamente quando YouTube chiude la diretta al limite delle 12 ore.
 
-Il campo **Nuova diretta alle (HH:MM)** forza invece un ricambio quotidiano: al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con il titolo rivalutato dai segnaposto. Impostandolo a `00:00` si ottiene una diretta al giorno, con la data corretta nel titolo. Lasciando il campo vuoto il comportamento resta quello precedente: il campo è vuoto anche nelle installazioni nuove, quindi il ricambio va abilitato esplicitamente.
+Il campo **New broadcast at (HH:MM)** forza invece un ricambio quotidiano: al primo scatto successivo a quell'ora la diretta in corso viene chiusa e ne parte una nuova, con il titolo rivalutato dai segnaposto. Impostandolo a `00:00` si ottiene una diretta al giorno, con la data corretta nel titolo. Lasciando il campo vuoto il comportamento resta quello precedente: il campo è vuoto anche nelle installazioni nuove, quindi il ricambio va abilitato esplicitamente.
 
-Il campo **Descrizione** fa eccezione al riuso: se viene cambiato dall'interfaccia, la diretta già in onda viene aggiornata alla ripartenza successiva dello streaming, senza aspettare che YouTube la chiuda. Il titolo no, e volutamente: contiene i segnaposto `{date}` e `{time}`, che vanno fotografati alla creazione e non riscritti a ogni scatto. Se YouTube rifiuta l'aggiornamento la diretta prosegue lo stesso con la vecchia descrizione, e il motivo finisce nel log come `Could not update the description of broadcast`.
+Il campo **Description** fa eccezione al riuso: se viene cambiato dall'interfaccia, la diretta già in onda viene aggiornata alla ripartenza successiva dello streaming, senza aspettare che YouTube la chiuda. Il titolo no, e volutamente: contiene i segnaposto `{date}` e `{time}`, che vanno fotografati alla creazione e non riscritti a ogni scatto. Se YouTube rifiuta l'aggiornamento la diretta prosegue lo stesso con la vecchia descrizione, e il motivo finisce nel log come `Could not update the description of broadcast`.
 
 Ogni volta che una diretta viene riusata il log dice perché non è stata sostituita, così è immediato capire se il ricambio è attivo:
 
@@ -155,7 +155,7 @@ Reusing YouTube broadcast Xy1z2 (started after the daily reset of 27/07/2026 00:
 
 ## Anteprima nell'interfaccia
 
-Mentre lo streaming è attivo, in **Cam Control** compare l'interruttore **Anteprima diretta**: mostra un fotogramma al secondo preso dal flusso video al posto dell'ultimo scatto. È lo stesso fotogramma che alimenta ONVIF, con le maschere privacy già applicate, scritto su tmpfs per non consumare la microSD.
+Mentre lo streaming è attivo, in **Cam Control** compare l'interruttore **Live preview**: mostra un fotogramma al secondo preso dal flusso video al posto dell'ultimo scatto. È lo stesso fotogramma che alimenta ONVIF, con le maschere privacy già applicate, scritto su tmpfs per non consumare la microSD.
 
 ![Anteprima attiva: l'immagine viene dal flusso video e il disegno delle maschere è disabilitato.](img/ui-cam-control-anteprima.png){ width=100% }
 

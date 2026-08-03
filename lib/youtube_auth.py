@@ -189,7 +189,7 @@ class YouTubeDeviceFlow:
             refresh = payload.get("refresh_token")
             self._clear()
             if not refresh:
-                return {"status": "failed", "error": "nessun refresh token restituito"}
+                return {"status": "failed", "error": "no refresh token returned"}
             channel = self._channel_title(payload.get("access_token"))
             self.logger.info(
                 f"YouTube device flow authorized, refresh token obtained for channel '{channel or '?'}'."
@@ -208,7 +208,7 @@ class YouTubeDeviceFlow:
 
         self._clear()
         self.logger.warning(f"YouTube device flow ended: {error}")
-        return {"status": "failed", "error": error or "autorizzazione non riuscita"}
+        return {"status": "failed", "error": error or "authorization failed"}
 
     def _channel_title(self, access_token):
         """
@@ -248,6 +248,6 @@ class YouTubeDeviceFlow:
         except ValueError:
             error = response.text
         if error in ("invalid_client", "unauthorized_client"):
-            return ("Credenziali non valide o client OAuth del tipo sbagliato. "
-                    "Serve un client di tipo 'TV e dispositivi di immissione limitata'.")
-        return f"Avvio del flusso non riuscito ({response.status_code}): {error or response.text}"
+            return ("Invalid credentials, or the OAuth client is of the wrong type. "
+                    "A client of type 'TV and Limited Input devices' is required.")
+        return f"Could not start the flow ({response.status_code}): {error or response.text}"

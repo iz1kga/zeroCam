@@ -5,7 +5,7 @@
           :src="imageUrl" 
           @error="onImageError" 
           @load="onImageLoad"
-          alt="Ultima immagine" 
+          alt="Latest image"
           class="img-fluid rounded border" 
           style="max-height: 720px;"
         />
@@ -26,13 +26,13 @@
         <button class="btn btn-primary me-2" @click="$emit('take-photo')" :disabled="isCapturing">
           <span v-if="isCapturing" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
           <i v-else class="bi bi-camera me-1"></i>
-          [[ isCapturing ? 'Scatto...' : 'Take Photo' ]]
+          [[ isCapturing ? 'Capturing...' : 'Take Photo' ]]
         </button>
         <button class="btn btn-info me-2" @click="$emit('start-focus-aid')" :disabled="isCapturing">
           <i class="bi bi-bullseye me-1"></i> Start Focus Aid
         </button>
         <button class="btn btn-danger" @click="$emit('restart-app')">
-            <i class="bi bi-arrow-clockwise me-1"></i> Riavvia
+            <i class="bi bi-arrow-clockwise me-1"></i> Restart
         </button>
       </div>
     </div>

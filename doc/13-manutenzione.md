@@ -60,7 +60,7 @@ Su un Pi 5 in cassetta esterna la temperatura è il valore da tenere d'occhio: s
 
 ## Riavvio
 
-Il pulsante **Riavvia** in Cam Control riavvia l'intero Raspberry Pi. Per riavviare la sola applicazione, più rapido:
+Il pulsante **Restart** in Cam Control riavvia l'intero Raspberry Pi. Per riavviare la sola applicazione, più rapido:
 
 ```bash
 sudo systemctl restart zerocam.service

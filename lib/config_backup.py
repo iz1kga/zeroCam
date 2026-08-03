@@ -53,7 +53,7 @@ def build(config, privacy_mask, passphrase, version=""):
     config manager e vengono ricifrati qui con la passphrase.
     """
     if not passphrase or len(passphrase) < MIN_PASSPHRASE_LEN:
-        raise BackupError(f"La passphrase deve essere di almeno {MIN_PASSPHRASE_LEN} caratteri.")
+        raise BackupError(f"The passphrase must be at least {MIN_PASSPHRASE_LEN} characters long.")
 
     payload = {
         "config": {k: v for k, v in (config or {}).items() if k not in EXCLUDED_SECTIONS},
@@ -84,15 +84,15 @@ def read(envelope, passphrase):
     chiamante distingue "nessuna maschera nel file" da "maschera vuota".
     """
     if not isinstance(envelope, dict):
-        raise BackupError("File di backup non valido.")
+        raise BackupError("Invalid backup file.")
 
     fmt = envelope.get("zerocam_backup")
     if fmt is None:
-        raise BackupError("Il file non è un backup zeroCAM.")
+        raise BackupError("The file is not a zeroCAM backup.")
     if fmt > BACKUP_FORMAT:
-        raise BackupError(f"Backup in formato {fmt}, troppo recente per questa versione.")
+        raise BackupError(f"Backup in format {fmt}, too recent for this version.")
     if not passphrase:
-        raise BackupError("Passphrase richiesta per aprire il backup.")
+        raise BackupError("A passphrase is required to open the backup.")
 
     kdf = envelope.get("kdf") or {}
     try:
@@ -100,24 +100,24 @@ def read(envelope, passphrase):
         iterations = int(kdf.get("iterations", KDF_ITERATIONS))
         token = envelope["payload"].encode()
     except (KeyError, AttributeError, ValueError, TypeError):
-        raise BackupError("File di backup incompleto o danneggiato.")
+        raise BackupError("Backup file incomplete or damaged.")
 
     if not salt or iterations < 1:
-        raise BackupError("File di backup incompleto o danneggiato.")
+        raise BackupError("Backup file incomplete or damaged.")
 
     try:
         plain = _fernet(passphrase, salt, iterations).decrypt(token)
     except InvalidToken:
-        raise BackupError("Passphrase errata o file di backup alterato.")
+        raise BackupError("Wrong passphrase, or the backup file has been tampered with.")
 
     try:
         payload = json.loads(plain.decode())
     except (ValueError, UnicodeDecodeError):
-        raise BackupError("Contenuto del backup illeggibile.")
+        raise BackupError("The backup content is unreadable.")
 
     config = payload.get("config")
     if not isinstance(config, dict) or not config:
-        raise BackupError("Il backup non contiene una configurazione valida.")
+        raise BackupError("The backup does not hold a valid configuration.")
 
     mask = payload.get("privacy_mask")
     if mask is not None and not isinstance(mask, list):

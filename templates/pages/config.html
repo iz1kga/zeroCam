@@ -75,11 +75,11 @@
         <div class="card card-body">
             <div class="row mb-3">
                 <div class="col-md-4"><field-renderer :model="config.FtpHost" key-name="enabled" :schema="schema"
-                        label="Upload FTP attivo" /></div>
+                        label="FTP upload enabled" /></div>
                 <div class="col-md-8">
                     <div class="form-text">
-                        Carica l'immagine appena elaborata su un server FTP a ogni scatto, sovrascrivendo
-                        sempre lo stesso file. Spegnendolo il resto della configurazione resta dov'&egrave;.
+                        Uploads the freshly processed image to an FTP server after every shot, always
+                        overwriting the same file. Turning it off leaves the rest of the settings where they are.
                     </div>
                 </div>
             </div>
@@ -128,8 +128,9 @@
                 </div>
             </div>
             <div class="form-text">
-                POST multipart/form-data verso l'endpoint con header
-                <code>Authorization: Bearer &lt;token&gt;</code>. Timestamp generato in UTC al momento dello shot.
+                POST multipart/form-data to the endpoint with an
+                <code>Authorization: Bearer &lt;token&gt;</code> header. The timestamp is generated in UTC at
+                the moment of the shot.
             </div>
         </div>
     </div>
@@ -180,8 +181,8 @@
                     v-show="activeCameraTab === phase">
 
                     <div v-if="phase === 'day'">
-                        <p class="text-muted small">Impostazioni per l'esposizione automatica della fotocamera in
-                            condizioni diurne.</p>
+                        <p class="text-muted small">Settings for the camera's automatic exposure in daylight
+                            conditions.</p>
                         <div class="row align-items-end">
                             <div class="col-md-3">
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="AeEnable"
@@ -217,28 +218,28 @@
                         </div>
                         <div class="row align-items-end mt-3">
                             <div class="col-md-3">
-                                <label class="form-label">Guadagno rosso</label>
+                                <label class="form-label">Red Gain</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainRed"
                                     :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Guadagno blu</label>
+                                <label class="form-label">Blue Gain</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainBlue"
                                     :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                             <div class="col-md-6">
                                 <div class="form-text">
-                                    I guadagni valgono solo con AWB Mode su <em>Manuale</em>: l'automatismo viene spento
-                                    e il bilanciamento resta fisso. &Egrave; il rimedio alle luci al sodio, che l'AWB
-                                    insegue virando tutta l'immagine.
+                                    The gains only apply with AWB Mode set to <em>Manual</em>: automatic white
+                                    balance is switched off and the balance stays fixed. This is the cure for
+                                    sodium lighting, which AWB chases by tinting the whole image.
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div v-else>
-                        <p class="text-muted small">Impostazioni per l'algoritmo di bracketing manuale in condizioni di
-                            scarsa illuminazione.</p>
+                        <p class="text-muted small">Settings for the manual bracketing algorithm in low-light
+                            conditions.</p>
                         <div class="row align-items-end">
                             <div class="col-md-3">
                                 <label class="form-label">Min Target Brightness</label>
@@ -268,21 +269,21 @@
                                     :schema="schema" />
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Guadagno rosso</label>
+                                <label class="form-label">Red Gain</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainRed"
                                     :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Guadagno blu</label>
+                                <label class="form-label">Blue Gain</label>
                                 <field-renderer :model="config.cameraParameters[phase]" key-name="ColourGainBlue"
                                     :schema="schema" :disabled="config.cameraParameters[phase].AwbMode !== 7" />
                             </div>
                         </div>
                         <div class="form-text">
-                            Di notte l'AWB automatico non ha un bianco su cui agganciarsi e le luci al sodio lo portano
-                            fuori strada: con AWB Mode su <em>Manuale</em> il bilanciamento resta fisso sui guadagni
-                            indicati. I valori di partenza si leggono nei metadati di uno scatto venuto bene, campo
-                            <code>ColourGains</code>.
+                            At night automatic AWB has no white to lock onto and sodium lighting leads it astray:
+                            with AWB Mode set to <em>Manual</em> the balance stays fixed on the gains you give.
+                            Good starting values can be read from the metadata of a shot that came out right,
+                            field <code>ColourGains</code>.
                         </div>
                     </div>
 
@@ -309,38 +310,38 @@
                 </div>
             </div>
             <div class="row mb-3">
-                <div class="col-md-9"><label class="form-label">Destinazioni aggiuntive (una per riga)</label>
+                <div class="col-md-9"><label class="form-label">Extra destinations (one per line)</label>
                     <field-renderer :model="config.streamParameters" key-name="extra_destinations" :schema="schema" />
                     <div class="form-text">
-                        URL RTMP completi verso cui ritrasmettere lo stesso flusso (Twitch, un server tuo, un'altra
-                        piattaforma). Il video viene codificato una sola volta e duplicato, quindi la CPU non cambia.
-                        Una destinazione irraggiungibile non ferma le altre.
+                        Full RTMP URLs to relay the same feed to (Twitch, a server of your own, another
+                        platform). The video is encoded once and duplicated, so the CPU load does not change.
+                        One unreachable destination does not stop the others.
                     </div>
                 </div>
             </div>
             <div class="row mb-3">
                 <div class="col-md-12">
                     <field-renderer :model="config.streamParameters" key-name="overlay" :schema="schema"
-                        label="Annotazione e loghi nella diretta" />
+                        label="Annotation and logos on the live stream" />
                     <div class="form-text">
-                        Disegna sul video in diretta la stessa barra con testo e data/ora della pagina
-                        <em>Annotation</em> e i loghi abilitati in <em>Overlay Images</em>, riscalati dal formato
-                        della foto a quello dello streaming. Il lavoro lo fa ffmpeg mentre codifica, quindi il
-                        costo in CPU &egrave; minimo. L'orologio &egrave; aggiornato in tempo reale.
+                        Draws on the live video the same bar with text and date/time as the
+                        <em>Annotation</em> page, plus the logos enabled in <em>Overlay Images</em>, rescaled
+                        from the photo format to the streaming one. ffmpeg does the work while it encodes, so
+                        the CPU cost is minimal. The clock updates in real time.
                     </div>
                 </div>
             </div>
 
             <div class="row mb-3">
-                <div class="col-md-6"><label class="form-label">Audio di sottofondo</label>
+                <div class="col-md-6"><label class="form-label">Background audio</label>
                     <select class="form-select" v-model="config.streamParameters.audio_file">
-                        <option value="">Nessuno (silenzio)</option>
+                        <option value="">None (silent)</option>
                         <option v-for="item in audioAssets" :key="item.reference" :value="item.reference">
                             [[ item.name ]]
                         </option>
                         <option v-if="missingAsset(config.streamParameters.audio_file)"
                             :value="config.streamParameters.audio_file">
-                            [[ config.streamParameters.audio_file ]] (file mancante)
+                            [[ config.streamParameters.audio_file ]] (file missing)
                         </option>
                     </select>
                 </div>
@@ -349,16 +350,16 @@
                 </div>
                 <div class="col-md-12">
                     <div class="form-text">
-                        Il brano viene ripetuto in loop per tutta la durata della diretta. I file si caricano
-                        nella pagina <em>Assets</em>. Senza selezione la diretta va in onda con una traccia
-                        muta, che YouTube richiede comunque.
+                        The track is looped for the whole length of the broadcast. Files are uploaded on the
+                        <em>Assets</em> page. With nothing selected the stream goes out with a silent track,
+                        which YouTube requires anyway.
                     </div>
                 </div>
             </div>
 
             <!-- Diretta automatica: gestione del broadcast via YouTube Data API -->
             <hr>
-            <h5>Diretta automatica</h5>
+            <h5>Automatic broadcast</h5>
             <div v-if="config.youtubeLive">
                 <div class="row mb-3 align-items-end">
                     <div class="col-md-3">
@@ -377,76 +378,76 @@
                             <field-renderer class="flex-grow-1" :model="config.youtubeLive" key-name="refresh_token"
                                 :schema="schema" />
                             <button type="button" class="btn btn-outline-primary" @click="startYoutubeAuth"
-                                :disabled="youtubeAuth.active" title="Genera il token autorizzando su Google">
+                                :disabled="youtubeAuth.active" title="Generate the token by authorising on Google">
                                 <span v-if="youtubeAuth.active"
                                     class="spinner-border spinner-border-sm" role="status"></span>
-                                <span v-else><i class="bi bi-google me-1"></i>Autentica</span>
+                                <span v-else><i class="bi bi-google me-1"></i>Authenticate</span>
                             </button>
                         </div>
                     </div>
                 </div>
                 <div v-if="youtubeAuth.userCode" class="alert alert-info d-flex align-items-center gap-3 flex-wrap">
                     <div>
-                        <div>1. Apri <a :href="youtubeAuth.verificationUrl" target="_blank"
-                                rel="noopener">[[ youtubeAuth.verificationUrl ]]</a> su questo o su un altro
-                            dispositivo (telefono, PC).</div>
-                        <div>2. Inserisci questo codice e autorizza l'accesso al canale desiderato.</div>
-                        <div class="small text-muted mt-1">In attesa dell'autorizzazione...</div>
+                        <div>1. Open <a :href="youtubeAuth.verificationUrl" target="_blank"
+                                rel="noopener">[[ youtubeAuth.verificationUrl ]]</a> on this or any other
+                            device (phone, PC).</div>
+                        <div>2. Enter this code and authorise access to the channel you want.</div>
+                        <div class="small text-muted mt-1">Waiting for authorisation...</div>
                     </div>
                     <span class="badge bg-dark fs-4 user-select-all ms-auto">[[ youtubeAuth.userCode ]]</span>
                     <button type="button" class="btn btn-sm btn-outline-secondary"
-                        @click="stopYoutubeAuth">Annulla</button>
+                        @click="stopYoutubeAuth">Cancel</button>
                 </div>
                 <div v-if="youtubeAuth.message"
                     :class="youtubeAuth.ok ? 'alert alert-success' : 'alert alert-danger'">
                     [[ youtubeAuth.message ]]
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-6"><label class="form-label">Titolo diretta</label><field-renderer
+                    <div class="col-md-6"><label class="form-label">Broadcast title</label><field-renderer
                             :model="config.youtubeLive" key-name="title" :schema="schema" /></div>
-                    <div class="col-md-6"><label class="form-label">Descrizione</label><field-renderer
+                    <div class="col-md-6"><label class="form-label">Description</label><field-renderer
                             :model="config.youtubeLive" key-name="description" :schema="schema" /></div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3"><label class="form-label">Privacy</label>
                         <select class="form-select" v-model="config.youtubeLive.privacy">
-                            <option value="public">Pubblico</option>
-                            <option value="unlisted">Non in elenco</option>
-                            <option value="private">Privato</option>
+                            <option value="public">Public</option>
+                            <option value="unlisted">Unlisted</option>
+                            <option value="private">Private</option>
                         </select>
                     </div>
-                    <div class="col-md-3"><label class="form-label">Latenza</label>
+                    <div class="col-md-3"><label class="form-label">Latency</label>
                         <select class="form-select" v-model="config.youtubeLive.latency">
-                            <option value="normal">Normale</option>
-                            <option value="low">Bassa</option>
-                            <option value="ultraLow">Molto bassa</option>
+                            <option value="normal">Normal</option>
+                            <option value="low">Low</option>
+                            <option value="ultraLow">Ultra low</option>
                         </select>
                     </div>
-                    <div class="col-md-3"><label class="form-label">Timeout API (s)</label><field-renderer
+                    <div class="col-md-3"><label class="form-label">API timeout (s)</label><field-renderer
                             :model="config.youtubeLive" key-name="timeout" :schema="schema" /></div>
-                    <div class="col-md-3"><label class="form-label">Nuova diretta alle (HH:MM)</label><field-renderer
+                    <div class="col-md-3"><label class="form-label">New broadcast at (HH:MM)</label><field-renderer
                             :model="config.youtubeLive" key-name="daily_reset_time" :schema="schema" /></div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="dvr" :schema="schema"
                             label="DVR" /></div>
                     <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="record"
-                            :schema="schema" label="Registra dall'inizio" /></div>
+                            :schema="schema" label="Record from the start" /></div>
                     <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="made_for_kids"
-                            :schema="schema" label="Contenuto per bambini" /></div>
+                            :schema="schema" label="Made for kids" /></div>
                     <div class="col-md-3"><field-renderer :model="config.youtubeLive" key-name="end_on_shutdown"
-                            :schema="schema" label="Chiudi diretta allo shutdown" /></div>
+                            :schema="schema" label="End broadcast on shutdown" /></div>
                 </div>
                 <div class="form-text">
-                    Crea e collega automaticamente il broadcast alla stream key qui sopra, con avvio automatico e
-                    senza interruzione automatica: la diretta parte da sola e sopravvive alle pause per la cattura
-                    della foto, senza aprire il browser. Inserisci Client ID e Client Secret di un client OAuth di
-                    tipo &laquo;TV e dispositivi di immissione limitata&raquo; creato sulla Google Cloud Console,
-                    poi premi <strong>Autentica</strong> per ottenere il Refresh Token: non serve reinserirlo a mano.
-                    Nel titolo puoi usare i segnaposto <code>{date}</code> e <code>{time}</code>.
-                    Con &laquo;Nuova diretta alle&raquo; valorizzato (es. <code>00:00</code>) la diretta in corso
-                    viene chiusa e ricreata al primo scatto successivo a quell'ora; lasciandolo vuoto la stessa
-                    diretta resta attiva finch&eacute; YouTube la mantiene.
+                    Creates the broadcast and binds it to the stream key above, with automatic start and no
+                    automatic stop: the stream comes up on its own and survives the pauses needed to take the
+                    photo, without opening a browser. Enter the Client ID and Client Secret of an OAuth client
+                    of type &laquo;TV and limited input devices&raquo; created in the Google Cloud Console,
+                    then press <strong>Authenticate</strong> to obtain the Refresh Token: there is no need to
+                    type it in by hand. In the title you can use the <code>{date}</code> and <code>{time}</code>
+                    placeholders. With &laquo;New broadcast at&raquo; filled in (e.g. <code>00:00</code>) the
+                    running broadcast is closed and recreated at the first shot after that time; leave it empty
+                    and the same broadcast stays up for as long as YouTube keeps it.
                 </div>
             </div>
 
@@ -468,10 +469,10 @@
                                 :model="config.streamParameters[phase]" key-name="Sharpness" :schema="schema" /></div>
                         <div class="col-md-3"><label class="form-label">AWB Mode</label><field-renderer
                                 :model="config.streamParameters[phase]" key-name="AwbMode" :schema="schema" /></div>
-                        <div class="col-md-3"><label class="form-label">Guadagno rosso</label><field-renderer
+                        <div class="col-md-3"><label class="form-label">Red Gain</label><field-renderer
                                 :model="config.streamParameters[phase]" key-name="ColourGainRed" :schema="schema"
                                 :disabled="config.streamParameters[phase].AwbMode !== 7" /></div>
-                        <div class="col-md-3"><label class="form-label">Guadagno blu</label><field-renderer
+                        <div class="col-md-3"><label class="form-label">Blue Gain</label><field-renderer
                                 :model="config.streamParameters[phase]" key-name="ColourGainBlue" :schema="schema"
                                 :disabled="config.streamParameters[phase].AwbMode !== 7" /></div>
                         <div class="col-md-3"><label class="form-label">Noise Reduction</label><field-renderer
@@ -494,24 +495,23 @@
     <div v-if="configPage === 'overlayImages' && config.OverlayImages">
         <h4>Overlay Images</h4>
         <div class="row g-3">
-            <div class="col-xl-7">
+            <div class="col-xl-4">
                 <div class="card card-body h-100">
                     <overlay-preview :config="config" :highlight="highlightedOverlay" />
                 </div>
             </div>
-            <div class="col-xl-5">
+            <div class="col-xl-8">
                 <div class="card card-body h-100 overlay-list">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="mb-0">Loghi</h5>
+                        <h5 class="mb-0">Logos</h5>
                         <button class="btn btn-sm btn-outline-primary" @click="addOverlay">
-                            <i class="bi bi-plus-lg"></i> Aggiungi
+                            <i class="bi bi-plus-lg"></i> Add
                         </button>
                     </div>
 
                     <p class="text-muted small" v-if="!config.OverlayImages.length">
-                        Nessun logo. Con <em>Aggiungi</em> se ne mette uno, e poi un altro:
-                        non c'&egrave; un numero massimo, ma ognuno di quelli attivi viene
-                        scaricato e sovrapposto a ogni scatto.
+                        No logos. <em>Add</em> puts one in, then another: there is no maximum,
+                        but every enabled logo gets downloaded and drawn onto every single shot.
                     </p>
 
                     <div v-for="(img, index) in config.OverlayImages" :key="index"
@@ -528,7 +528,7 @@
                             <img v-if="assetReference(img.url)" :src="assetUrl(img.url)" alt=""
                                 class="border rounded bg-light p-1" style="height: 32px">
                             <button class="btn btn-sm btn-outline-danger" @click="removeOverlay(index)"
-                                title="Rimuovi questo logo">
+                                title="Remove this logo">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -536,7 +536,7 @@
                         <select class="form-select" v-if="logoAssets.length"
                             :value="assetReference(img.url)"
                             @change="img.url = $event.target.value || img.url">
-                            <option value="">Indirizzo scritto a mano...</option>
+                            <option value="">Hand-written address...</option>
                             <option v-for="item in logoAssets" :key="item.reference" :value="item.reference">
                                 [[ item.name ]]
                             </option>
@@ -549,18 +549,18 @@
                                 <field-renderer :model="img" key-name="X" :schema="schema" /></div>
                             <div class="col-6"><label class="form-label mb-0 small">Y</label>
                                 <field-renderer :model="img" key-name="Y" :schema="schema" /></div>
-                            <div class="col-6"><label class="form-label mb-0 small">Scala %</label>
+                            <div class="col-6"><label class="form-label mb-0 small">Scale %</label>
                                 <field-renderer :model="img" key-name="scale" :schema="schema" /></div>
-                            <div class="col-6"><label class="form-label mb-0 small">Opacit&agrave; %</label>
+                            <div class="col-6"><label class="form-label mb-0 small">Opacity %</label>
                                 <field-renderer :model="img" key-name="opacity" :schema="schema" /></div>
                         </div>
                     </div>
 
                     <div class="form-text mt-auto">
-                        I loghi si trascinano sull'anteprima. La <strong>scala riduce soltanto</strong>:
-                        sopra il 100% il logo resta alla sua dimensione, perch&eacute; ingrandire un PNG
-                        lo sfoca. L'opacit&agrave; moltiplica la trasparenza gi&agrave; presente nel file.
-                        Aggiunte e rimozioni valgono solo dopo <strong>Salva Configurazione</strong>.
+                        Logos can be dragged on the preview. <strong>Scale only shrinks</strong>:
+                        above 100% the logo stays at its own size, because enlarging a PNG blurs it.
+                        Opacity multiplies the transparency already in the file.
+                        Additions and removals only count after <strong>Save Configuration</strong>.
                     </div>
                 </div>
             </div>
@@ -573,45 +573,45 @@
     <div v-if="configPage === 'annotation' && config.Annotation">
         <h4>Annotation</h4>
         <div class="row g-3">
-            <div class="col-xl-7">
+            <div class="col-xl-4">
                 <div class="card card-body h-100">
                     <overlay-preview :config="config" />
                 </div>
             </div>
-            <div class="col-xl-5">
+            <div class="col-xl-8">
                 <div class="card card-body h-100">
                     <div class="row g-3">
                         <div class="col-sm-6">
-                            <color-field :model="config.Annotation.Container" label="Sfondo della fascia" />
+                            <color-field :model="config.Annotation.Container" label="Background color" />
                         </div>
                         <div class="col-sm-6">
-                            <color-field :model="config.Annotation.Content.Color" label="Colore del testo" />
+                            <color-field :model="config.Annotation.Content.Color" label="Text Color" />
                         </div>
                     </div>
 
                     <hr class="my-3">
 
                     <div class="row g-3">
-                        <div class="col-sm-6"><label class="form-label">Corpo del carattere</label>
+                        <div class="col-sm-6"><label class="form-label">Font Size</label>
                             <field-renderer :model="config.Annotation.Content" key-name="FontSize"
                                 :schema="schema" /></div>
-                        <div class="col-sm-6"><label class="form-label">Margine</label>
+                        <div class="col-sm-6"><label class="form-label">Margin</label>
                             <field-renderer :model="config.Annotation.Container" key-name="Offset"
                                 :schema="schema" /></div>
                     </div>
 
-                    <div><label class="form-label">Testo</label>
+                    <div><label class="form-label">Text</label>
                         <field-renderer :model="config.Annotation.Content" key-name="Text"
                             :schema="schema" /></div>
 
-                    <div><label class="form-label">Formato di data e ora</label>
+                    <div><label class="form-label">Date and Time format</label>
                         <field-renderer :model="config.Annotation" key-name="DTFormat"
                             :schema="schema" /></div>
 
                     <div class="form-text mt-auto">
-                        L'altezza della fascia &egrave; il corpo del carattere pi&ugrave; due volte il
-                        margine. Nel formato della data valgono i codici <code>strftime</code>:
-                        <code>%d-%m-%Y %H:%M</code> d&agrave; <code>03-08-2026 14:05</code>.
+                        The height of the bar is the font size plus twice the margin. The date format
+                        takes <code>strftime</code> codes: <code>%d-%m-%Y %H:%M</code> gives
+                        <code>03-08-2026 14:05</code>.
                     </div>
                 </div>
             </div>
@@ -625,45 +625,45 @@
             <div class="row align-items-end mb-3">
                 <div class="col-md-3">
                     <field-renderer :model="config.timelapse" key-name="enabled" :schema="schema"
-                        label="Timelapse attivo" />
+                        label="Timelapse enabled" />
                 </div>
-                <div class="col-md-3"><label class="form-label">Giorno</label>
+                <div class="col-md-3"><label class="form-label">Day</label>
                     <select class="form-select" v-model="config.timelapse.day">
-                        <option value="monday">Luned&igrave;</option>
-                        <option value="tuesday">Marted&igrave;</option>
-                        <option value="wednesday">Mercoled&igrave;</option>
-                        <option value="thursday">Gioved&igrave;</option>
-                        <option value="friday">Venerd&igrave;</option>
-                        <option value="saturday">Sabato</option>
-                        <option value="sunday">Domenica</option>
+                        <option value="monday">Monday</option>
+                        <option value="tuesday">Tuesday</option>
+                        <option value="wednesday">Wednesday</option>
+                        <option value="thursday">Thursday</option>
+                        <option value="friday">Friday</option>
+                        <option value="saturday">Saturday</option>
+                        <option value="sunday">Sunday</option>
                     </select>
                 </div>
-                <div class="col-md-3"><label class="form-label">Ora (HH:MM)</label><field-renderer
+                <div class="col-md-3"><label class="form-label">Time (HH:MM)</label><field-renderer
                         :model="config.timelapse" key-name="time" :schema="schema" /></div>
-                <div class="col-md-3"><label class="form-label">Conserva i frame (settimane)</label><field-renderer
+                <div class="col-md-3"><label class="form-label">Keep frames (weeks)</label><field-renderer
                         :model="config.timelapse" key-name="retention_weeks" :schema="schema" /></div>
             </div>
             <div class="form-text">
-                Ogni scatto lascia una copia ridimensionata in una cartella dedicata. Una volta a settimana i fotogrammi
-                vengono montati e il video caricato su YouTube con le credenziali della sezione
-                <strong>Stream</strong>. L'archivio di debug (<em>Camera &rarr; Archive Images</em>) &egrave; un'altra
-                cosa e non serve a questo.
+                Every shot leaves a resized copy in a folder of its own. Once a week the frames are built into
+                a video and uploaded to YouTube with the credentials from the <strong>Stream</strong> section.
+                The debug archive (<em>Camera &rarr; Archive Images</em>) is a different thing and is not used
+                for this.
             </div>
         </div>
 
         <div class="card card-body mb-3">
-            <h5>Fotogrammi</h5>
+            <h5>Frames</h5>
             <div class="row align-items-end">
-                <div class="col-md-3"><label class="form-label">Larghezza (px)</label><field-renderer
+                <div class="col-md-3"><label class="form-label">Width (px)</label><field-renderer
                         :model="config.timelapse" key-name="frame_width" :schema="schema" /></div>
-                <div class="col-md-3"><label class="form-label">Qualit&agrave; JPEG</label><field-renderer
+                <div class="col-md-3"><label class="form-label">JPEG quality</label><field-renderer
                         :model="config.timelapse" key-name="frame_quality" :schema="schema" /></div>
-                <div class="col-md-3"><label class="form-label">Minimo per montare</label><field-renderer
+                <div class="col-md-3"><label class="form-label">Minimum to build</label><field-renderer
                         :model="config.timelapse" key-name="min_frames" :schema="schema" /></div>
             </div>
             <div class="form-text">
-                I fotogrammi sono salvati gi&agrave; alla risoluzione finale del video: il montaggio &egrave; pi&ugrave;
-                rapido e lo spazio occupato prevedibile. Alzare la larghezza aumenta in proporzione l'occupazione su disco.
+                Frames are saved at the final video resolution already: building is faster and the disk
+                footprint predictable. Raising the width increases disk usage in proportion.
             </div>
         </div>
 
@@ -674,7 +674,7 @@
                         v-model.number="config.timelapse.fps" /></div>
                 <div class="col-md-2"><label class="form-label">CRF</label><field-renderer :model="config.timelapse"
                         key-name="crf" :schema="schema" /></div>
-                <div class="col-md-3"><label class="form-label">Preset x264</label>
+                <div class="col-md-3"><label class="form-label">x264 preset</label>
                     <select class="form-select" v-model="config.timelapse.preset">
                         <option value="ultrafast">ultrafast</option>
                         <option value="veryfast">veryfast</option>
@@ -683,47 +683,47 @@
                         <option value="slow">slow</option>
                     </select>
                 </div>
-                <div class="col-md-2"><label class="form-label">Thread</label><field-renderer :model="config.timelapse"
+                <div class="col-md-2"><label class="form-label">Threads</label><field-renderer :model="config.timelapse"
                         key-name="threads" :schema="schema" /></div>
                 <div class="col-md-3 align-self-center"><field-renderer :model="config.timelapse" key-name="keep_local"
-                        :schema="schema" label="Tieni il file sul Pi" /></div>
+                        :schema="schema" label="Keep the file on the Pi" /></div>
             </div>
             <div class="row mb-3">
-                <div class="col-md-6"><label class="form-label">Titolo</label><field-renderer :model="config.timelapse"
+                <div class="col-md-6"><label class="form-label">Title</label><field-renderer :model="config.timelapse"
                         key-name="title" :schema="schema" /></div>
-                <div class="col-md-6"><label class="form-label">Descrizione</label><field-renderer
+                <div class="col-md-6"><label class="form-label">Description</label><field-renderer
                         :model="config.timelapse" key-name="description" :schema="schema" /></div>
             </div>
             <div class="row align-items-end">
                 <div class="col-md-3"><label class="form-label">Privacy</label>
                     <select class="form-select" v-model="config.timelapse.privacy">
-                        <option value="public">Pubblico</option>
-                        <option value="unlisted">Non in elenco</option>
-                        <option value="private">Privato</option>
+                        <option value="public">Public</option>
+                        <option value="unlisted">Unlisted</option>
+                        <option value="private">Private</option>
                     </select>
                 </div>
                 <div class="col-md-3"><field-renderer :model="config.timelapse" key-name="made_for_kids" :schema="schema"
-                        label="Contenuto per bambini" /></div>
+                        label="Made for kids" /></div>
             </div>
             <div class="form-text mt-2">
-                Nel titolo e nella descrizione puoi usare <code>{from}</code>, <code>{to}</code>, <code>{date}</code> e
-                <code>{frames}</code>. Il montaggio gira con priorit&agrave; bassa per non disturbare lo streaming:
-                preset e thread regolano quanto pesa sulla CPU.
+                In the title and description you can use <code>{from}</code>, <code>{to}</code>,
+                <code>{date}</code> and <code>{frames}</code>. Building runs at low priority so it does not
+                disturb the stream: preset and threads set how much CPU it takes.
             </div>
         </div>
 
         <div class="card card-body mb-3">
             <h5>Audio</h5>
             <div class="row align-items-end">
-                <div class="col-md-6"><label class="form-label">Brano di sottofondo</label>
+                <div class="col-md-6"><label class="form-label">Background track</label>
                     <select class="form-select" v-model="config.timelapse.audio_file">
-                        <option value="">Nessuno (video muto)</option>
+                        <option value="">None (silent video)</option>
                         <option v-for="item in audioAssets" :key="item.reference" :value="item.reference">
                             [[ item.name ]]
                         </option>
                         <option v-if="missingAsset(config.timelapse.audio_file)"
                             :value="config.timelapse.audio_file">
-                            [[ config.timelapse.audio_file ]] (file mancante)
+                            [[ config.timelapse.audio_file ]] (file missing)
                         </option>
                     </select>
                 </div>
@@ -732,9 +732,9 @@
                 </div>
             </div>
             <div class="form-text mt-2">
-                Il brano viene ripetuto fino alla fine dei fotogrammi e tagliato l&igrave;. I file si caricano
-                nella pagina <em>Assets</em>. Attenzione ai diritti: un brano protetto pu&ograve; far rivendicare
-                o bloccare il video su YouTube.
+                The track is looped until the frames run out and cut there. Files are uploaded on the
+                <em>Assets</em> page. Mind the rights: a protected track can get the video claimed or blocked
+                on YouTube.
             </div>
         </div>
     </div>
@@ -742,25 +742,25 @@
     <!-- Rete: l'hotspot di appoggio. Lo stato delle interfacce sta invece
          nella pagina Network, che non passa dalla configurazione. -->
     <div v-if="configPage === 'network' && config.network">
-        <h4>Rete</h4>
+        <h4>Network</h4>
         <div class="card card-body mb-3">
-            <h5>Hotspot di appoggio</h5>
+            <h5>Fallback hotspot</h5>
             <div class="row align-items-end mb-3">
                 <div class="col-md-3"><field-renderer :model="config.network" key-name="hotspot_enabled"
-                        :schema="schema" label="Hotspot attivo" /></div>
-                <div class="col-md-4"><label class="form-label">Nome della rete</label><field-renderer
+                        :schema="schema" label="Hotspot enabled" /></div>
+                <div class="col-md-4"><label class="form-label">Network name</label><field-renderer
                         :model="config.network" key-name="hotspot_ssid" :schema="schema" /></div>
                 <div class="col-md-3"><label class="form-label">Password</label><field-renderer
                         :model="config.network" key-name="hotspot_password" :schema="schema" /></div>
-                <div class="col-md-2"><label class="form-label">Attesa (s)</label><field-renderer
+                <div class="col-md-2"><label class="form-label">Delay (s)</label><field-renderer
                         :model="config.network" key-name="hotspot_delay" :schema="schema" /></div>
             </div>
             <div class="form-text">
-                Senza password l'hotspot resta spento: aperto, darebbe a chiunque passi l'accesso a
-                questa console. Lasciando vuoto il nome, viene ricavato dall'hostname del dispositivo,
-                che l'installazione rende unico: &egrave; il modo per non far collidere due webcam
-                accese vicine. Questi due valori sono quelli stampati sull'etichetta, quindi
-                cambiandoli l'etichetta non vale pi&ugrave;.
+                Without a password the hotspot stays off: open, it would hand this console to anyone
+                walking past. Leave the name empty and it is derived from the device hostname, which the
+                installation makes unique: that is what keeps two cameras switched on nearby from
+                colliding. These two values are the ones printed on the label, so changing them makes the
+                label wrong.
             </div>
         </div>
     </div>
@@ -770,7 +770,7 @@
         <h4>Assets</h4>
         <div class="card card-body mb-3">
             <div class="row align-items-end">
-                <div class="col-md-3"><label class="form-label">Categoria</label>
+                <div class="col-md-3"><label class="form-label">Category</label>
                     <select class="form-select" v-model="assetUpload.category">
                         <option v-for="(label, key) in assetCategories" :key="key" :value="key">[[ label ]]</option>
                     </select>
@@ -781,7 +781,7 @@
                 <div class="col-md-3">
                     <button class="btn btn-primary w-100" @click="uploadAsset" :disabled="assetUpload.busy">
                         <span v-if="assetUpload.busy" class="spinner-border spinner-border-sm me-1"></span>
-                        Carica
+                        Upload
                     </button>
                 </div>
             </div>
@@ -790,30 +790,30 @@
                 [[ assetUpload.message ]]
             </div>
             <div class="form-text mt-2">
-                Audio per la diretta e per il timelapse, immagini per i loghi in sovraimpressione. I file
-                restano nella cartella dei dati e sopravvivono agli aggiornamenti.
+                Audio for the live stream and the timelapse, images for the overlay logos. The files stay in
+                the data folder and survive updates.
             </div>
         </div>
 
         <div class="card card-body">
             <div class="d-flex align-items-center mb-3">
-                <h5 class="mb-0 me-3">Materiale caricato</h5>
+                <h5 class="mb-0 me-3">Uploaded material</h5>
                 <select class="form-select w-auto" v-model="assetFilter">
-                    <option value="">Tutte le categorie</option>
+                    <option value="">All categories</option>
                     <option v-for="(label, key) in assetCategories" :key="key" :value="key">[[ label ]]</option>
                 </select>
                 <button class="btn btn-outline-secondary btn-sm ms-auto" @click="loadAssets">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
-            <div v-if="!filteredAssets.length" class="text-muted">Nessun file in questa categoria.</div>
+            <div v-if="!filteredAssets.length" class="text-muted">No files in this category.</div>
             <table v-else class="table table-sm align-middle">
                 <thead>
                     <tr>
-                        <th>Nome</th>
-                        <th>Categoria</th>
-                        <th class="text-end">Dimensione</th>
-                        <th>Anteprima</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th class="text-end">Size</th>
+                        <th>Preview</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -830,7 +830,7 @@
                         </td>
                         <td class="text-end">
                             <button class="btn btn-outline-danger btn-sm" @click="deleteAsset(item)"
-                                title="Elimina">
+                                title="Delete">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </td>
@@ -842,7 +842,7 @@
 
     <div class="mt-4 text-end">
         <button class="btn btn-success me-2" @click="$emit('save-config')">
-            Salva Configurazione
+            Save Configuration
         </button>
     </div>
 </div>

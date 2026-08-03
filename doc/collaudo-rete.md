@@ -57,7 +57,7 @@ e si ferma al primo che risponde, e `49-polkit-pkla-compat.rules` risponde
 prima. Con la numerazione `50-` la regola risulta caricata, il log di polkit
 non segnala nulla, e ogni modifica fallisce lo stesso.
 
-La prova vera si fa dall'interfaccia: **Network → Indirizzo** su `eth0`,
+La prova vera si fa dall'interfaccia: **Network → Address** su `eth0`,
 mettere un indirizzo fisso, poi rimetterlo in DHCP. Se il log riporta
 `Insufficient privileges`, la regola non ha effetto; l'audit di
 NetworkManager conferma di chi era il tentativo:
@@ -81,14 +81,14 @@ wifi, per non perdere la sessione.
 
 ## 3. Wifi
 
-- **Cerca reti**: l'elenco deve comparire in pochi secondi, ordinato per
+- **Scan networks**: l'elenco deve comparire in pochi secondi, ordinato per
   segnale, senza duplicati dello stesso SSID.
 - **Connessione** a una rete vera, con il cavo ancora attaccato: entrambe
   le interfacce restano su, e il traffico continua a uscire dal cavo.
   `ip route` deve mostrare la rotta di `eth0` con metrica più bassa.
 - **Password sbagliata**: deve tornare l'errore vero di `nmcli`, e in
   `nmcli connection show` non deve restare nessun profilo con quel nome.
-- **Dimentica**: il profilo sparisce da `nmcli connection show`.
+- **Forget**: il profilo sparisce da `nmcli connection show`.
 
 ## 4. Hotspot
 

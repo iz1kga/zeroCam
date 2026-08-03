@@ -78,10 +78,10 @@ Chi aggiorna da una versione precedente non deve fare nulla: l'installer sposta 
 Il push RTMP da solo non basta più: YouTube ha ritirato lo "Stream now", quindi la sola chiave di streaming non fa andare in onda nulla finché non si apre la Live Control Room. zeroCAM può creare e collegare il broadcast da solo, con avvio automatico e senza interruzione automatica, così la diretta parte da sé e sopravvive alle pause di pochi secondi durante la cattura della foto.
 
 1.  Sulla [Google Cloud Console](https://console.cloud.google.com/): crea un progetto, abilita **YouTube Data API v3**, configura la schermata di consenso OAuth e crea credenziali OAuth di tipo **TV e dispositivi di immissione limitata**.
-2.  Nell'interfaccia web, pagina **Config → Stream**: incolla **Client ID** e **Client Secret** nella sezione *Diretta automatica* e premi **Autentica**. Compare un codice: aprilo su [google.com/device](https://www.google.com/device) da qualsiasi dispositivo, inseriscilo e scegli il canale su cui pubblicare. Il **Refresh Token** viene compilato da solo.
+2.  Nell'interfaccia web, pagina **Config → Stream**: incolla **Client ID** e **Client Secret** nella sezione *Automatic broadcast* e premi **Authenticate**. Compare un codice: aprilo su [google.com/device](https://www.google.com/device) da qualsiasi dispositivo, inseriscilo e scegli il canale su cui pubblicare. Il **Refresh Token** viene compilato da solo.
 3.  Attiva *Auto broadcast* e **salva**. La stream key resta quella indicata sopra nella stessa pagina.
 
-Il pulsante *Autentica* funziona anche accedendo alla webcam via LAN in http, senza HTTPS né configurazioni di rete: è il metodo consigliato. In alternativa, da un PC con browser, resta disponibile lo script `installation_tools/yt_oauth_setup.py`, che però richiede un client OAuth di tipo *Applicazione desktop*.
+Il pulsante *Authenticate* funziona anche accedendo alla webcam via LAN in http, senza HTTPS né configurazioni di rete: è il metodo consigliato. In alternativa, da un PC con browser, resta disponibile lo script `installation_tools/yt_oauth_setup.py`, che però richiede un client OAuth di tipo *Applicazione desktop*.
 
 Il canale su cui finiscono diretta e timelapse è quello scelto durante l'autenticazione: per usare un canale secondario, selezionalo in quel passaggio.
 
@@ -91,7 +91,7 @@ Il campo **Nuova diretta alle (HH:MM)** forza il ricambio giornaliero: se valori
 
 ### Anteprima di annotazione e loghi
 
-Le pagine **Annotation** e **Overlays** mostrano l'ultimo scatto con barra e loghi disegnati sopra, aggiornati mentre si cambiano i valori: i loghi si trascinano con il mouse e i campi *X* e *Y* si aggiornano da soli, come nell'editor delle maschere privacy. Niente è salvato finché non si preme *Salva Configurazione*.
+Le pagine **Annotation** e **Overlays** mostrano l'ultimo scatto con barra e loghi disegnati sopra, aggiornati mentre si cambiano i valori: i loghi si trascinano con il mouse e i campi *X* e *Y* si aggiornano da soli, come nell'editor delle maschere privacy. Niente è salvato finché non si preme *Save Configuration*.
 
 L'anteprima la disegna il browser sull'ultimo scatto senza annotazione, che il dispositivo conserva in memoria volatile a ogni cattura: è immediata e non carica il Raspberry. Il carattere è lo stesso che usa il dispositivo, ma restano possibili scarti di qualche pixel: la verifica definitiva è la foto.
 
@@ -117,16 +117,16 @@ Si configura in **Config → Timelapse**: giorno e ora del montaggio, fps, risol
 
 Due note pratiche:
 
-* Le credenziali sono le stesse della diretta: il token ottenuto con il pulsante *Autentica* copre già anche l'upload dei video. Un refresh token generato con la vecchia versione dello script va rigenerato una volta.
+* Le credenziali sono le stesse della diretta: il token ottenuto con il pulsante *Authenticate* copre già anche l'upload dei video. Un refresh token generato con la vecchia versione dello script va rigenerato una volta.
 * I fotogrammi occupano spazio: con uno scatto ogni 10 minuti a 2560px si va sull'ordine del gigabyte al mese. Il parametro *Conserva i frame* cancella automaticamente quelli più vecchi, e la pagina Timelapse mostra sempre quanti sono e quanto occupano.
 
-Il pulsante *Genera e pubblica ora* monta subito il timelapse senza aspettare la scadenza settimanale, utile per provare la configurazione.
+Il pulsante *Build and publish now* monta subito il timelapse senza aspettare la scadenza settimanale, utile per provare la configurazione.
 
 Nella stessa pagina c'è una galleria per scorrere i fotogrammi raccolti: si sceglie il giorno, si scorre con il cursore o con le frecce, e il pulsante *Riproduci* fa un'anteprima animata a 2, 5 o 10 fotogrammi al secondo. È il modo più rapido per controllare cosa finirà nel video prima di montarlo.
 
 ### Anteprima della diretta in Cam Control
 
-Quando lo streaming è in corso, sopra l'immagine compare l'interruttore *Anteprima diretta*: mostra un fotogramma al secondo preso dal flusso video al posto dell'ultimo scatto. È lo stesso fotogramma che alimenta ONVIF, privacy mask già applicate, salvato su tmpfs per non consumare la SD.
+Quando lo streaming è in corso, sopra l'immagine compare l'interruttore *Live preview*: mostra un fotogramma al secondo preso dal flusso video al posto dell'ultimo scatto. È lo stesso fotogramma che alimenta ONVIF, privacy mask già applicate, salvato su tmpfs per non consumare la SD.
 
 L'interruttore appare solo se il fotogramma è fresco: lo streaming si ferma a ogni scatto, e in quei secondi l'anteprima torna da sola all'ultima immagine. Sull'anteprima le privacy mask non sono modificabili, perché l'inquadratura dello streaming non coincide con quella della foto: per ridisegnarle si torna all'ultimo scatto.
 
@@ -136,7 +136,7 @@ Nella pagina **Sicurezza** si può scaricare l'intera configurazione (privacy ma
 
 Sul dispositivo i segreti sono cifrati con `ZEROCAM_SECRET_KEY`, che vive nell'ambiente del servizio: copiare il `.conf.json` così com'è darebbe un backup illeggibile su un'installazione nuova. Il backup viene quindi costruito dalla configurazione decifrata e richiuso subito con una **passphrase scelta al momento del download** (PBKDF2-SHA256 + Fernet, salt casuale): il file non contiene nulla in chiaro ed è ripristinabile su qualsiasi dispositivo, anche con secret key diversa. La passphrase non è recuperabile: se si perde, il backup è carta straccia.
 
-Il ripristino chiede file e passphrase, riscrive la configurazione ricifrando i segreti con la chiave locale e sovrascrive la privacy mask. Restano esclusi password di accesso all'interfaccia e chiave di sessione Flask, che rimangono quelle del dispositivo su cui si ripristina: un backup vecchio non rimette in uso credenziali di login superate. Conviene riavviare dalla pagina Controllo per applicare tutto.
+Il ripristino chiede file e passphrase, riscrive la configurazione ricifrando i segreti con la chiave locale e sovrascrive la privacy mask. Restano esclusi password di accesso all'interfaccia e chiave di sessione Flask, che rimangono quelle del dispositivo su cui si ripristina: un backup vecchio non rimette in uso credenziali di login superate. Conviene riavviare dalla pagina Cam Control per applicare tutto.
 
 ---
 
@@ -256,20 +256,20 @@ Upgrading from an earlier version needs no manual step: the installer moves what
 The RTMP push alone is no longer enough: YouTube retired "Stream now", so the stream key by itself never goes on air until someone opens the Live Control Room. zeroCAM can create and bind the broadcast on its own, with auto-start enabled and auto-stop disabled, so the stream goes live by itself and survives the few-second pauses taken to capture the still image.
 
 1.  On the [Google Cloud Console](https://console.cloud.google.com/): create a project, enable **YouTube Data API v3**, configure the OAuth consent screen and create **TV and Limited Input devices** OAuth credentials.
-2.  In the web interface, page **Config → Stream**: paste **Client ID** and **Client Secret** in the *Diretta automatica* section and press **Autentica**. A code appears: open [google.com/device](https://www.google.com/device) on any device, enter it and pick the channel to publish to. The **Refresh Token** is filled in for you.
+2.  In the web interface, page **Config → Stream**: paste **Client ID** and **Client Secret** in the *Automatic broadcast* section and press **Authenticate**. A code appears: open [google.com/device](https://www.google.com/device) on any device, enter it and pick the channel to publish to. The **Refresh Token** is filled in for you.
 3.  Enable *Auto broadcast* and **save**. The stream key stays the one shown above on the same page.
 
-The *Autentica* button works even when reaching the webcam over plain LAN http, with no HTTPS and no network setup: it is the recommended method. Alternatively, from a machine with a browser, the `installation_tools/yt_oauth_setup.py` script is still available, but it needs a *Desktop app* OAuth client.
+The *Authenticate* button works even when reaching the webcam over plain LAN http, with no HTTPS and no network setup: it is the recommended method. Alternatively, from a machine with a browser, the `installation_tools/yt_oauth_setup.py` script is still available, but it needs a *Desktop app* OAuth client.
 
 The channel that live broadcasts and timelapses go to is the one chosen during authentication: to use a secondary channel, select it at that step.
 
 The broadcast title supports the `{date}` and `{time}` placeholders. An existing broadcast is reused while valid and recreated automatically once YouTube closes it (12 hour limit).
 
-The **Nuova diretta alle (HH:MM)** field forces a daily rollover: when set (e.g. `00:00`), the first capture after that local time closes the running broadcast and starts a fresh one, with the title placeholders re-evaluated. Leave it empty to keep the previous behaviour (a new broadcast only when YouTube ends the current one).
+The **New broadcast at (HH:MM)** field forces a daily rollover: when set (e.g. `00:00`), the first capture after that local time closes the running broadcast and starts a fresh one, with the title placeholders re-evaluated. Leave it empty to keep the previous behaviour (a new broadcast only when YouTube ends the current one).
 
 ### Live preview of annotation and logos
 
-The **Annotation** and **Overlays** pages show the last picture with the bar and the logos drawn on top, updating as the values change: logos are dragged with the mouse and the *X* and *Y* fields follow, the same way the privacy mask editor works. Nothing is saved until *Salva Configurazione* is pressed.
+The **Annotation** and **Overlays** pages show the last picture with the bar and the logos drawn on top, updating as the values change: logos are dragged with the mouse and the *X* and *Y* fields follow, the same way the privacy mask editor works. Nothing is saved until *Save Configuration* is pressed.
 
 The preview is drawn by the browser over the last picture without annotation, which the device keeps in volatile memory at every capture: it is instant and costs the Raspberry nothing. The font is the same file the device uses, but a few pixels of difference remain possible — the photo is still the final word.
 
@@ -279,7 +279,7 @@ Under **Config → Stream**, the *Destinazioni aggiuntive* field takes extra RTM
 
 ### Annotation and logos on the live stream
 
-The *Annotazione e loghi nella diretta* checkbox, again under **Config → Stream**, draws the bar with the text and the clock from the **Annotation** page and the logos enabled in **Overlay Images** onto the live video. There is no second configuration to fill in: font, coordinates and scale are the ones used for the still image, rescaled by the ratio between the stream width and the capture width.
+The *Annotation and logos on the live stream* checkbox, again under **Config → Stream**, draws the bar with the text and the clock from the **Annotation** page and the logos enabled in **Overlay Images** onto the live video. There is no second configuration to fill in: font, coordinates and scale are the ones used for the still image, rescaled by the ratio between the stream width and the capture width.
 
 The drawing is done by ffmpeg filters while it is already re-encoding, so the CPU cost is negligible and frames never travel through Python for it. The clock updates frame by frame instead of freezing at stream start, and logos are downloaded once and cached. Privacy masks are still applied first, so text and logos never end up under the blur.
 
@@ -295,16 +295,16 @@ Configure it under **Config → Timelapse**: build day and time, fps, frame reso
 
 Two practical notes:
 
-* Credentials are the same as the live broadcast: the token obtained with the *Autentica* button already covers video upload too. A refresh token generated with the old version of the script must be regenerated once.
+* Credentials are the same as the live broadcast: the token obtained with the *Authenticate* button already covers video upload too. A refresh token generated with the old version of the script must be regenerated once.
 * Frames take space: one capture every 10 minutes at 2560px lands in the order of a gigabyte per month. The *retention* setting removes the oldest ones automatically, and the Timelapse page always shows how many frames there are and how much they take.
 
-The *Genera e pubblica ora* button builds the timelapse immediately instead of waiting for the weekly schedule, which is handy to check the configuration.
+The *Build and publish now* button builds the timelapse immediately instead of waiting for the weekly schedule, which is handy to check the configuration.
 
 The same page holds a gallery to browse the collected frames: pick a day, scrub with the slider or the arrows, and the *Riproduci* button plays an animated preview at 2, 5 or 10 frames per second. It is the quickest way to check what will end up in the video before building it.
 
 ### Live preview in Cam Control
 
-While the stream is running, an *Anteprima diretta* switch appears above the image: it shows one frame per second taken from the video feed instead of the last capture. It is the very frame that feeds ONVIF, privacy masks already applied, written to tmpfs so the SD card is spared.
+While the stream is running, a *Live preview* switch appears above the image: it shows one frame per second taken from the video feed instead of the last capture. It is the very frame that feeds ONVIF, privacy masks already applied, written to tmpfs so the SD card is spared.
 
 The switch only shows up while the frame is fresh: the stream stops at every capture, and during those seconds the preview falls back to the last image on its own. Privacy masks cannot be edited on the preview, because the stream frames a different portion of the sensor than the photo: switch back to the capture to redraw them.
 

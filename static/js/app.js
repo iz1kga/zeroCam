@@ -197,20 +197,20 @@ const OverlayPreview = defineComponent({
   template: `
     <div class="overlay-preview">
       <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0">Anteprima</h5>
+        <h5 class="mb-0">Preview</h5>
         <button class="btn btn-sm btn-outline-secondary" @click="refreshBase">
           <i class="bi bi-arrow-clockwise"></i>
         </button>
       </div>
 
       <div v-if="!available" class="alert alert-secondary py-2 small mb-0">
-        L'anteprima compare dopo il primo scatto successivo all'aggiornamento.
-        Da <strong>Cam Control</strong> si pu&ograve; scattare subito con
+        The preview appears after the first shot taken since the update.
+        From <strong>Cam Control</strong> you can take one right now with
         <em>Take Photo</em>.
       </div>
 
       <div v-else class="preview-container" ref="container">
-        <img :src="baseUrl" alt="Ultimo scatto senza annotazione"
+        <img :src="baseUrl" alt="Latest shot without annotation"
              class="img-fluid rounded border" style="max-height: 520px"
              @load="onBaseLoad" @error="available = false">
 
@@ -249,10 +249,10 @@ const OverlayPreview = defineComponent({
       </div>
 
       <div class="form-text mt-2">
-        I loghi si trascinano: <strong>X</strong> e <strong>Y</strong> si aggiornano da soli.
-        &Egrave; un'anteprima disegnata dal browser, quindi qualche pixel di differenza
-        rispetto allo scatto &egrave; normale. Nulla di ci&ograve; che si vede qui &egrave;
-        salvato finch&eacute; non si preme <strong>Salva Configurazione</strong>.
+        Logos can be dragged: <strong>X</strong> and <strong>Y</strong> update on their own.
+        This preview is drawn by the browser, so a few pixels of difference from the actual
+        shot are normal. Nothing you see here is saved until you press
+        <strong>Save Configuration</strong>.
       </div>
     </div>
   `
@@ -469,22 +469,22 @@ const startApp = async () => {
           // Il salvataggio può fallire in scrittura: dirlo, invece di
           // annunciare un successo che non c'è stato.
           alert(data.success
-            ? 'Configurazione salvata: le nuove impostazioni valgono dal prossimo scatto.'
-            : 'Salvataggio non riuscito. Controlla i log.');
+            ? 'Configuration saved: the new settings apply from the next shot.'
+            : 'Save failed. Check the logs.');
         } catch (error) {
-          if (error.message !== 'Session expired') alert('Salvataggio non riuscito. Controlla i log.');
+          if (error.message !== 'Session expired') alert('Save failed. Check the logs.');
         }
       },
       async takePhoto() {
         try {
           const res = await secureFetch('/api/take_photo', { method: 'POST' });
           if (!res.ok) {
-            alert('Impossibile scattare la foto.');
+            alert('Could not take the photo.');
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            console.error('Errore durante lo scatto:', error);
-            alert('Errore durante lo scatto. Controlla i log.');
+            console.error('Error while taking the shot:', error);
+            alert('Error while taking the shot. Check the logs.');
           }
         }
       },
@@ -501,14 +501,14 @@ const startApp = async () => {
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            console.error('Errore nel leggere lo stato del timelapse:', error);
+            console.error('Error reading the timelapse status:', error);
           }
         }
       },
       async runTimelapse(upload) {
         const question = upload
-          ? 'Montare e pubblicare subito il timelapse su YouTube?'
-          : 'Montare subito il timelapse senza pubblicarlo?';
+          ? 'Build the timelapse now and publish it to YouTube?'
+          : 'Build the timelapse now without publishing it?';
         if (!confirm(question)) return;
         try {
           this.timelapseStartedAt = this.timelapseStats?.last_result?.at || null;
@@ -520,24 +520,24 @@ const startApp = async () => {
           if (res.ok) {
             this.timelapseRunning = true;
           } else {
-            alert('Impossibile avviare il montaggio.');
+            alert('Could not start the build.');
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            console.error('Errore avviando il timelapse:', error);
-            alert('Errore avviando il timelapse. Controlla i log.');
+            console.error('Error starting the timelapse:', error);
+            alert('Error starting the timelapse. Check the logs.');
           }
         }
       },
       async restartApp() {
-        if (confirm('Sei sicuro di voler riavviare l\'applicazione?')) {
+        if (confirm('Are you sure you want to restart the application?')) {
           try {
             await secureFetch('/api/restart', { method: 'POST' });
-            alert('Riavvio in corso...');
+            alert('Restarting...');
           } catch (error) {
             if (error.message !== 'Session expired') {
-              console.error('Errore durante il riavvio:', error);
-              alert('Errore durante il riavvio. Controlla i log.');
+              console.error('Error during the restart:', error);
+              alert('Error during the restart. Check the logs.');
             }
           }
         }
@@ -564,14 +564,14 @@ const startApp = async () => {
 
             // 2. Controlla se lo stato è appena cambiato da true a false
             if (wasCapturing && !this.isCapturing) {
-              console.log("Cattura terminata. Aggiorno l'immagine.");
+              console.log("Capture finished. Refreshing the image.");
               // 3. Aggiorna l'URL con un timestamp per forzare il ricaricamento
               this.imageUrl = `${this.baseImageUrl}?_=${Date.now()}`;
             }
           })
           .catch(err => {
             if (err.message !== 'Session expired') {
-              console.error("Errore recupero stato cattura:", err);
+              console.error("Error fetching the capture status:", err);
               this.isCapturing = false;
             }
           });
@@ -591,7 +591,7 @@ const startApp = async () => {
           })
           .catch(err => {
             if (err.message !== 'Session expired') {
-              console.error('Errore recupero stato streaming:', err);
+              console.error('Error fetching the streaming status:', err);
               this.streamRunning = false;
             }
           });
@@ -616,7 +616,7 @@ const startApp = async () => {
         if (this.logTimer) { clearInterval(this.logTimer); this.logTimer = null; }
       },
       fetchLog() {
-        secureFetch('/api/log').then(res => res.ok ? res.text() : Promise.reject('Errore')).then(text => {
+        secureFetch('/api/log').then(res => res.ok ? res.text() : Promise.reject('Error')).then(text => {
           this.logContent = text;
           this.$nextTick(() => {
             const pre = document.getElementById('logView');
@@ -624,7 +624,7 @@ const startApp = async () => {
           });
         }).catch(err => {
           if (err.message !== 'Session expired') {
-            this.logContent = `Errore caricamento log:\n${err}`;
+            this.logContent = `Error loading the log:\n${err}`;
           }
         });
       },
@@ -633,7 +633,7 @@ const startApp = async () => {
           this.stats = data;
         }).catch(err => {
           if (err.message !== 'Session expired') {
-            console.error("Errore recupero statistiche:", err);
+            console.error("Error fetching the statistics:", err);
           }
         });
       },
@@ -676,22 +676,22 @@ const startApp = async () => {
           if (response.ok) {
             window.location.href = '/login';
           } else {
-            console.error('Logout fallito');
-            alert('Impossibile effettuare il logout.');
+            console.error('Logout failed');
+            alert('Could not log out.');
           }
         } catch (error) {
-          console.error('Errore durante il logout:', error);
-          alert('Errore di connessione durante il logout.');
+          console.error('Error during the logout:', error);
+          alert('Connection error during the logout.');
         }
       },
       async changePassword(passwords) {
         if (passwords.new !== passwords.confirm) {
-          this.changePasswordMessage = "Le nuove password non coincidono.";
+          this.changePasswordMessage = "The new passwords do not match.";
           this.changePasswordSuccess = false;
           return;
         }
         if (!passwords.new || !passwords.current) {
-          this.changePasswordMessage = "Tutti i campi sono obbligatori.";
+          this.changePasswordMessage = "All fields are required.";
           this.changePasswordSuccess = false;
           return;
         }
@@ -720,7 +720,7 @@ const startApp = async () => {
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            this.changePasswordMessage = 'Errore di connessione con il server.';
+            this.changePasswordMessage = 'Connection error with the server.';
             this.changePasswordSuccess = false;
           }
         } finally {
@@ -890,7 +890,7 @@ const startApp = async () => {
       async uploadAsset() {
         const input = this.$refs.assetFile;
         if (!input || !input.files || !input.files.length) {
-          this.assetUpload.message = 'Scegli prima un file.';
+          this.assetUpload.message = 'Pick a file first.';
           this.assetUpload.ok = false;
           return;
         }
@@ -905,8 +905,8 @@ const startApp = async () => {
           const data = await res.json();
           this.assetUpload.ok = !!data.success;
           this.assetUpload.message = data.success
-            ? 'Caricato ' + data.asset.name + '.'
-            : (data.error || 'Caricamento non riuscito.');
+            ? 'Uploaded ' + data.asset.name + '.'
+            : (data.error || 'Upload failed.');
           if (data.success) {
             input.value = '';
             await this.loadAssets();
@@ -914,27 +914,27 @@ const startApp = async () => {
         } catch (error) {
           if (error.message !== 'Session expired') {
             this.assetUpload.ok = false;
-            this.assetUpload.message = 'Errore di rete durante il caricamento.';
+            this.assetUpload.message = 'Network error during the upload.';
           }
         } finally {
           this.assetUpload.busy = false;
         }
       },
       async deleteAsset(item) {
-        if (!confirm('Eliminare ' + item.name + '?')) return;
+        if (!confirm('Delete ' + item.name + '?')) return;
         try {
           const res = await secureFetch('/api/assets/' + item.category + '/' + encodeURIComponent(item.name),
             { method: 'DELETE' });
           const data = await res.json();
           this.assetUpload.ok = !!data.success;
           this.assetUpload.message = data.success
-            ? 'Eliminato ' + item.name + '.'
-            : (data.error || 'Eliminazione non riuscita.');
+            ? 'Deleted ' + item.name + '.'
+            : (data.error || 'Delete failed.');
           if (data.success) await this.loadAssets();
         } catch (error) {
           if (error.message !== 'Session expired') {
             this.assetUpload.ok = false;
-            this.assetUpload.message = 'Errore di rete durante l\'eliminazione.';
+            this.assetUpload.message = 'Network error during the delete.';
           }
         }
       },
@@ -977,7 +977,7 @@ const startApp = async () => {
       async startYoutubeAuth() {
         const yl = this.config.youtubeLive || {};
         if (!yl.client_id || !yl.client_secret) {
-          this.youtubeAuth.message = 'Inserisci prima Client ID e Client Secret.';
+          this.youtubeAuth.message = 'Enter the Client ID and Client Secret first.';
           this.youtubeAuth.ok = false;
           return;
         }
@@ -992,7 +992,7 @@ const startApp = async () => {
           const data = await res.json();
           if (!data.success) {
             this.youtubeAuth.active = false;
-            this.youtubeAuth.message = data.error || 'Avvio autenticazione fallito.';
+            this.youtubeAuth.message = data.error || 'Could not start the authentication.';
             this.youtubeAuth.ok = false;
             return;
           }
@@ -1004,7 +1004,7 @@ const startApp = async () => {
         } catch (error) {
           this.youtubeAuth.active = false;
           if (error.message !== 'Session expired') {
-            this.youtubeAuth.message = 'Errore di rete durante l\'avvio.';
+            this.youtubeAuth.message = 'Network error while starting.';
             this.youtubeAuth.ok = false;
           }
         }
@@ -1013,7 +1013,7 @@ const startApp = async () => {
         if (this.youtubeAuthPolling) return; // evita richieste sovrapposte
         if (Date.now() > this.youtubeAuthExpiry) {
           this.stopYoutubeAuth();
-          this.youtubeAuth.message = 'Codice scaduto, riprova.';
+          this.youtubeAuth.message = 'The code has expired, try again.';
           this.youtubeAuth.ok = false;
           return;
         }
@@ -1027,12 +1027,12 @@ const startApp = async () => {
             // Il canale autorizzato va mostrato: se non è quello della stream
             // key la diretta fallisce con un 403 solo allo scatto successivo.
             this.youtubeAuth.message = data.channel
-              ? 'Autenticato sul canale "' + data.channel + '". Verifica che sia quello della stream key, poi salva la configurazione.'
-              : 'Autenticazione completata. Ricordati di salvare la configurazione.';
+              ? 'Authenticated on channel "' + data.channel + '". Check it is the one the stream key belongs to, then save the configuration.'
+              : 'Authentication complete. Remember to save the configuration.';
             this.youtubeAuth.ok = true;
           } else if (data.status !== 'pending') {
             this.stopYoutubeAuth();
-            this.youtubeAuth.message = 'Autenticazione non riuscita: ' + (data.error || data.status);
+            this.youtubeAuth.message = 'Authentication failed: ' + (data.error || data.status);
             this.youtubeAuth.ok = false;
           }
         } catch (error) {
@@ -1118,7 +1118,7 @@ const startApp = async () => {
 
         if (this.currentPoints.length < 3) {
           this.currentPoints = [];
-          console.warn("Disegno ROI annullato: servono almeno 3 punti.");
+          console.warn("ROI drawing cancelled: at least 3 points are needed.");
           return;
         }
         const newRoi = { id: Date.now(), points: this.currentPoints, mode: 'blur' };
@@ -1129,7 +1129,7 @@ const startApp = async () => {
 
       // NUOVO: Annulla il disegno in corso con il tasto destro
       cancelCurrentRoi() {
-        console.log("Disegno ROI in corso annullato.");
+        console.log("ROI drawing in progress cancelled.");
         this.currentPoints = [];
       },
 
@@ -1269,11 +1269,11 @@ const startApp = async () => {
       },
       connectivityLabel() {
         return {
-          full: 'Internet raggiungibile',
-          limited: 'Rete senza internet',
-          portal: 'Dietro un portale di accesso',
-          none: 'Nessuna connettività'
-        }[this.state.connectivity] || 'Connettività sconosciuta';
+          full: 'Internet reachable',
+          limited: 'Network without internet',
+          portal: 'Behind a captive portal',
+          none: 'No connectivity'
+        }[this.state.connectivity] || 'Connectivity unknown';
       },
       connectivityClass() {
         if (this.state.connectivity === 'full') return 'bg-success';
@@ -1308,7 +1308,7 @@ const startApp = async () => {
           this.loaded = true;
         } catch (error) {
           if (error.message !== 'Session expired') {
-            this.setMessage('Impossibile leggere lo stato della rete.', false);
+            this.setMessage('Could not read the network status.', false);
           }
         }
       },
@@ -1320,13 +1320,13 @@ const startApp = async () => {
           const result = await response.json();
           if (result.success) {
             this.networks = result.networks;
-            if (!this.networks.length) this.setMessage('Nessuna rete in portata.', false);
+            if (!this.networks.length) this.setMessage('No networks in range.', false);
           } else {
-            this.setMessage(result.message || 'Scansione non riuscita.', false);
+            this.setMessage(result.message || 'Scan failed.', false);
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            this.setMessage('Errore di connessione durante la scansione.', false);
+            this.setMessage('Connection error during the scan.', false);
           }
         } finally {
           this.scanning = false;
@@ -1368,14 +1368,14 @@ const startApp = async () => {
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            this.setMessage('Errore di connessione durante il tentativo.', false);
+            this.setMessage('Connection error during the attempt.', false);
           }
         } finally {
           this.busy = false;
         }
       },
       async forget(name) {
-        if (!confirm(`Dimenticare la rete ${name}? La password salvata verrà cancellata.`)) return;
+        if (!confirm(`Forget the network ${name}? The stored password will be deleted.`)) return;
         this.busy = true;
         try {
           const response = await secureFetch('/api/network/forget', {
@@ -1388,7 +1388,7 @@ const startApp = async () => {
           await this.loadStatus();
         } catch (error) {
           if (error.message !== 'Session expired') {
-            this.setMessage('Errore di connessione.', false);
+            this.setMessage('Connection error.', false);
           }
         } finally {
           this.busy = false;
@@ -1433,11 +1433,11 @@ const startApp = async () => {
         } catch (error) {
           if (error.name === 'AbortError') {
             this.setMessage(
-              'Nessuna risposta: probabilmente l\'indirizzo è cambiato proprio ' +
-              'sotto questa connessione. Riapri l\'interfaccia al nuovo indirizzo ' +
-              'e controlla il log.', false);
+              'No answer: the address has most likely changed right underneath ' +
+              'this connection. Reopen the interface at the new address and check ' +
+              'the log.', false);
           } else if (error.message !== 'Session expired') {
-            this.setMessage('Errore di connessione.', false);
+            this.setMessage('Connection error.', false);
           }
         } finally {
           clearTimeout(timeout);
@@ -1492,7 +1492,7 @@ const startApp = async () => {
           });
           if (!response.ok) {
             const result = await response.json().catch(() => ({}));
-            this.setBackupMessage(result.message || 'Backup non riuscito.', false);
+            this.setBackupMessage(result.message || 'Backup failed.', false);
             return;
           }
 
@@ -1509,10 +1509,10 @@ const startApp = async () => {
           URL.revokeObjectURL(url);
 
           this.backupPassphrase = '';
-          this.setBackupMessage('Backup scaricato. Conserva la passphrase: senza non è recuperabile.', true);
+          this.setBackupMessage('Backup downloaded. Keep the passphrase: without it the file cannot be recovered.', true);
         } catch (error) {
           if (error.message !== 'Session expired') {
-            this.setBackupMessage('Errore di connessione durante il backup.', false);
+            this.setBackupMessage('Connection error during the backup.', false);
           }
         } finally {
           this.backupBusy = false;
@@ -1523,7 +1523,7 @@ const startApp = async () => {
       },
       async uploadRestore() {
         if (!this.restoreFile) return;
-        if (!confirm('La configurazione attuale verrà sovrascritta. Procedere?')) return;
+        if (!confirm('The current configuration will be overwritten. Proceed?')) return;
 
         this.restoreBusy = true;
         this.setBackupMessage('', false);
@@ -1532,7 +1532,7 @@ const startApp = async () => {
           try {
             backup = JSON.parse(await this.restoreFile.text());
           } catch (e) {
-            this.setBackupMessage('Il file selezionato non è un JSON valido.', false);
+            this.setBackupMessage('The file you picked is not valid JSON.', false);
             return;
           }
 
@@ -1542,7 +1542,7 @@ const startApp = async () => {
             body: JSON.stringify({ backup: backup, passphrase: this.restorePassphrase })
           });
           const result = await response.json().catch(() => ({}));
-          this.setBackupMessage(result.message || 'Ripristino non riuscito.', response.ok);
+          this.setBackupMessage(result.message || 'Restore failed.', response.ok);
 
           if (response.ok) {
             this.restorePassphrase = '';
@@ -1552,7 +1552,7 @@ const startApp = async () => {
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            this.setBackupMessage('Errore di connessione durante il ripristino.', false);
+            this.setBackupMessage('Connection error during the restore.', false);
           }
         } finally {
           this.restoreBusy = false;
@@ -1623,7 +1623,7 @@ const startApp = async () => {
           }
         } catch (error) {
           if (error.message !== 'Session expired') {
-            console.error('Errore nel caricare i giorni della galleria:', error);
+            console.error('Error loading the gallery days:', error);
           }
         }
       },
@@ -1639,7 +1639,7 @@ const startApp = async () => {
           this.galleryPreload.clear();
         } catch (error) {
           if (error.message !== 'Session expired') {
-            console.error('Errore nel caricare i fotogrammi:', error);
+            console.error('Error loading the frames:', error);
           }
         }
       },
@@ -1722,7 +1722,7 @@ startApp().catch(error => {
   // Gestisce l'errore di sessione scaduta che può avvenire durante il caricamento dei template
   if (error.message !== 'Session expired') {
     console.error("Failed to start the application:", error);
-    document.body.innerHTML = '<div class="alert alert-danger">Impossibile avviare l\'applicazione. Controlla la console per i dettagli.</div>';
+    document.body.innerHTML = '<div class="alert alert-danger">Could not start the application. Check the console for details.</div>';
   }
 });
 

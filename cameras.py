@@ -162,7 +162,7 @@ class PiCameraDevice:
                     f"Gain={data_to_store['gain_index']}"
                 )
         except Exception as e:
-            self.logger.error(f"Impossibile salvare il file .capture_info: {e}")
+            self.logger.error(f"Could not save the .capture_info file: {e}")
 
 
     def update_config(self, new_params, new_stream_params, new_device_params,
@@ -312,7 +312,7 @@ class PiCameraDevice:
 
                         # --- ANTI-BOUNCING (ora basato su stato combinato) ---
                         if current_state in exp_results:
-                            self.logger.warning(f"Rilevata oscillazione! Stato (shutter_idx={shutter_idx}, gain_idx={gain_idx}) già testato. Scelgo il migliore.")
+                            self.logger.warning(f"Oscillation detected! State (shutter_idx={shutter_idx}, gain_idx={gain_idx}) already tried. Picking the best one.")
                             break
 
                         exposure_us = shutter_speeds_us[shutter_idx]
@@ -382,7 +382,7 @@ class PiCameraDevice:
                                 break
 
                     # --- LOGICA DI FALLBACK (se non si trova l'esposizione perfetta) ---
-                    self.logger.warning("Nessuna esposizione perfetta trovata. Scelgo la più vicina.")
+                    self.logger.warning("No perfect exposure found. Picking the closest one.")
                     if not exp_results: return None, {}
                     target_br = (BRIGHTNESS_TARGET_MIN + BRIGHTNESS_TARGET_MAX) / 2
                     
@@ -401,7 +401,7 @@ class PiCameraDevice:
                     return best_result['image'], best_result['metadata']
 
             except Exception as e:
-                self.logger.error(f"Errore durante takePicture: {e}", exc_info=True)
+                self.logger.error(f"Error during takePicture: {e}", exc_info=True)
                 if self.camera.started: self.camera.stop()
                 return None, {}
             finally:
@@ -433,7 +433,7 @@ class PiCameraDevice:
                 self.camera.set_controls(params)
 
                 self.camera.start()
-                self.logger.info("In attesa della stabilizzazione del sensore (2 secondi)...")
+                self.logger.info("Waiting for the sensor to settle (2 seconds)...")
                 time.sleep(2)
 
                 self.logger.info(f"Cattura dell'immagine {params['ExposureTime']/1000000:.2f}s a Gain {params.get('AnalogueGain')}")
@@ -444,7 +444,7 @@ class PiCameraDevice:
                 return output_buffer, metadata
 
             except Exception as e:
-                self.logger.error(f"Errore durante takePicture per '{dayperiod}': {e}", exc_info=True)
+                self.logger.error(f"Error during takePicture for '{dayperiod}': {e}", exc_info=True)
                 if self.camera.started:
                         self.camera.stop()
                 return None, {}
@@ -478,7 +478,7 @@ class PiCameraDevice:
         except (TypeError, ValueError):
             volume = 100
 
-        self.logger.info(f"Audio dello streaming: {os.path.basename(track)} al {volume}% di volume.")
+        self.logger.info(f"Streaming audio: {os.path.basename(track)} at {volume}% volume.")
         filters = [] if volume == 100 else ["-af", f"volume={volume / 100:.2f}"]
         return ["-stream_loop", "-1", "-re", "-i", track], filters
 

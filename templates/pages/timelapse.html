@@ -2,18 +2,18 @@
     <h4>Timelapse</h4>
 
     <div class="form-text mb-3">
-        Le impostazioni del timelapse (giorno, ora, fotogrammi, video) sono in
+        The timelapse settings (day, time, frames, video) live in
         <strong>Configuration &rarr; Timelapse</strong>.
     </div>
 
     <div class="card card-body mb-3">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h5 class="mb-0">Galleria</h5>
+            <h5 class="mb-0">Gallery</h5>
             <div class="d-flex align-items-center gap-2">
                 <select class="form-select form-select-sm w-auto" :value="galleryDay"
                     @change="selectGalleryDay($event.target.value)">
                     <option v-for="d in galleryDays" :key="d.day" :value="d.day">
-                        [[ d.day ]] &mdash; [[ d.count ]] frame
+                        [[ d.day ]] &mdash; [[ d.count ]] frames
                     </option>
                 </select>
                 <button class="btn btn-outline-secondary btn-sm" @click="loadGalleryDays">
@@ -23,12 +23,12 @@
         </div>
 
         <div v-if="galleryFrames.length === 0" class="text-muted mt-3">
-            Nessun fotogramma disponibile. Attiva il timelapse e attendi il primo scatto.
+            No frames available. Enable the timelapse and wait for the first shot.
         </div>
 
         <div v-else class="mt-3">
             <div class="text-center bg-dark rounded position-relative">
-                <img :src="galleryFrameUrl" class="img-fluid rounded" alt="Fotogramma"
+                <img :src="galleryFrameUrl" class="img-fluid rounded" alt="Frame"
                     style="max-height: 60vh;" />
                 <span class="badge bg-dark position-absolute top-0 end-0 m-2">
                     [[ galleryFrameLabel ]]
@@ -48,7 +48,7 @@
                     </button>
                     <button class="btn btn-outline-primary btn-sm" @click="toggleGalleryPlay">
                         <i class="bi" :class="galleryPlaying ? 'bi-pause-fill' : 'bi-play-fill'"></i>
-                        [[ galleryPlaying ? 'Pausa' : 'Riproduci' ]]
+                        [[ galleryPlaying ? 'Pause' : 'Play' ]]
                     </button>
                     <button class="btn btn-outline-secondary btn-sm" @click="stepGallery(1)">
                         <i class="bi bi-chevron-right"></i>
@@ -58,7 +58,7 @@
                     </button>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <label class="form-label mb-0 small text-muted">Velocit&agrave;</label>
+                    <label class="form-label mb-0 small text-muted">Speed</label>
                     <select class="form-select form-select-sm w-auto" v-model.number="gallerySpeed">
                         <option :value="2">2 fps</option>
                         <option :value="5">5 fps</option>
@@ -70,44 +70,44 @@
                 </div>
             </div>
             <div class="form-text">
-                Anteprima dei fotogrammi che finiranno nel video. La riproduzione avanza solo quando l'immagine
-                successiva &egrave; arrivata dal dispositivo: alla prima passata pu&ograve; risultare pi&ugrave;
-                lenta della velocit&agrave; scelta, poi i fotogrammi restano in cache e scorrono fluidi.
+                A preview of the frames that will end up in the video. Playback only advances once the next
+                image has arrived from the device: on the first pass it can run slower than the speed you
+                picked, then the frames stay cached and play smoothly.
             </div>
         </div>
     </div>
 
     <div class="card card-body">
-        <h5>Stato</h5>
+        <h5>Status</h5>
         <div v-if="timelapseStats" class="row">
             <div class="col-md-3">
-                <div class="text-muted small">Fotogrammi</div>
+                <div class="text-muted small">Frames</div>
                 <div class="fs-4">[[ timelapseStats.frames ]]</div>
             </div>
             <div class="col-md-3">
-                <div class="text-muted small">Spazio occupato</div>
+                <div class="text-muted small">Disk used</div>
                 <div class="fs-4">[[ formatBytes(timelapseStats.bytes) ]]</div>
             </div>
             <div class="col-md-3">
-                <div class="text-muted small">Pi&ugrave; vecchio</div>
+                <div class="text-muted small">Oldest</div>
                 <div>[[ timelapseStats.oldest || '&ndash;' ]]</div>
             </div>
             <div class="col-md-3">
-                <div class="text-muted small">Pi&ugrave; recente</div>
+                <div class="text-muted small">Newest</div>
                 <div>[[ timelapseStats.newest || '&ndash;' ]]</div>
             </div>
         </div>
-        <div v-else class="text-muted">Caricamento...</div>
+        <div v-else class="text-muted">Loading...</div>
 
         <div v-if="timelapseStats && timelapseStats.last_result" class="mt-3">
-            <div class="text-muted small">Ultimo montaggio</div>
+            <div class="text-muted small">Last build</div>
             <div :class="timelapseStats.last_result.ok ? 'text-success' : 'text-danger'">
                 [[ timelapseStats.last_result.at ]] &ndash;
                 <span v-if="timelapseStats.last_result.ok">
-                    [[ timelapseStats.last_result.frames ]] fotogrammi
+                    [[ timelapseStats.last_result.frames ]] frames
                     <span v-if="timelapseStats.last_result.video_id">
                         &middot; <a :href="'https://youtu.be/' + timelapseStats.last_result.video_id"
-                            target="_blank" rel="noopener">apri su YouTube</a>
+                            target="_blank" rel="noopener">open on YouTube</a>
                     </span>
                 </span>
                 <span v-else>[[ timelapseStats.last_result.error ]]</span>
@@ -119,18 +119,18 @@
             <button class="btn btn-primary" @click="$emit('run-timelapse', true)" :disabled="timelapseRunning">
                 <span v-if="timelapseRunning" class="spinner-border spinner-border-sm me-1" role="status"></span>
                 <i v-else class="bi bi-film me-1"></i>
-                [[ timelapseRunning ? 'Montaggio in corso...' : 'Genera e pubblica ora' ]]
+                [[ timelapseRunning ? 'Building...' : 'Build and publish now' ]]
             </button>
             <button class="btn btn-outline-secondary" @click="$emit('run-timelapse', false)"
                 :disabled="timelapseRunning">
-                <i class="bi bi-hdd me-1"></i> Genera senza pubblicare
+                <i class="bi bi-hdd me-1"></i> Build without publishing
             </button>
             <button class="btn btn-outline-secondary" @click="$emit('refresh-timelapse')">
-                <i class="bi bi-arrow-clockwise me-1"></i> Aggiorna
+                <i class="bi bi-arrow-clockwise me-1"></i> Refresh
             </button>
         </div>
         <div class="form-text">
-            Il montaggio pu&ograve; durare diversi minuti e prosegue in background: usa Aggiorna per vedere l'esito.
+            Building can take several minutes and carries on in the background: use Refresh to see the outcome.
         </div>
     </div>
 </div>

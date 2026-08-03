@@ -40,7 +40,7 @@ La fase corrente viene scritta nel log a ogni scatto.
 
 ## Sicurezza e accesso
 
-**System → Cambio Password** cambia la password dell'interfaccia; serve quella attuale. La password è conservata come hash in `.conf.json`, insieme a una chiave di sessione Flask generata al primo avvio.
+**System → Change Password** cambia la password dell'interfaccia; serve quella attuale. La password è conservata come hash in `.conf.json`, insieme a una chiave di sessione Flask generata al primo avvio.
 
 Se la password viene persa, si può reimpostarla da terminale sul dispositivo:
 

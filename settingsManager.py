@@ -364,7 +364,7 @@ class SettingsManager:
                                  password=data.get('password') or '',
                                  hidden=bool(data.get('hidden')))
             self.logger.info(f"Wifi connected to '{ssid}'.")
-            return jsonify(success=True, message=f"Connesso a {ssid}.")
+            return jsonify(success=True, message=f"Connected to {ssid}.")
         except network.NetworkError as e:
             self.logger.error(f"Wifi connection to '{ssid}' failed: {e}")
             if hotspot_was_up:
@@ -393,11 +393,11 @@ class SettingsManager:
         """Cancella un profilo salvato."""
         name = ((request.json or {}).get('name') or '').strip()
         if not name:
-            return jsonify(success=False, message="Manca il nome della rete."), 400
+            return jsonify(success=False, message="The network name is missing."), 400
         try:
             network.forget(name)
             self.logger.info(f"Wifi profile '{name}' deleted from web UI.")
-            return jsonify(success=True, message=f"Rete {name} dimenticata.")
+            return jsonify(success=True, message=f"Network {name} forgotten.")
         except network.NetworkError as e:
             self.logger.error(f"Could not delete wifi profile '{name}': {e}")
             return jsonify(success=False, message=str(e)), 400
@@ -417,7 +417,7 @@ class SettingsManager:
         data = request.json or {}
         connection = (data.get('connection') or '').strip()
         if not connection:
-            return jsonify(success=False, message="Manca il profilo da modificare."), 400
+            return jsonify(success=False, message="The profile to change is missing."), 400
 
         method = data.get('method') or 'auto'
         try:
@@ -429,11 +429,11 @@ class SettingsManager:
                 self.logger.warning(
                     f"Profile '{connection}' switched to the fixed address {data.get('address')}."
                 )
-                return jsonify(success=True, message="Indirizzo fisso applicato.")
+                return jsonify(success=True, message="Static address applied.")
 
             network.set_dhcp(connection)
             self.logger.warning(f"Profile '{connection}' switched back to DHCP.")
-            return jsonify(success=True, message="Indirizzo automatico applicato.")
+            return jsonify(success=True, message="Automatic address applied.")
         except network.NetworkError as e:
             self.logger.error(f"Could not reconfigure '{connection}': {e}")
             return jsonify(success=False, message=str(e)), 400
@@ -442,7 +442,7 @@ class SettingsManager:
     def restart(self):
         self.logger.warning("System reboot requested from web UI.")
         threading.Thread(target=lambda: os.system('sudo /sbin/reboot'), name="RebootThread").start()
-        return jsonify(success=True, message="Riavvio del sistema in corso...")
+        return jsonify(success=True, message="System restart under way...")
 
     @login_required
     def change_password(self):
@@ -501,7 +501,7 @@ class SettingsManager:
             return jsonify(success=False, message=str(e)), 400
         except Exception as e:
             self.logger.error(f"Failed to build configuration backup: {e}", exc_info=True)
-            return jsonify(success=False, message="Backup non riuscito, controlla i log."), 500
+            return jsonify(success=False, message="Backup failed, check the logs."), 500
 
         filename = f"zerocam-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
         self.logger.warning(f"Configuration backup downloaded as {filename}.")
@@ -532,7 +532,7 @@ class SettingsManager:
                 restored[section] = json.loads(json.dumps(current[section]))
 
         if not self.zerocam.config_manager.save_config(restored):
-            return jsonify(success=False, message="Salvataggio della configurazione ripristinata non riuscito."), 500
+            return jsonify(success=False, message="Could not save the restored configuration."), 500
 
         if mask is not None:
             try:
@@ -542,12 +542,12 @@ class SettingsManager:
                 self.logger.error(f"Restored config but failed to write privacy mask: {e}", exc_info=True)
                 return jsonify(
                     success=False,
-                    message="Configurazione ripristinata, ma la privacy mask non è stata scritta."
+                    message="Configuration restored, but the privacy mask could not be written."
                 ), 500
 
         self.zerocam.apply_updated_config()
         self.logger.warning("Configuration restored from backup file.")
-        return jsonify(success=True, message="Configurazione ripristinata. Riavvia per applicarla del tutto.")
+        return jsonify(success=True, message="Configuration restored. Restart to apply it fully.")
 
     @login_required
     def get_log(self):
@@ -759,7 +759,7 @@ class SettingsManager:
         uploaded = request.files.get('file')
         category = request.form.get('category', '')
         if not uploaded or not uploaded.filename:
-            return jsonify(success=False, error="Nessun file ricevuto."), 400
+            return jsonify(success=False, error="No file received."), 400
 
         try:
             item = assets.save(category, uploaded.filename, uploaded)
@@ -767,7 +767,7 @@ class SettingsManager:
             return jsonify(success=False, error=str(e)), 400
         except Exception as e:
             self.logger.error(f"Asset upload failed: {e}", exc_info=True)
-            return jsonify(success=False, error="Salvataggio non riuscito."), 500
+            return jsonify(success=False, error="Could not save the file."), 500
 
         self.logger.info(f"Asset uploaded: {item['reference']} ({item['size']} bytes)")
         return jsonify(success=True, asset=item)
@@ -780,7 +780,7 @@ class SettingsManager:
             return jsonify(success=False, error=str(e)), 400
 
         if not removed:
-            return jsonify(success=False, error="File non trovato."), 404
+            return jsonify(success=False, error="File not found."), 404
         self.logger.info(f"Asset deleted: {category}/{name}")
         return jsonify(success=True)
 

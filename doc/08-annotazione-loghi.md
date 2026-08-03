@@ -6,7 +6,7 @@ Le pagine **Annotation** e **Overlays** mostrano in cima l'ultimo scatto con la 
 
 **I loghi si trascinano.** Prendendone uno con il mouse, i campi *X* e *Y* si aggiornano da soli: è il modo naturale di posizionarli, e funziona come l'editor delle maschere privacy.
 
-Niente di quello che si vede nell'anteprima è salvato finché non si preme **Salva Configurazione**: chiudendo la pagina le prove fatte si perdono, e lo scatto successivo esce con i valori vecchi.
+Niente di quello che si vede nell'anteprima è salvato finché non si preme **Save Configuration**: chiudendo la pagina le prove fatte si perdono, e lo scatto successivo esce con i valori vecchi.
 
 L'anteprima è disegnata dal browser, non dal dispositivo, quindi è immediata e non lo carica di lavoro. Il carattere è lo stesso file che il dispositivo usa per stampare l'annotazione, quindi il testo ha le proporzioni giuste; restano possibili scarti di qualche pixel nella posizione verticale del testo e nella lunghezza dei nomi di giorni e mesi, che nell'anteprima seguono la lingua del browser e nello scatto quella del dispositivo. La verifica definitiva resta la foto.
 
@@ -20,12 +20,12 @@ I comandi stanno a destra dell'anteprima, così l'effetto di ogni modifica è so
 
 | Campo | Significato |
 |---|---|
-| Sfondo della fascia | Colore e trasparenza della fascia |
-| Colore del testo | Colore e trasparenza del testo |
-| Corpo del carattere | Altezza del carattere in pixel |
-| Margine | Distanza fra testo e bordi; determina anche l'altezza della fascia |
-| Testo | Testo fisso, tipicamente nome della località e indirizzo del sito |
-| Formato di data e ora | Formato della data, con i codici `strftime` |
+| Background color | Colore e trasparenza della fascia |
+| Text Color | Colore e trasparenza del testo |
+| Font Size | Altezza del carattere in pixel |
+| Margin | Distanza fra testo e bordi; determina anche l'altezza della fascia |
+| Text | Testo fisso, tipicamente nome della località e indirizzo del sito |
+| Date and Time format | Formato della data, con i codici `strftime` |
 
 I due colori si scelgono con il selettore del sistema, e la trasparenza con il cursore accanto: da 0, che rende l'elemento invisibile, a 255, che lo rende pieno. Sotto a ciascuno è scritto il valore risultante in forma `rgba(...)`, utile per riprodurre lo stesso colore altrove. Nel file di configurazione restano quattro numeri da 0 a 255 — `R`, `G`, `B`, `A` — che è la forma in cui il dispositivo li usa.
 
@@ -49,9 +49,9 @@ Il carattere usato è `static/css/fonts/Arial.ttf`, incluso nell'applicazione.
 
 **Configuration → Overlays** ha la stessa impostazione della pagina precedente: anteprima a sinistra, elenco dei loghi a destra. Passando con il mouse su una voce dell'elenco, il logo corrispondente si evidenzia sull'anteprima — con più loghi sovrapposti è l'unico modo per sapere quale si sta modificando.
 
-L'elenco parte vuoto. **Aggiungi** inserisce un logo, e lo si può premere quante volte serve; il cestino accanto a ciascuno lo toglie. Non c'è un numero massimo, ma ogni logo attivo viene scaricato e sovrapposto a ogni scatto, quindi il tempo di elaborazione cresce con la quantità.
+L'elenco parte vuoto. **Add** inserisce un logo, e lo si può premere quante volte serve; il cestino accanto a ciascuno lo toglie. Non c'è un numero massimo, ma ogni logo attivo viene scaricato e sovrapposto a ogni scatto, quindi il tempo di elaborazione cresce con la quantità.
 
-Un logo appena aggiunto non ha ancora un indirizzo: finché non lo si sceglie viene semplicemente saltato, senza comparire nel log come errore. Aggiunte e rimozioni valgono solo dopo **Salva Configurazione**: chiudendo la pagina prima, si perdono.
+Un logo appena aggiunto non ha ancora un indirizzo: finché non lo si sceglie viene semplicemente saltato, senza comparire nel log come errore. Aggiunte e rimozioni valgono solo dopo **Save Configuration**: chiudendo la pagina prima, si perdono.
 
 Ogni immagine ha:
 
@@ -66,7 +66,7 @@ Ogni immagine ha:
 
 ![La pagina Overlays: anteprima a sinistra, elenco dei loghi a destra.](img/ui-config-overlays.png){ width=100% }
 
-L'indirizzo può essere un URL http, come è sempre stato, oppure un file caricato in **Configuration → Assets**: in quel caso, invece di scriverlo a mano, si sceglie dal menu *...oppure un logo caricato*, che compila il campo URL con un riferimento del tipo `asset:logo/nome.png` e mostra l'anteprima. Un logo caricato è preferibile a uno remoto: non dipende da un sito che può cambiare o sparire, e funziona anche con la webcam senza accesso a internet in uscita.
+L'indirizzo può essere un URL http, come è sempre stato, oppure un file caricato in **Configuration → Assets**: in quel caso, invece di scriverlo a mano, si sceglie dal menu a tendina sopra il campo URL, che lo compila con un riferimento del tipo `asset:logo/nome.png` e mostra l'anteprima. Un logo caricato è preferibile a uno remoto: non dipende da un sito che può cambiare o sparire, e funziona anche con la webcam senza accesso a internet in uscita.
 
 I loghi vengono scaricati e tenuti in memoria, e riscaricati a ogni salvataggio della configurazione: sostituendo un file all'origine, o fra gli assets, basta salvare per farlo riprendere: non serve riavviare.
 
@@ -98,7 +98,7 @@ Il caricamento chiede la categoria e il file. Sono ammessi:
 | Categoria | Estensioni |
 |---|---|
 | Audio | `.mp3`, `.aac`, `.m4a`, `.ogg`, `.opus`, `.wav`, `.flac` |
-| Loghi | `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.bmp` |
+| Logos | `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp`, `.bmp` |
 
 Il limite per file è di 32 MB. Il nome viene ripulito da accenti, spazi e caratteri speciali, perché finisce in una riga di comando di ffmpeg: *Brano Estivo (2026).mp3* diventa `Brano-Estivo-2026-.mp3`.
 
@@ -106,7 +106,7 @@ L'elenco mostra dimensione e anteprima — un lettore per l'audio, la miniatura 
 
 ![La pagina Assets: caricamento in alto, elenco del materiale con anteprima ed eliminazione sotto.](img/ui-config-assets.png){ width=100% }
 
-Nelle altre pagine gli assets non si scrivono a mano: compaiono nelle tendine *Audio di sottofondo* (Stream), *Brano di sottofondo* (Timelapse) e *...oppure un logo caricato* (Overlays). In configurazione vengono salvati come `asset:categoria/nome`, un riferimento indipendente dal percorso di installazione: un backup della configurazione ripristinato su un altro Raspberry continua a puntare al file giusto, **purché quel file sia stato ricaricato**. Il backup della configurazione contiene le impostazioni, non i file degli assets: quelli vanno copiati a parte, o ricaricati dall'interfaccia.
+Nelle altre pagine gli assets non si scrivono a mano: compaiono nelle tendine *Background audio* (Stream), *Background track* (Timelapse) e nella tendina dei loghi (Overlays). In configurazione vengono salvati come `asset:categoria/nome`, un riferimento indipendente dal percorso di installazione: un backup della configurazione ripristinato su un altro Raspberry continua a puntare al file giusto, **purché quel file sia stato ricaricato**. Il backup della configurazione contiene le impostazioni, non i file degli assets: quelli vanno copiati a parte, o ricaricati dall'interfaccia.
 
 Eliminando un asset ancora referenziato non succede nulla di drammatico: il riferimento resta in configurazione ma punta al vuoto, e chi lo usa lo segnala nel log e prosegue — la diretta va in onda muta, il timelapse viene montato senza audio, il logo viene saltato.
 

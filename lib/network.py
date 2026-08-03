@@ -53,15 +53,15 @@ def _run(args, timeout):
             capture_output=True, text=True, env=_ENV, timeout=timeout,
         )
     except FileNotFoundError:
-        raise NetworkError("nmcli non è installato su questo sistema.")
+        raise NetworkError("nmcli is not installed on this system.")
     except subprocess.TimeoutExpired:
-        raise NetworkError(f"nmcli non ha risposto entro {timeout} secondi.")
+        raise NetworkError(f"nmcli did not answer within {timeout} seconds.")
 
     if result.returncode != 0:
         # nmcli mette il motivo su stderr; quando tace, il codice di uscita
         # è tutto quello che possiamo riportare.
         detail = (result.stderr or result.stdout or "").strip()
-        raise NetworkError(detail or f"nmcli è uscito con codice {result.returncode}.")
+        raise NetworkError(detail or f"nmcli exited with code {result.returncode}.")
 
     return result.stdout
 
@@ -271,18 +271,18 @@ def saved_wifi():
 
 def _check_ssid(ssid):
     if not ssid:
-        raise NetworkError("Il nome della rete non può essere vuoto.")
+        raise NetworkError("The network name cannot be empty.")
     # Il limite è dello standard: 32 byte, non 32 caratteri, e un SSID con
     # accenti ne consuma più di uno per lettera.
     if len(ssid.encode("utf-8")) > 32:
-        raise NetworkError("Il nome della rete supera i 32 byte consentiti.")
+        raise NetworkError("The network name exceeds the 32 bytes allowed.")
 
 
 def _check_psk(password):
     # WPA vuole da 8 a 63 caratteri: sotto, NetworkManager rifiuta il
     # profilo con un errore che all'utente non direbbe nulla.
     if not 8 <= len(password) <= 63:
-        raise NetworkError("La password wifi deve avere da 8 a 63 caratteri.")
+        raise NetworkError("The wifi password must be 8 to 63 characters long.")
 
 
 def wifi_connect(ssid, password="", ifname=None, hidden=False):
@@ -344,30 +344,30 @@ def _check_ipv4(address, gateway, dns):
         interface = ipaddress.ip_interface(address)
     except ValueError:
         raise NetworkError(
-            f"'{address}' non è un indirizzo valido: serve la forma 192.168.1.50/24."
+            f"'{address}' is not a valid address: the form 192.168.1.50/24 is required."
         )
     if interface.version != 4:
-        raise NetworkError("Sono ammessi solo indirizzi IPv4.")
+        raise NetworkError("Only IPv4 addresses are allowed.")
     # Senza prefisso ip_interface assume /32, che isolerebbe il dispositivo
     # dalla sua stessa rete.
     if "/" not in address:
-        raise NetworkError("Manca la lunghezza del prefisso, per esempio /24.")
+        raise NetworkError("The prefix length is missing, for example /24.")
 
     if gateway:
         try:
             gw = ipaddress.ip_address(gateway)
         except ValueError:
-            raise NetworkError(f"'{gateway}' non è un gateway valido.")
+            raise NetworkError(f"'{gateway}' is not a valid gateway.")
         if gw not in interface.network:
             raise NetworkError(
-                f"Il gateway {gateway} non appartiene alla rete {interface.network}."
+                f"Gateway {gateway} does not belong to network {interface.network}."
             )
 
     for server in dns or []:
         try:
             ipaddress.ip_address(server)
         except ValueError:
-            raise NetworkError(f"'{server}' non è un indirizzo DNS valido.")
+            raise NetworkError(f"'{server}' is not a valid DNS address.")
 
 
 def set_static(connection, address, gateway="", dns=None):

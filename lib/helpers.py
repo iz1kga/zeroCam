@@ -110,7 +110,7 @@ class CryptoHelper:
     def __init__(self, secret_key, logger):
         self.logger = logger
         if not secret_key:
-            self.logger.error("La chiave segreta non può essere vuota.")
+            self.logger.error("The secret key cannot be empty.")
             raise ValueError("Secret key cannot be empty.")
         self.key = self._derive_key(secret_key)
         self.fernet = Fernet(self.key)
@@ -143,7 +143,7 @@ class CryptoHelper:
             decrypted = self.fernet.decrypt(encrypted_part.encode())
             return decrypted.decode()
         except Exception as e:
-            self.logger.error(f"Errore durante la decrittografia: {e}. Controllare che ZEROCAM_SECRET_KEY sia corretta.", exc_info=True)
+            self.logger.error(f"Decryption error: {e}. Check that ZEROCAM_SECRET_KEY is correct.", exc_info=True)
             # In caso di errore (es. chiave errata), restituisce la stringa originale per evitare crash
             return ciphertext
 

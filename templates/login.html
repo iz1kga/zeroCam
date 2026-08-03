@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>zeroCAM - Login</title>
@@ -33,7 +33,7 @@
         <form method="POST" action="{{ url_for('login') }}">
             <img src="{{ url_for('static', filename='brand/zc_logo_big.svg') }}" alt="zeroCAM"
                  class="login-logo mb-4">
-            <h1 class="h5 mb-3 fw-normal text-muted">Accesso alla console</h1>
+            <h1 class="h5 mb-3 fw-normal text-muted">Console sign in</h1>
 
             {% with messages = get_flashed_messages() %}
               {% if messages %}
@@ -52,7 +52,7 @@
                 <label for="password">Password</label>
             </div>
 
-            <button class="w-100 btn btn-lg btn-primary" type="submit">Accedi</button>
+            <button class="w-100 btn btn-lg btn-primary" type="submit">Sign in</button>
             <p class="mt-5 mb-3 text-muted small">&copy; zeroCAM &mdash; live landscape cam</p>
         </form>
     </main>

@@ -4,8 +4,8 @@
 
 Una webcam che inquadra un abitato riprende anche finestre, giardini e cortili che non è opportuno mostrare. Le maschere privacy coprono zone dell'immagine di forma qualsiasi, in due modi:
 
-* **Sfocata** — la zona viene resa illeggibile ma resta riconoscibile come parte del paesaggio;
-* **Coperta** — la zona diventa un'area nera piena.
+* **Blurred** — la zona viene resa illeggibile ma resta riconoscibile come parte del paesaggio;
+* **Filled** — la zona diventa un'area nera piena.
 
 Le maschere sono applicate sia alla foto pubblicata sia al video in diretta, e sono applicate *prima* di annotazione e loghi, che quindi non finiscono mai sotto la sfocatura.
 
@@ -15,7 +15,7 @@ In **Cam Control**, sull'ultima immagine:
 
 1. si fa clic su ogni vertice del poligono da coprire;
 2. si chiude la figura con un doppio clic;
-3. nella colonna di destra la maschera compare nell'elenco, dove si sceglie *Sfocata* o *Coperta* e la si può eliminare.
+3. nella colonna di destra la maschera compare nell'elenco, dove si sceglie *Blurred* o *Filled* e la si può eliminare.
 
 ![Due maschere in corso di definizione: il poligono numerato indica l'ordine, il pannello a destra ne governa modalità e cancellazione.](img/ui-cam-control.png){ width=100% }
 
@@ -48,7 +48,7 @@ Il risultato è che la stessa maschera copre lo stesso oggetto in entrambe le us
 
 ## Verifica
 
-Il modo più rapido per controllare il risultato sul video è l'interruttore **Anteprima diretta** in Cam Control: il fotogramma mostrato è esattamente quello che esce dallo streaming, maschere già applicate. Nel log, all'avvio dello streaming, compaiono le righe con le viste sensore e il numero di maschere preparate:
+Il modo più rapido per controllare il risultato sul video è l'interruttore **Live preview** in Cam Control: il fotogramma mostrato è esattamente quello che esce dallo streaming, maschere già applicate. Nel log, all'avvio dello streaming, compaiono le righe con le viste sensore e il numero di maschere preparate:
 
 ```
 Sensor view - still: (...), stream: (...)
